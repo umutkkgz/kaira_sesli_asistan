@@ -12,7 +12,7 @@ const moveSpeed = 0.02;
 let frame = 0;
 let blinkTimeout = 0;
 let currentAudioLevel = 0;
-// GÜNCELLEME: Ağız animasyonu için hedef ölçek vektörü
+// Ağız animasyonu için hedef ölçek vektörü
 let targetMouthScale = new THREE.Vector3(1, 1, 1);
 
 // Dışarıdan avatarın durumunu değiştirmek için fonksiyon
@@ -84,8 +84,8 @@ export function initAvatar(canvas) {
     eyeL.add(pupilL);
     eyeR.add(pupilR);
 
-    // Ağız için daha güvenilir bir geometri kullanıldı
-    const mouthGeo = new THREE.PlaneGeometry(0.3, 0.05);
+    // GÜNCELLEME: Ağız için CircleGeometry kullanıldı ('o' şekli için)
+    const mouthGeo = new THREE.CircleGeometry(0.15, 16); // 0.3 genişliğinde bir daire
     mouth = new THREE.Mesh(mouthGeo, mouthMaterial);
     mouth.position.set(0, -0.15, 0.41);
     head.add(mouth);
@@ -130,10 +130,16 @@ function animateThreeJS() {
     head.rotation.y *= 0.95;
 
     // Avatarın o anki durumuna göre animasyonları yönet
-    if (coreState === 'idle') {
-        character.position.lerp(targetPosition, moveSpeed);
-        if (character.position.distanceTo(targetPosition) < 0.2) {
-            setNewTarget();
+    if (coreState === 'idle' || coreState === 'listening') {
+        if (coreState === 'idle') {
+            character.position.lerp(targetPosition, moveSpeed);
+            if (character.position.distanceTo(targetPosition) < 0.2) {
+                setNewTarget();
+            }
+        } else { // listening
+            character.position.lerp(new THREE.Vector3(0, 0, 0), moveSpeed * 2);
+            pupilL.position.x += (0 - pupilL.position.x) * 0.1;
+            pupilR.position.x += (0 - pupilR.position.x) * 0.1;
         }
         
         if (frame > blinkTimeout) {
@@ -143,29 +149,25 @@ function animateThreeJS() {
                 blinkTimeout = frame + Math.random() * 200 + 100;
             }
         }
-        // GÜNCELLEME: Ağız hedefi normale dönsün
-        targetMouthScale.set(1, 1, 1);
+        // Ağız '_' şeklinde olsun
+        targetMouthScale.set(1, 0.1, 1);
 
-    } else if (coreState === 'listening') {
-        character.position.lerp(new THREE.Vector3(0, 0, 0), moveSpeed * 2);
-        pupilL.position.x += (0 - pupilL.position.x) * 0.1;
-        pupilR.position.x += (0 - pupilR.position.x) * 0.1;
     } else if (coreState === 'thinking') {
         head.rotation.y = Math.sin(time * 2) * 0.2;
         head.rotation.x = Math.sin(time * 1.5) * 0.1;
         eyeL.scale.y = 0.5;
         eyeR.scale.y = 0.5;
-        // GÜNCELLEME: Düşünürken ağız hedefi belirlensin
-        targetMouthScale.x = 1 + Math.sin(time * 15) * 0.2;
-        targetMouthScale.y = 0.7 + Math.sin(time * 15) * 0.2;
+        // Düşünürken ağız '_' şeklinde hafifçe titresin
+        targetMouthScale.x = 1 + Math.sin(time * 20) * 0.1;
+        targetMouthScale.y = 0.1 + Math.abs(Math.sin(time * 20) * 0.05);
     } else if (coreState === 'speaking') {
-        // GÜNCELLEME: Konuşurken ağız hedefi belirlensin
-        targetMouthScale.y = 1 + currentAudioLevel * 15;
-        targetMouthScale.x = 1 + currentAudioLevel * 2;
+        // Konuşurken ağız 'o' şeklinde olsun ve ses seviyesine göre boyutu değişsin
+        const mouthSize = currentAudioLevel * 1.2; // 0'dan 1.2'ye
+        targetMouthScale.set(1 + mouthSize * 0.2, 1 + mouthSize, 1);
     }
 
-    // GÜNCELLEME: Ağız her zaman hedefe doğru yumuşakça hareket etsin
-    mouth.scale.lerp(targetMouthScale, 0.2);
+    // Ağız her zaman hedefe doğru yumuşakça hareket etsin
+    mouth.scale.lerp(targetMouthScale, 0.3);
 
     // Karakterin her zaman kameraya bakmasını sağlayan yönelim mantığı
     const tempObject = new THREE.Object3D();
