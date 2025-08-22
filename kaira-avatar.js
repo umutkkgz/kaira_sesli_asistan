@@ -65,16 +65,17 @@ export function initAvatar(canvas) {
     head.add(headMesh);
     head.position.y = 0.6;
     
-    // GÜNCELLEME: Kafa 180 derece döndürülerek yüzün kameraya bakması sağlandı.
-    head.rotation.y = Math.PI;
+    // DÜZELTME: Kafa 180 derece döndürme komutu kaldırıldı.
+    // Artık karakterin genel yönelimi `lookAt` ile yönetilecek.
+    // head.rotation.y = Math.PI; // BU SATIR KALDIRILDI
 
     // Gözler (Neon efektli)
     const eyeGeo = new THREE.CircleGeometry(0.1, 16);
     eyeL = new THREE.Mesh(eyeGeo, eyeMaterial);
     eyeR = new THREE.Mesh(eyeGeo, eyeMaterial);
-    // Gözler artık kafanın -Z eksenine yerleştiriliyor (döndürüldüğü için)
-    eyeL.position.set(-0.2, 0.1, -0.41);
-    eyeR.position.set(0.2, 0.1, -0.41);
+    // DÜZELTME: Gözler artık kafanın +Z eksenine (ön yüzüne) yerleştiriliyor.
+    eyeL.position.set(-0.2, 0.1, 0.41);
+    eyeR.position.set(0.2, 0.1, 0.41);
     head.add(eyeL, eyeR);
 
     // Göz Bebekleri
@@ -92,7 +93,8 @@ export function initAvatar(canvas) {
     mouthShape.quadraticCurveTo(0, 0, 0.15, 0);
     const mouthGeo = new THREE.ShapeGeometry(mouthShape);
     mouth = new THREE.Mesh(mouthGeo, mouthMaterial);
-    mouth.position.set(0, -0.15, -0.41);
+    // DÜZELTME: Ağız da +Z eksenine yerleştiriliyor.
+    mouth.position.set(0, -0.15, 0.41);
     head.add(mouth);
 
     character.add(head);
@@ -173,7 +175,6 @@ function animateThreeJS() {
     // Her zaman kameraya doğru yumuşakça dön
     const targetQuaternion = new THREE.Quaternion();
     const tempMatrix = new THREE.Matrix4();
-    // GÜNCELLEME: lookAt mantığı düzeltildi
     tempMatrix.lookAt(character.position, camera.position, character.up);
     targetQuaternion.setFromRotationMatrix(tempMatrix);
     character.quaternion.slerp(targetQuaternion, 0.05);
