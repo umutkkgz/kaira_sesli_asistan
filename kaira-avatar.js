@@ -64,10 +64,6 @@ export function initAvatar(canvas) {
     const headMesh = new THREE.Mesh(headGeo, bodyMaterial);
     head.add(headMesh);
     head.position.y = 0.6;
-    
-    // DÜZELTME: Kafa 180 derece döndürme komutu kaldırıldı.
-    // Artık karakterin genel yönelimi `lookAt` ile yönetilecek.
-    // head.rotation.y = Math.PI; // BU SATIR KALDIRILDI
 
     // Gözler (Neon efektli)
     const eyeGeo = new THREE.CircleGeometry(0.1, 16);
@@ -172,12 +168,13 @@ function animateThreeJS() {
         mouth.geometry = new THREE.ShapeGeometry(newShape);
     }
 
-    // Her zaman kameraya doğru yumuşakça dön
-    const targetQuaternion = new THREE.Quaternion();
-    const tempMatrix = new THREE.Matrix4();
-    tempMatrix.lookAt(character.position, camera.position, character.up);
-    targetQuaternion.setFromRotationMatrix(tempMatrix);
-    character.quaternion.slerp(targetQuaternion, 0.05);
+    // DÜZELTME: Karakterin her zaman kameraya bakmasını sağlayan yönelim mantığı
+    // Geçici bir obje kullanarak hedef yönelimi hesapla
+    const tempObject = new THREE.Object3D();
+    tempObject.position.copy(character.position);
+    tempObject.lookAt(camera.position);
+    // Yumuşak bir geçişle (slerp) karakterin yönelimini güncelle
+    character.quaternion.slerp(tempObject.quaternion, 0.05);
     
     renderer.render(scene, camera);
 }
