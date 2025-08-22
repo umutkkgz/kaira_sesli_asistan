@@ -69,7 +69,6 @@ export function initAvatar(canvas) {
     const eyeGeo = new THREE.CircleGeometry(0.1, 16);
     eyeL = new THREE.Mesh(eyeGeo, eyeMaterial);
     eyeR = new THREE.Mesh(eyeGeo, eyeMaterial);
-    // DÜZELTME: Gözler artık kafanın +Z eksenine (ön yüzüne) yerleştiriliyor.
     eyeL.position.set(-0.2, 0.1, 0.41);
     eyeR.position.set(0.2, 0.1, 0.41);
     head.add(eyeL, eyeR);
@@ -83,13 +82,9 @@ export function initAvatar(canvas) {
     eyeL.add(pupilL);
     eyeR.add(pupilR);
 
-    // Ağız
-    const mouthShape = new THREE.Shape();
-    mouthShape.moveTo(-0.15, 0);
-    mouthShape.quadraticCurveTo(0, 0, 0.15, 0);
-    const mouthGeo = new THREE.ShapeGeometry(mouthShape);
+    // GÜNCELLEME: Ağız için daha güvenilir bir geometri kullanıldı
+    const mouthGeo = new THREE.PlaneGeometry(0.3, 0.05);
     mouth = new THREE.Mesh(mouthGeo, mouthMaterial);
-    // DÜZELTME: Ağız da +Z eksenine yerleştiriliyor.
     mouth.position.set(0, -0.15, 0.41);
     head.add(mouth);
 
@@ -107,14 +102,12 @@ export function initAvatar(canvas) {
     animateThreeJS();
 }
 
-// GÜNCELLEME: Avatar için yeni hedef belirleme mantığı
+// Avatar için yeni hedef belirleme mantığı
 function setNewTarget() {
-    // Ekranın görünür alanını hesapla
-    const vFOV = THREE.MathUtils.degToRad(camera.fov); // vertical fov in radians
+    const vFOV = THREE.MathUtils.degToRad(camera.fov);
     const height = 2 * Math.tan(vFOV / 2) * camera.position.z;
     const width = height * camera.aspect;
 
-    // Hedefi ekranın kenarlarına daha yakın olacak şekilde ayarla
     targetPosition.x = (Math.random() - 0.5) * width * 0.8; 
     targetPosition.y = (Math.random() - 0.5) * height * 0.8;
     targetPosition.z = (Math.random() - 0.5) * 2;
@@ -129,6 +122,7 @@ function animateThreeJS() {
     // Her döngüde mimikleri sıfırla
     eyeL.scale.y = 1;
     eyeR.scale.y = 1;
+    mouth.scale.set(1, 1, 1);
     pupilL.position.set(0, 0, 0.01);
     pupilR.position.set(0, 0, 0.01);
     head.rotation.x *= 0.95;
@@ -141,7 +135,6 @@ function animateThreeJS() {
             setNewTarget();
         }
         
-        // Rastgele Göz Kırpma
         if (frame > blinkTimeout) {
             eyeL.scale.y = 0.05;
             eyeR.scale.y = 0.05;
@@ -158,22 +151,19 @@ function animateThreeJS() {
         head.rotation.x = Math.sin(time * 1.5) * 0.1;
         eyeL.scale.y = 0.5;
         eyeR.scale.y = 0.5;
+        // GÜNCELLEME: Düşünürken ağzı hareket ettir
+        mouth.scale.x = 1 + Math.sin(time * 10) * 0.1;
+        mouth.scale.y = 0.7 + Math.sin(time * 10) * 0.1;
     } else if (coreState === 'speaking') {
-        const mouthHeight = currentAudioLevel * 0.15;
-        const newShape = new THREE.Shape();
-        newShape.moveTo(-0.15, 0);
-        newShape.quadraticCurveTo(0, -mouthHeight, 0.15, 0);
-        newShape.quadraticCurveTo(0, mouthHeight * 0.2, -0.15, 0);
-        mouth.geometry.dispose();
-        mouth.geometry = new THREE.ShapeGeometry(newShape);
+        // GÜNCELLEME: Konuşma animasyonu ölçeklendirme kullanacak şekilde değiştirildi
+        mouth.scale.y = 1 + currentAudioLevel * 15;
+        mouth.scale.x = 1 + currentAudioLevel * 2;
     }
 
-    // DÜZELTME: Karakterin her zaman kameraya bakmasını sağlayan yönelim mantığı
-    // Geçici bir obje kullanarak hedef yönelimi hesapla
+    // Karakterin her zaman kameraya bakmasını sağlayan yönelim mantığı
     const tempObject = new THREE.Object3D();
     tempObject.position.copy(character.position);
     tempObject.lookAt(camera.position);
-    // Yumuşak bir geçişle (slerp) karakterin yönelimini güncelle
     character.quaternion.slerp(tempObject.quaternion, 0.05);
     
     renderer.render(scene, camera);
