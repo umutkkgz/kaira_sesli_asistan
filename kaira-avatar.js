@@ -82,7 +82,7 @@ export function initAvatar(canvas) {
     eyeL.add(pupilL);
     eyeR.add(pupilR);
 
-    // GÜNCELLEME: Ağız için daha güvenilir bir geometri kullanıldı
+    // Ağız için daha güvenilir bir geometri kullanıldı
     const mouthGeo = new THREE.PlaneGeometry(0.3, 0.05);
     mouth = new THREE.Mesh(mouthGeo, mouthMaterial);
     mouth.position.set(0, -0.15, 0.41);
@@ -119,10 +119,9 @@ function animateThreeJS() {
     const time = Date.now() * 0.001;
     frame++;
 
-    // Her döngüde mimikleri sıfırla
+    // Her döngüde gözleri sıfırla
     eyeL.scale.y = 1;
     eyeR.scale.y = 1;
-    mouth.scale.set(1, 1, 1);
     pupilL.position.set(0, 0, 0.01);
     pupilR.position.set(0, 0, 0.01);
     head.rotation.x *= 0.95;
@@ -142,6 +141,9 @@ function animateThreeJS() {
                 blinkTimeout = frame + Math.random() * 200 + 100;
             }
         }
+        // DÜZELTME: Ağız normal boyutuna yumuşakça dönsün
+        mouth.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+
     } else if (coreState === 'listening') {
         character.position.lerp(new THREE.Vector3(0, 0, 0), moveSpeed * 2);
         pupilL.position.x += (0 - pupilL.position.x) * 0.1;
@@ -151,11 +153,11 @@ function animateThreeJS() {
         head.rotation.x = Math.sin(time * 1.5) * 0.1;
         eyeL.scale.y = 0.5;
         eyeR.scale.y = 0.5;
-        // GÜNCELLEME: Düşünürken ağzı hareket ettir
+        // Düşünürken ağzı hareket ettir
         mouth.scale.x = 1 + Math.sin(time * 10) * 0.1;
         mouth.scale.y = 0.7 + Math.sin(time * 10) * 0.1;
     } else if (coreState === 'speaking') {
-        // GÜNCELLEME: Konuşma animasyonu ölçeklendirme kullanacak şekilde değiştirildi
+        // Konuşma animasyonu ölçeklendirme kullanacak şekilde değiştirildi
         mouth.scale.y = 1 + currentAudioLevel * 15;
         mouth.scale.x = 1 + currentAudioLevel * 2;
     }
