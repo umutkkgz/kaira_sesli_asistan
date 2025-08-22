@@ -64,31 +64,35 @@ export function initAvatar(canvas) {
     const headMesh = new THREE.Mesh(headGeo, bodyMaterial);
     head.add(headMesh);
     head.position.y = 0.6;
+    
+    // GÜNCELLEME: Kafa 180 derece döndürülerek yüzün kameraya bakması sağlandı.
+    head.rotation.y = Math.PI;
 
     // Gözler (Neon efektli)
     const eyeGeo = new THREE.CircleGeometry(0.1, 16);
     eyeL = new THREE.Mesh(eyeGeo, eyeMaterial);
     eyeR = new THREE.Mesh(eyeGeo, eyeMaterial);
-    eyeL.position.set(-0.2, 0.1, 0.41);
-    eyeR.position.set(0.2, 0.1, 0.41);
+    // Gözler artık kafanın -Z eksenine yerleştiriliyor (döndürüldüğü için)
+    eyeL.position.set(-0.2, 0.1, -0.41);
+    eyeR.position.set(0.2, 0.1, -0.41);
     head.add(eyeL, eyeR);
 
     // Göz Bebekleri
     const pupilGeo = new THREE.CircleGeometry(0.05, 16);
     pupilL = new THREE.Mesh(pupilGeo, pupilMaterial);
     pupilR = new THREE.Mesh(pupilGeo, pupilMaterial);
-    pupilL.position.z = 0.01; // Gözün hafifçe önünde
+    pupilL.position.z = 0.01;
     pupilR.position.z = 0.01;
     eyeL.add(pupilL);
     eyeR.add(pupilR);
 
-    // Ağız (Daha dinamik bir şekil için)
+    // Ağız
     const mouthShape = new THREE.Shape();
     mouthShape.moveTo(-0.15, 0);
     mouthShape.quadraticCurveTo(0, 0, 0.15, 0);
     const mouthGeo = new THREE.ShapeGeometry(mouthShape);
     mouth = new THREE.Mesh(mouthGeo, mouthMaterial);
-    mouth.position.set(0, -0.15, 0.41);
+    mouth.position.set(0, -0.15, -0.41);
     head.add(mouth);
 
     character.add(head);
@@ -105,11 +109,16 @@ export function initAvatar(canvas) {
     animateThreeJS();
 }
 
-// Avatar için yeni hedef belirle (Ekranın sağı ve solu ağırlıklı)
+// GÜNCELLEME: Avatar için yeni hedef belirleme mantığı
 function setNewTarget() {
-    const side = Math.random() < 0.5 ? -1 : 1; // %50 ihtimalle sol veya sağ
-    targetPosition.x = (Math.random() * 0.5 + 0.3) * 4 * side; // Ekranın %30-%80'i arası
-    targetPosition.y = (Math.random() - 0.5) * 4;
+    // Ekranın görünür alanını hesapla
+    const vFOV = THREE.MathUtils.degToRad(camera.fov); // vertical fov in radians
+    const height = 2 * Math.tan(vFOV / 2) * camera.position.z;
+    const width = height * camera.aspect;
+
+    // Hedefi ekranın kenarlarına daha yakın olacak şekilde ayarla
+    targetPosition.x = (Math.random() - 0.5) * width * 0.8; 
+    targetPosition.y = (Math.random() - 0.5) * height * 0.8;
     targetPosition.z = (Math.random() - 0.5) * 2;
 }
 
@@ -143,25 +152,20 @@ function animateThreeJS() {
             }
         }
     } else if (coreState === 'listening') {
-        // Dinlerken hedefe daha hızlı git
         character.position.lerp(new THREE.Vector3(0, 0, 0), moveSpeed * 2);
-        // Göz bebeklerini merkeze odakla
         pupilL.position.x += (0 - pupilL.position.x) * 0.1;
         pupilR.position.x += (0 - pupilR.position.x) * 0.1;
     } else if (coreState === 'thinking') {
-        // Düşünürken kafayı salla
         head.rotation.y = Math.sin(time * 2) * 0.2;
         head.rotation.x = Math.sin(time * 1.5) * 0.1;
-        // Gözleri kıs
         eyeL.scale.y = 0.5;
         eyeR.scale.y = 0.5;
     } else if (coreState === 'speaking') {
-        // Konuşurken ağzı sesin şiddetine göre hareket ettir
         const mouthHeight = currentAudioLevel * 0.15;
         const newShape = new THREE.Shape();
         newShape.moveTo(-0.15, 0);
-        newShape.quadraticCurveTo(0, -mouthHeight, 0.15, 0); // Alt dudağı hareket ettir
-        newShape.quadraticCurveTo(0, mouthHeight * 0.2, -0.15, 0); // Üst dudağı hafifçe
+        newShape.quadraticCurveTo(0, -mouthHeight, 0.15, 0);
+        newShape.quadraticCurveTo(0, mouthHeight * 0.2, -0.15, 0);
         mouth.geometry.dispose();
         mouth.geometry = new THREE.ShapeGeometry(newShape);
     }
@@ -169,6 +173,7 @@ function animateThreeJS() {
     // Her zaman kameraya doğru yumuşakça dön
     const targetQuaternion = new THREE.Quaternion();
     const tempMatrix = new THREE.Matrix4();
+    // GÜNCELLEME: lookAt mantığı düzeltildi
     tempMatrix.lookAt(character.position, camera.position, character.up);
     targetQuaternion.setFromRotationMatrix(tempMatrix);
     character.quaternion.slerp(targetQuaternion, 0.05);
