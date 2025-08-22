@@ -239,11 +239,11 @@
             fd.append("text", (text || "").trim());
             fd.append("angry", angry ? "true" : "false");
             // YENİ: Sohbet geçmişi ve kullanıcı ID'si sunucuya gönderiliyor
-            fd.append("chat_history", JSON.stringify(chatHistory.slice(-10))); // Son 10 mesajı gönder
+            const lastHistory = chatHistory.slice(-10); fd.append("history", JSON.stringify(lastHistory)); // Son 10 mesajı gönder
             fd.append("user_id", USER_ID);
 
             const ctrl = new AbortController();
-            const to = setTimeout(() => ctrl.abort(), 60_000);
+            const to = setTimeout(() => ctrl.abort(), 300_000); // 5 dk zaman aşımı
 
             try {
                 const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal });
