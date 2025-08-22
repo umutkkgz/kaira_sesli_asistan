@@ -12,6 +12,8 @@ const moveSpeed = 0.02;
 let frame = 0;
 let blinkTimeout = 0;
 let currentAudioLevel = 0;
+// GÜNCELLEME: Ağız animasyonu için hedef ölçek vektörü
+let targetMouthScale = new THREE.Vector3(1, 1, 1);
 
 // Dışarıdan avatarın durumunu değiştirmek için fonksiyon
 export function setCoreState(newState) {
@@ -141,8 +143,8 @@ function animateThreeJS() {
                 blinkTimeout = frame + Math.random() * 200 + 100;
             }
         }
-        // DÜZELTME: Ağız normal boyutuna yumuşakça dönsün
-        mouth.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+        // GÜNCELLEME: Ağız hedefi normale dönsün
+        targetMouthScale.set(1, 1, 1);
 
     } else if (coreState === 'listening') {
         character.position.lerp(new THREE.Vector3(0, 0, 0), moveSpeed * 2);
@@ -153,14 +155,17 @@ function animateThreeJS() {
         head.rotation.x = Math.sin(time * 1.5) * 0.1;
         eyeL.scale.y = 0.5;
         eyeR.scale.y = 0.5;
-        // Düşünürken ağzı hareket ettir
-        mouth.scale.x = 1 + Math.sin(time * 10) * 0.1;
-        mouth.scale.y = 0.7 + Math.sin(time * 10) * 0.1;
+        // GÜNCELLEME: Düşünürken ağız hedefi belirlensin
+        targetMouthScale.x = 1 + Math.sin(time * 15) * 0.2;
+        targetMouthScale.y = 0.7 + Math.sin(time * 15) * 0.2;
     } else if (coreState === 'speaking') {
-        // Konuşma animasyonu ölçeklendirme kullanacak şekilde değiştirildi
-        mouth.scale.y = 1 + currentAudioLevel * 15;
-        mouth.scale.x = 1 + currentAudioLevel * 2;
+        // GÜNCELLEME: Konuşurken ağız hedefi belirlensin
+        targetMouthScale.y = 1 + currentAudioLevel * 15;
+        targetMouthScale.x = 1 + currentAudioLevel * 2;
     }
+
+    // GÜNCELLEME: Ağız her zaman hedefe doğru yumuşakça hareket etsin
+    mouth.scale.lerp(targetMouthScale, 0.2);
 
     // Karakterin her zaman kameraya bakmasını sağlayan yönelim mantığı
     const tempObject = new THREE.Object3D();
