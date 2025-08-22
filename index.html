@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAIRA - Sesli Asistan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            overflow: hidden; /* Kaydırma çubuklarını gizle */
+        }
+
+        #space-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Glassmorphism Etkisi */
+        .glass-container {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #chat-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background-color: rgba(75, 85, 99, 0.8);
+            border-radius: 20px;
+        }
+
+        .user-bubble {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            align-self: flex-end;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+        .assistant-bubble {
+            background: rgba(55, 65, 81, 0.8);
+            color: #E5E7EB;
+            align-self: flex-start;
+        }
+
+        /* Mikrofon animasyonu */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 25px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .is-listening {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Mesajların yumuşak girişi */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-bubble, .assistant-bubble {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white p-4">
+
+    <canvas id="space-bg"></canvas>
+
+    <div class="w-full max-w-2xl mx-auto glass-container rounded-2xl shadow-2xl flex flex-col p-6" style="height: 90vh;">
+        
+        <!-- Başlık -->
+        <div class="text-center border-b border-gray-700/50 pb-4 mb-4">
+            <h1 class="text-2xl font-bold text-gray-200 tracking-wider">KAIRA</h1>
+            <p id="status" class="text-sm text-cyan-400 h-5 transition-all duration-300">Konuşmak için mikrofon simgesine dokunun</p>
+        </div>
+
+        <!-- Sohbet Mesajları Alanı -->
+        <div id="chat-container" class="flex-grow overflow-y-auto pr-2 flex flex-col gap-4">
+            <!-- Örnek Asistan Mesajı -->
+            <div class="p-3 rounded-xl max-w-lg assistant-bubble">
+                Merhaba! Size nasıl yardımcı olabilirim?
+            </div>
+        </div>
+
+        <!-- Kontrol Alanı -->
+        <div class="pt-4 mt-4 border-t border-gray-700/50 flex flex-col items-center">
+            <button id="mic-btn" class="bg-blue-600 hover:bg-blue-700 transition-all duration-300 rounded-full w-16 h-16 flex items-center justify-center shadow-lg transform hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7v1h6v-1h-2v-2.07z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <audio id="player" class="hidden"></audio>
+
+    <script>
+        // --- UZAY ARKA PLANI ANİMASYONU ---
+        const canvas = document.getElementById('space-bg');
+        const ctx = canvas.getContext('2d');
+
+        let stars = [];
+        let meteors = [];
+
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createStars() {
+            stars = [];
+            const starCount = window.innerWidth / 4; // Yıldız yoğunluğu
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random() * 0.5 + 0.5,
+                    twinkleSpeed: Math.random() * 0.015
+                });
+            }
+        }
+
+        function createMeteor() {
+            meteors.push({
+                x: Math.random() * canvas.width + 100,
+                y: -100,
+                len: Math.random() * 150 + 50,
+                speed: Math.random() * 8 + 5,
+                angle: Math.PI / 4
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Yıldızları çiz
+            ctx.fillStyle = 'white';
+            stars.forEach(star => {
+                star.alpha += star.twinkleSpeed;
+                if (star.alpha > 1) {
+                    star.alpha = 1;
+                    star.twinkleSpeed *= -1;
+                } else if (star.alpha < 0.5) {
+                    star.alpha = 0.5;
+                    star.twinkleSpeed *= -1;
+                }
+                ctx.globalAlpha = star.alpha;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Meteorları çiz
+            meteors.forEach((meteor, index) => {
+                const tailX = meteor.x + Math.cos(meteor.angle) * meteor.len;
+                const tailY = meteor.y + Math.sin(meteor.angle) * meteor.len;
+                const gradient = ctx.createLinearGradient(meteor.x, meteor.y, tailX, tailY);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(meteor.x, meteor.y);
+                ctx.lineTo(tailX, tailY);
+                ctx.stroke();
+
+                meteor.x -= meteor.speed * Math.cos(meteor.angle);
+                meteor.y += meteor.speed * Math.sin(meteor.angle);
+
+                if (meteor.x < -meteor.len || meteor.y > canvas.height + meteor.len) {
+                    meteors.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(draw);
+        }
+        
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            createStars();
+        });
+
+        setCanvasSize();
+        createStars();
+        draw();
+        setInterval(createMeteor, 3000); // Her 3 saniyede bir meteor oluştur
+
+        // --- SESLİ ASİSTAN KODU (DEĞİŞTİRİLMEDİ) ---
+        const API_BASE = "https://aed4147b5a11.ngrok-free.app"; 
+        const micBtn = document.getElementById('mic-btn');
+        const statusEl = document.getElementById('status');
+        const player = document.getElementById('player');
+        const chatContainer = document.getElementById('chat-container');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isRecording = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'tr-TR';
+            recognition.interimResults = false;
+            
+            recognition.onstart = () => {
+                isRecording = true;
+                micBtn.classList.add('is-listening');
+                statusEl.textContent = 'Dinliyorum...';
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                micBtn.classList.remove('is-listening');
+                if (statusEl.textContent === 'Dinliyorum...') {
+                    statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                addMessageToChat(transcript, 'user');
+                getAIResponse(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech Recognition Error:", event.error);
+                statusEl.textContent = `Hata: ${event.error}`;
+            };
+
+        } else {
+            statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor.";
+            micBtn.disabled = true;
+        }
+        
+        let audioUnlocked = false;
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            player.muted = true;
+            player.play().catch(() => {});
+            player.muted = false;
+            audioUnlocked = true;
+            console.log("Audio context unlocked by user interaction.");
+        }
+
+        micBtn.addEventListener('click', () => {
+            unlockAudio();
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+
+        player.onended = () => {
+            statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun';
+            micBtn.disabled = false;
+        };
+
+        function base64ToBlobUrl(base64, contentType = 'audio/wav') {
+            const byteCharacters = atob(base64);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                const slice = byteCharacters.slice(offset, offset + 512);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                // HATA BURADAYDI: Uint88Array -> Uint8Array olarak düzeltildi.
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            const blob = new Blob(byteArrays, { type: contentType });
+            return URL.createObjectURL(blob);
+        }
+
+        async function getAIResponse(text, { angry = false } = {}) {
+            statusEl.textContent = "Sunucuya gönderiliyor…";
+            micBtn.disabled = true;
+
+            const fd = new FormData();
+            fd.append("text", (text || "").trim());
+            fd.append("angry", angry ? "true" : "false");
+
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 60_000);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tts`, {
+                    method: "POST",
+                    body: fd,
+                    signal: ctrl.signal,
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text().catch(() => "");
+                    throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`);
+                }
+
+                const data = await res.json();
+                
+                if (!data.audio_data) {
+                    throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
+                }
+                
+                const audioUrl = base64ToBlobUrl(data.audio_data);
+                
+                if (player.previousUrl) {
+                    URL.revokeObjectURL(player.previousUrl);
+                }
+                player.previousUrl = audioUrl;
+                
+                player.src = audioUrl;
+                await player.play().catch((e) => { console.error("Ses oynatılamadı:", e) });
+                statusEl.textContent = 'Cevap oynatılıyor...';
+
+                const out = data.text_response ?? data.clean_text ?? "";
+                addMessageToChat(out, 'assistant');
+
+                return data;
+            } catch (err) {
+                console.error(err);
+                const errorMessage = "Hata: " + (err?.message || err);
+                statusEl.textContent = errorMessage;
+                addMessageToChat(errorMessage, 'assistant');
+                micBtn.disabled = false;
+                throw err;
+            } finally {
+                clearTimeout(to);
+            }
+        }
+
+        function addMessageToChat(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`;
+            bubble.textContent = text;
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>
