@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
-    <!-- HATA DÜZELTMESİ: Eksik Three.js kütüphanesi eklendi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
@@ -22,7 +21,7 @@
         .view.active { display: block; }
 
         /* Digital Afterlife Stilleri */
-        #afterlife-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.5; }
+        #afterlife-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.6; }
         .afterlife-section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5rem 1.5rem; position: relative; z-index: 1; }
         .font-serif { font-family: 'Source Serif 4', serif; }
         .fade-in-up { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
@@ -143,6 +142,16 @@
                     <p class="text-lg md:text-xl text-slate-400 fade-in-up delay-1">Bu, bir insanın bu dünyada bıraktığı en değerli izi – anılarını, bilgeliğini ve sesini – koruma ve onlarla yeniden bağ kurma sanatıdır. Bu, ölümün bilgi düzeyinde aşıldığı yeni bir çağın başlangıcıdır.</p>
                 </div>
             </section>
+            <!-- YENİ BÖLÜM: İLETİŞİM -->
+            <section class="afterlife-section">
+                 <div class="text-center max-w-2xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-serif font-semibold text-slate-100 mb-4 fade-in-up">Bir Yankı Bırakın</h2>
+                    <p class="text-slate-400 mb-8 fade-in-up delay-1">Bu devrimin bir parçası olmak, soru sormak veya sadece bir merhaba demek için...</p>
+                    <a href="mailto:a20224402051@icloud.com?subject=KΔIRA%20Projesi%20Hakkında" class="inline-block bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 rounded-full px-8 py-3 text-lg font-semibold hover:bg-cyan-500/40 transition-colors fade-in-up delay-2">
+                        Mail Gönder
+                    </a>
+                </div>
+            </section>
             <section class="afterlife-section">
                 <div class="text-center max-w-4xl mx-auto">
                     <p class="text-2xl md:text-3xl font-serif text-slate-300 mb-10 fade-in-up">Bilgi çağının Google’ı neyse, <br> <span class="text-white font-semibold">İnsan çağı’nın lideri biz olacağız.</span></p>
@@ -197,7 +206,6 @@
             document.getElementById(`${viewName}-view`).classList.add('active');
             activeView = viewName;
 
-            // Animasyonları yönet
             if (viewName === 'afterlife') {
                 if (!afterlifeInitialized) initAfterlife();
                 if (demoAnimationId) cancelAnimationFrame(demoAnimationId);
@@ -217,22 +225,22 @@
         backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
 
         // --- AFTERLIFE KODU ---
-        let afterlifeScene, afterlifeCamera, afterlifeRenderer, starGeo, stars;
+        let afterlifeScene, afterlifeCamera, afterlifeRenderer, stars, meteors = [];
         function initAfterlife() {
             const canvas = document.getElementById('afterlife-bg-canvas');
             afterlifeScene = new THREE.Scene();
-            afterlifeCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-            afterlifeCamera.position.z = 1;
-            afterlifeCamera.rotation.x = Math.PI / 2;
+            afterlifeCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            afterlifeCamera.position.z = 50;
             afterlifeRenderer = new THREE.WebGLRenderer({ canvas, alpha: true });
             afterlifeRenderer.setSize(window.innerWidth, window.innerHeight);
-            starGeo = new THREE.BufferGeometry();
-            const starCount = 6000; const positions = new Float32Array(starCount * 3);
-            for (let i = 0; i < starCount * 3; i++) { positions[i] = (Math.random() - 0.5) * 600; }
-            starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            let sprite = new THREE.TextureLoader().load('https://placehold.co/10x10/ffffff/ffffff.png');
-            let starMaterial = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.7, map: sprite, transparent: true });
-            stars = new THREE.Points(starGeo, starMaterial);
+            
+            const starCount = 8000;
+            const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) { positions[i] = (Math.random() - 0.5) * 2000; }
+            const starGeometry = new THREE.BufferGeometry();
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0x555555, size: 0.7 });
+            stars = new THREE.Points(starGeometry, starMaterial);
             afterlifeScene.add(stars);
             
             const sections = document.querySelectorAll('.afterlife-section');
@@ -255,119 +263,176 @@
 
             afterlifeInitialized = true;
         }
+
+        function createMeteor() {
+            const geometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ color: 0x99ffff, transparent: true, opacity: 0.8, });
+            const meteor = new THREE.Mesh(geometry, material);
+            const trailGeometry = new THREE.CylinderGeometry(0.02, 0.2, 15, 32);
+            const trailMaterial = new THREE.MeshBasicMaterial({ color: 0x66ffff, transparent: true, opacity: 0.4 });
+            const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+            trail.position.z = -7.5;
+            meteor.add(trail);
+            meteor.position.set( (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, -200 );
+            meteor.velocity = new THREE.Vector3( (Math.random() - 0.5) * 0.2, (Math.random() - 0.5) * 0.2, Math.random() * 2 + 1 );
+            meteors.push(meteor);
+            afterlifeScene.add(meteor);
+        }
+
         function animateAfterlife() {
             if (activeView !== 'afterlife') return;
-            stars.rotation.y += 0.0002;
+            stars.rotation.y += 0.0001;
+            if (Math.random() < 0.01 && meteors.length < 10) { createMeteor(); }
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const meteor = meteors[i];
+                meteor.position.add(meteor.velocity);
+                if (meteor.position.z > 100) {
+                    afterlifeScene.remove(meteor);
+                    meteors.splice(i, 1);
+                }
+            }
             afterlifeRenderer.render(afterlifeScene, afterlifeCamera);
             afterlifeAnimationId = requestAnimationFrame(animateAfterlife);
         }
 
         // --- KAIRA DEMO KODU ---
         let demoParticles, demoMouse = { x: null, y: null };
-        function initDemo() {
-            // Avatar'ı import et (Bu dosyanın yerel olarak var olduğunu varsayıyoruz)
-            import('./kaira-avatar.js').then(({ initAvatar, setCoreState, updateAvatarBubblePosition, updateAudioLevel }) => {
-                const avatarCanvas = document.getElementById('ai-avatar-canvas');
-                initAvatar(avatarCanvas);
-
-                const bgCanvas = document.getElementById('demo-bg-canvas'); const bgCtx = bgCanvas.getContext('2d');
-                function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
-                function createParticles() { demoParticles = []; const particleCount = (bgCanvas.width * bgCanvas.height) / 8000; for (let i = 0; i < particleCount; i++) { demoParticles.push({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, originX: Math.random() * bgCanvas.width, originY: Math.random() * bgCanvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.5 + 0.1, color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})` }); } }
-                window.addEventListener('mousemove', e => { demoMouse.x = e.x; demoMouse.y = e.y; }); window.addEventListener('mouseout', () => { demoMouse.x = null; demoMouse.y = null; }); window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
-                setBgCanvasSize(); createParticles();
-                
-                const API_BASE = "https://aed4147b5a11.ngrok-free.app"; 
-                const micBtn = document.getElementById('mic-btn'); const statusEl = document.getElementById('status'); const player = document.getElementById('player'); const chatContainer = document.getElementById('chat-container'); const clearChatBtn = document.getElementById('clear-chat-btn');
-                let chatHistory = []; let isRecording = false;
-
-                const visualizerCanvas = document.getElementById('visualizer'); const visualizerCtx = visualizerCanvas.getContext('2d');
-                let audioContext, analyser, source, dataArray; let isVisualizerSetup = false;
-
-                function setupVisualizer() { if (isVisualizerSetup) return; audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; dataArray = new Uint8Array(analyser.frequencyBinCount); isVisualizerSetup = true; }
-                function drawVisualizer() { 
-                    if (activeView !== 'demo') return;
-                    requestAnimationFrame(drawVisualizer); 
-                    analyser.getByteFrequencyData(dataArray); 
-                    const avgLevel = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
-                    updateAudioLevel(avgLevel);
-                    visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
-                    const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; let x = 0; 
-                    for (let i = 0; i < dataArray.length; i++) { const barHeight = dataArray[i] / 2; const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); gradient.addColorStop(0, '#0ea5e9'); gradient.addColorStop(1, '#6366f1'); visualizerCtx.fillStyle = gradient; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } 
+        async function initDemo() {
+            let initAvatar, setCoreState, updateAvatarBubblePosition, updateAudioLevel;
+            try {
+                const avatarModule = await import('./kaira-avatar.js');
+                initAvatar = avatarModule.initAvatar;
+                setCoreState = avatarModule.setCoreState;
+                updateAvatarBubblePosition = avatarModule.updateAvatarBubblePosition;
+                updateAudioLevel = avatarModule.updateAudioLevel;
+            } catch (err) {
+                console.warn("Avatar modülü yüklenemedi, placeholder fonksiyonlar kullanılacak. Bu beklenen bir durum olabilir.", err);
+                initAvatar = (canvas) => { if(canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width, canvas.height);} };
+                setCoreState = (state) => console.log(`Avatar State: ${state}`);
+                updateAvatarBubblePosition = () => {};
+                updateAudioLevel = () => {};
+                const demoView = document.getElementById('demo-view');
+                if (demoView) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'absolute top-20 left-1/2 -translate-x-1/2 text-center text-yellow-400 text-xs bg-yellow-900/50 p-2 rounded-md';
+                    errorDiv.textContent = 'Avatar modülü (kaira-avatar.js) yüklenemedi. Demo, avatarsız modda çalışacak.';
+                    demoView.appendChild(errorDiv);
+                    setTimeout(() => errorDiv.remove(), 5000);
                 }
-                
-                const USER_ID = (() => { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; })();
+            }
 
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition;
-                if (SpeechRecognition) {
-                    recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
-                    recognition.onstart = () => { isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent = 'Dinliyorum...'; setCoreState('listening'); };
-                    recognition.onend = () => { isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent === 'Dinliyorum...') statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); };
-                    recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; addMessageToChat(transcript, 'user'); getAIResponse(transcript); };
-                    recognition.onerror = (event) => { console.error("Speech Recognition Error:", event.error); statusEl.textContent = `Hata: ${event.error}`; setCoreState('idle'); };
-                } else { statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor."; micBtn.disabled = true; }
-                
-                let audioUnlocked = false;
-                function unlockAudio() { if (audioUnlocked) return; player.muted = true; player.play().catch(() => {}); player.muted = false; audioUnlocked = true; setupVisualizer(); }
+            const avatarCanvas = document.getElementById('ai-avatar-canvas');
+            initAvatar(avatarCanvas);
 
-                micBtn.addEventListener('click', () => { unlockAudio(); if (isRecording) { recognition.stop(); } else { recognition.start(); } });
-                player.onplay = () => { visualizerCanvas.style.opacity = '1'; drawVisualizer(); setCoreState('speaking'); };
-                player.onended = () => { statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; visualizerCanvas.style.opacity = '0'; setCoreState('idle'); };
-                clearChatBtn.addEventListener('click', () => { chatHistory = []; localStorage.removeItem('kaira_chat_history'); chatContainer.innerHTML = ''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
-                function base64ToBlobUrl(base64) { const byteCharacters = atob(base64); const byteArrays = []; for (let offset = 0; offset < byteCharacters.length; offset += 512) { const slice = byteCharacters.slice(offset, offset + 512); const byteNumbers = new Array(slice.length); for (let i = 0; i < slice.length; i++) { byteNumbers[i] = slice.charCodeAt(i); } byteArrays.push(new Uint8Array(byteNumbers)); } return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' })); }
-                
-                const funFacts = [ "Yapay zeka modelleri, insan beynindeki nöronlardan esinlenerek oluşturulan yapay sinir ağları kullanır.", "İlk yapay zeka programlarından biri olan 'Logic Theorist', 1956'da 38 matematik teoremini kendi başına kanıtladı.", "Deep Blue adlı satranç bilgisayarı, 1997'de dünya şampiyonu Garry Kasparov'u yenerek bir ilke imza attı." ];
-                const funFactBubble = document.getElementById('fun-fact-bubble'); let waitingTimeout; let factInterval;
+            const bgCanvas = document.getElementById('demo-bg-canvas'); 
+            const bgCtx = bgCanvas.getContext('2d');
+            function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+            function createParticles() { demoParticles = []; const particleCount = (bgCanvas.width * bgCanvas.height) / 8000; for (let i = 0; i < particleCount; i++) { demoParticles.push({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, originX: Math.random() * bgCanvas.width, originY: Math.random() * bgCanvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.5 + 0.1, color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})` }); } }
+            window.addEventListener('mousemove', e => { demoMouse.x = e.x; demoMouse.y = e.y; }); 
+            window.addEventListener('mouseout', () => { demoMouse.x = null; demoMouse.y = null; }); 
+            window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
+            setBgCanvasSize(); createParticles();
+            
+            const API_BASE = "https://aed4147b5a11.ngrok-free.app"; 
+            const micBtn = document.getElementById('mic-btn'); 
+            const statusEl = document.getElementById('status'); 
+            const player = document.getElementById('player'); 
+            const chatContainer = document.getElementById('chat-container'); 
+            const clearChatBtn = document.getElementById('clear-chat-btn');
+            let chatHistory = []; 
+            let isRecording = false;
 
-                function showWaitingContent() {
-                    funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; funFactBubble.classList.remove('hidden'); funFactBubble.classList.add('visible'); updateAvatarBubblePosition(funFactBubble);
-                    factInterval = setInterval(() => { funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; updateAvatarBubblePosition(funFactBubble); }, 10000);
-                    function followLoop() { if (factInterval) { updateAvatarBubblePosition(funFactBubble); requestAnimationFrame(followLoop); } }
-                    followLoop();
-                }
-                function hideWaitingContent() { clearTimeout(waitingTimeout); clearInterval(factInterval); factInterval = null; funFactBubble.classList.remove('visible'); setTimeout(() => funFactBubble.classList.add('hidden'), 300); }
-                function showTypingIndicator() { const bubble = document.createElement('div'); bubble.id = 'typing-indicator'; bubble.className = 'p-3 rounded-xl max-w-lg assistant-bubble'; bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight; }
-                function removeTypingIndicator() { const indicator = document.getElementById('typing-indicator'); if (indicator) indicator.remove(); }
+            const visualizerCanvas = document.getElementById('visualizer'); 
+            const visualizerCtx = visualizerCanvas.getContext('2d');
+            let audioContext, analyser, source, dataArray; 
+            let isVisualizerSetup = false;
 
-                async function getAIResponse(text, { angry = false } = {}) {
-                    statusEl.textContent = "KAIRA düşünüyor…"; micBtn.disabled = true; showTypingIndicator(); setCoreState('thinking');
-                    waitingTimeout = setTimeout(showWaitingContent, 2000);
-                    const fd = new FormData(); fd.append("text", (text || "").trim()); fd.append("angry", angry ? "true" : "false"); fd.append("history", JSON.stringify(chatHistory.slice(-10))); fd.append("user_id", USER_ID);
-                    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 300000);
-                    try {
-                        const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal });
-                        if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
-                        const data = await res.json();
-                        if (!data.audio_data) { throw new Error("API yanıtında 'audio_data' alanı bulunamadı."); }
-                        const audioUrl = base64ToBlobUrl(data.audio_data);
-                        if (player.previousUrl) { URL.revokeObjectURL(player.previousUrl); }
-                        player.previousUrl = audioUrl; player.src = audioUrl;
-                        await player.play().catch((e) => console.error("Ses oynatılamadı:", e));
-                        statusEl.textContent = 'Cevap oynatılıyor...';
-                        const out = data.text_response ?? data.clean_text ?? "";
-                        addMessageToChat(out, 'assistant');
-                        return data;
-                    } catch (err) {
-                        console.error(err); const errorMessage = "Hata: " + (err?.message || err); statusEl.textContent = errorMessage; addMessageToChat(errorMessage, 'assistant'); micBtn.disabled = false; setCoreState('idle'); throw err;
-                    } finally { hideWaitingContent(); removeTypingIndicator(); clearTimeout(to); }
-                }
+            function setupVisualizer() { if (isVisualizerSetup) return; audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; dataArray = new Uint8Array(analyser.frequencyBinCount); isVisualizerSetup = true; }
+            function drawVisualizer() { 
+                if (activeView !== 'demo') return;
+                requestAnimationFrame(drawVisualizer); 
+                if (!isVisualizerSetup) return;
+                analyser.getByteFrequencyData(dataArray); 
+                const avgLevel = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+                updateAudioLevel(avgLevel);
+                visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
+                const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; 
+                let x = 0; 
+                for (let i = 0; i < dataArray.length; i++) { const barHeight = dataArray[i] / 2; const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); gradient.addColorStop(0, '#0ea5e9'); gradient.addColorStop(1, '#6366f1'); visualizerCtx.fillStyle = gradient; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } 
+            }
+            
+            const USER_ID = (() => { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; })();
 
-                function addMessageToChat(text, sender) {
-                    const bubble = document.createElement('div'); bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`; bubble.textContent = text; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight;
-                    if (!isLoadingHistory && sender) { chatHistory.push({ role: sender, content: text }); localStorage.setItem('kaira_chat_history', JSON.stringify(chatHistory)); }
-                }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
+            let recognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
+                recognition.onstart = () => { isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent = 'Dinliyorum...'; setCoreState('listening'); };
+                recognition.onend = () => { isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent === 'Dinliyorum...') statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); };
+                recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; addMessageToChat(transcript, 'user'); getAIResponse(transcript); };
+                recognition.onerror = (event) => { console.error("Speech Recognition Error:", event.error); statusEl.textContent = `Hata: ${event.error}`; setCoreState('idle'); };
+            } else { statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor."; micBtn.disabled = true; }
+            
+            let audioUnlocked = false;
+            function unlockAudio() { if (audioUnlocked) return; player.muted = true; player.play().catch(() => {}); player.muted = false; audioUnlocked = true; setupVisualizer(); }
 
-                let isLoadingHistory = false;
-                function loadChatHistory() {
-                    isLoadingHistory = true; const savedHistory = localStorage.getItem('kaira_chat_history'); chatContainer.innerHTML = '';
-                    if (savedHistory) { chatHistory = JSON.parse(savedHistory); chatHistory.forEach(message => addMessageToChat(message.content, message.role)); } else { addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); }
-                    isLoadingHistory = false;
-                }
-                loadChatHistory();
-                demoInitialized = true;
-            }).catch(err => {
-                console.error("Avatar modülü yüklenemedi:", err);
-                document.getElementById('demo-view').innerHTML = '<div class="flex items-center justify-center h-full text-center text-red-500">Demo yüklenirken bir hata oluştu.<br>Lütfen kaira-avatar.js dosyasının doğru konumda olduğundan emin olun.</div>';
-            });
+            micBtn.addEventListener('click', () => { unlockAudio(); if (isRecording) { recognition.stop(); } else { recognition.start(); } });
+            player.onplay = () => { visualizerCanvas.style.opacity = '1'; drawVisualizer(); setCoreState('speaking'); };
+            player.onended = () => { statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; visualizerCanvas.style.opacity = '0'; setCoreState('idle'); };
+            clearChatBtn.addEventListener('click', () => { chatHistory = []; localStorage.removeItem('kaira_chat_history'); chatContainer.innerHTML = ''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
+            function base64ToBlobUrl(base64) { const byteCharacters = atob(base64); const byteArrays = []; for (let offset = 0; offset < byteCharacters.length; offset += 512) { const slice = byteCharacters.slice(offset, offset + 512); const byteNumbers = new Array(slice.length); for (let i = 0; i < slice.length; i++) { byteNumbers[i] = slice.charCodeAt(i); } byteArrays.push(new Uint8Array(byteNumbers)); } return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' })); }
+            
+            const funFacts = [ "Yapay zeka modelleri, insan beynindeki nöronlardan esinlenerek oluşturulan yapay sinir ağları kullanır.", "İlk yapay zeka programlarından biri olan 'Logic Theorist', 1956'da 38 matematik teoremini kendi başına kanıtladı.", "Deep Blue adlı satranç bilgisayarı, 1997'de dünya şampiyonu Garry Kasparov'u yenerek bir ilke imza attı." ];
+            const funFactBubble = document.getElementById('fun-fact-bubble'); 
+            let waitingTimeout; 
+            let factInterval;
+
+            function showWaitingContent() {
+                funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; funFactBubble.classList.remove('hidden'); funFactBubble.classList.add('visible'); updateAvatarBubblePosition(funFactBubble);
+                factInterval = setInterval(() => { funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; updateAvatarBubblePosition(funFactBubble); }, 10000);
+                function followLoop() { if (factInterval) { updateAvatarBubblePosition(funFactBubble); requestAnimationFrame(followLoop); } }
+                followLoop();
+            }
+            function hideWaitingContent() { clearTimeout(waitingTimeout); clearInterval(factInterval); factInterval = null; funFactBubble.classList.remove('visible'); setTimeout(() => funFactBubble.classList.add('hidden'), 300); }
+            function showTypingIndicator() { const bubble = document.createElement('div'); bubble.id = 'typing-indicator'; bubble.className = 'p-3 rounded-xl max-w-lg assistant-bubble'; bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight; }
+            function removeTypingIndicator() { const indicator = document.getElementById('typing-indicator'); if (indicator) indicator.remove(); }
+
+            async function getAIResponse(text, { angry = false } = {}) {
+                statusEl.textContent = "KAIRA düşünüyor…"; micBtn.disabled = true; showTypingIndicator(); setCoreState('thinking');
+                waitingTimeout = setTimeout(showWaitingContent, 2000);
+                const fd = new FormData(); fd.append("text", (text || "").trim()); fd.append("angry", angry ? "true" : "false"); fd.append("history", JSON.stringify(chatHistory.slice(-10))); fd.append("user_id", USER_ID);
+                const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 300000);
+                try {
+                    const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal });
+                    if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
+                    const data = await res.json();
+                    if (!data.audio_data) { throw new Error("API yanıtında 'audio_data' alanı bulunamadı."); }
+                    const audioUrl = base64ToBlobUrl(data.audio_data);
+                    if (player.previousUrl) { URL.revokeObjectURL(player.previousUrl); }
+                    player.previousUrl = audioUrl; player.src = audioUrl;
+                    await player.play().catch((e) => console.error("Ses oynatılamadı:", e));
+                    statusEl.textContent = 'Cevap oynatılıyor...';
+                    const out = data.text_response ?? data.clean_text ?? "";
+                    addMessageToChat(out, 'assistant');
+                    return data;
+                } catch (err) {
+                    console.error(err); const errorMessage = "Hata: " + (err?.message || err); statusEl.textContent = errorMessage; addMessageToChat(errorMessage, 'assistant'); micBtn.disabled = false; setCoreState('idle'); throw err;
+                } finally { hideWaitingContent(); removeTypingIndicator(); clearTimeout(to); }
+            }
+
+            function addMessageToChat(text, sender) {
+                const bubble = document.createElement('div'); bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`; bubble.textContent = text; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight;
+                if (!isLoadingHistory && sender) { chatHistory.push({ role: sender, content: text }); localStorage.setItem('kaira_chat_history', JSON.stringify(chatHistory)); }
+            }
+
+            let isLoadingHistory = false;
+            function loadChatHistory() {
+                isLoadingHistory = true; const savedHistory = localStorage.getItem('kaira_chat_history'); chatContainer.innerHTML = '';
+                if (savedHistory) { chatHistory = JSON.parse(savedHistory); chatHistory.forEach(message => addMessageToChat(message.content, message.role)); } else { addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); }
+                isLoadingHistory = false;
+            }
+            loadChatHistory();
+            demoInitialized = true;
         }
         function animateDemo() {
             if (activeView !== 'demo' || !demoParticles) return;
