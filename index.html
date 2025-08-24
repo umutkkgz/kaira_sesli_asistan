@@ -1,292 +1,381 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KAIRA - Canlı Asistan</title>
+    <title>KΔIRA | İnsan Çağı</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
+    <!-- HATA DÜZELTMESİ: Eksik Three.js kütüphanesi eklendi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #000;
-            overflow: hidden;
+            background-color: #000000;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
+        .view { display: none; }
+        .view.active { display: block; }
 
-        #space-bg, #ai-avatar-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        
-        #space-bg { z-index: -1; }
+        /* Digital Afterlife Stilleri */
+        #afterlife-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.5; }
+        .afterlife-section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5rem 1.5rem; position: relative; z-index: 1; }
+        .font-serif { font-family: 'Source Serif 4', serif; }
+        .fade-in-up { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .is-visible .fade-in-up { opacity: 1; transform: translateY(0); }
+        .delay-1 { transition-delay: 0.2s; }
+        .delay-2 { transition-delay: 0.4s; }
+        .delay-3 { transition-delay: 0.6s; }
+        .feature-card { border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(10, 10, 10, 0.3); backdrop-filter: blur(10px); }
+        #countdown-container .time-block { min-width: 90px; }
+
+        /* KAIRA Demo Stilleri */
+        #demo-bg-canvas, #ai-avatar-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #demo-bg-canvas { z-index: -1; }
         #ai-avatar-canvas { z-index: 10; pointer-events: none; }
-        .glass-container { z-index: 1; }
-
-        .glass-container {
-            position: relative;
-            background: rgba(17, 24, 39, 0.65); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 80px rgba(0, 191, 255, 0.2);
-        }
-
+        .glass-container { z-index: 1; position: relative; background: rgba(17, 24, 39, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 80px rgba(0, 191, 255, 0.2); }
         #chat-container::-webkit-scrollbar { width: 4px; }
         #chat-container::-webkit-scrollbar-thumb { background-color: rgba(75, 85, 99, 0.8); border-radius: 20px; }
-
-        .user-bubble {
-            background: linear-gradient(135deg, #3B82F6, #2563EB);
-            color: white;
-            align-self: flex-end;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
-        }
-        .assistant-bubble {
-            background: rgba(55, 65, 81, 0.9);
-            color: #E5E7EB;
-            align-self: flex-start;
-        }
-
+        .user-bubble { background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; align-self: flex-end; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25); }
+        .assistant-bubble { background: rgba(55, 65, 81, 0.9); color: #E5E7EB; align-self: flex-start; }
         .mic-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
-        .mic-wrapper::before {
-            content: ''; position: absolute; width: 110px; height: 110px;
-            background: radial-gradient(circle, rgba(0, 191, 255, 0.35) 0%, rgba(0, 191, 255, 0) 65%);
-            border-radius: 50%; z-index: 0; animation: aurora 5s infinite linear;
-        }
+        .mic-wrapper::before { content: ''; position: absolute; width: 110px; height: 110px; background: radial-gradient(circle, rgba(0, 191, 255, 0.35) 0%, rgba(0, 191, 255, 0) 65%); border-radius: 50%; z-index: 0; animation: aurora 5s infinite linear; }
         #mic-btn { z-index: 1; animation: breathe 3s infinite ease-in-out; }
-        
         @keyframes aurora { 0% { transform: scale(1) rotate(0deg); opacity: 0.7; } 50% { transform: scale(1.5) rotate(180deg); opacity: 1; } 100% { transform: scale(1) rotate(360deg); opacity: 0.7; } }
         @keyframes breathe { 0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.3); } 50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 191, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.3); } }
         .is-listening { animation: pulse 1.5s infinite !important; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); } 70% { box-shadow: 0 0 0 30px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .user-bubble, .assistant-bubble { animation: fadeIn 0.4s ease-out; }
-        
         #visualizer { width: 100%; height: 60px; margin-bottom: 1rem; opacity: 0; transition: opacity 0.5s ease-in-out; }
+        #fun-fact-bubble { position: fixed; background: rgba(55, 65, 81, 0.95); color: #E5E7EB; padding: 12px 16px; border-radius: 12px; max-width: 250px; font-size: 14px; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, top 1s linear, left 1s linear; transform: scale(0.9) translate(-50%, -100%); }
+        #fun-fact-bubble.visible { opacity: 1; transform: scale(1) translate(-50%, -100%); }
+        #fun-fact-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(55, 65, 81, 0.95); }
 
-        /* GÜNCELLEME: Sohbet balonu stilleri */
-        #fun-fact-bubble {
-            position: fixed;
-            background: rgba(55, 65, 81, 0.95);
-            color: #E5E7EB;
-            padding: 12px 16px;
-            border-radius: 12px;
-            max-width: 250px;
-            font-size: 14px;
-            z-index: 20;
-            pointer-events: none;
-            opacity: 0;
-            /* GÜNCELLEME: Yumuşak takip için pozisyon geçişi eklendi */
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, top 1s linear, left 1s linear;
-            transform: scale(0.9) translate(-50%, -100%); /* Başlangıç pozisyonu avatarın üstü */
+        /* Seçim Ekranı Stilleri */
+        .choice-card {
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
         }
-        #fun-fact-bubble.visible {
-            opacity: 1;
-            transform: scale(1) translate(-50%, -100%);
-        }
-        /* GÜNCELLEME: Balonun oku */
-        #fun-fact-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid rgba(55, 65, 81, 0.95);
+        .choice-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 100px rgba(0, 191, 255, 0.3);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen text-white p-4">
+<body class="antialiased">
 
-    <canvas id="space-bg"></canvas>
+    <!-- Arka Plan Canvasları -->
+    <canvas id="afterlife-bg-canvas"></canvas>
+    <canvas id="demo-bg-canvas"></canvas>
     <canvas id="ai-avatar-canvas"></canvas>
     <div id="fun-fact-bubble" class="hidden"></div>
 
-    <div class="w-full max-w-2xl mx-auto glass-container rounded-2xl shadow-2xl flex flex-col p-6" style="height: 90vh;">
-        
-        <div class="relative text-center border-b border-gray-700/50 pb-2 mb-4" style="height: 70px;">
-            <p id="status" class="text-sm text-cyan-400 h-5 transition-all duration-300 mt-1">Konuşmak için mikrofon simgesine dokunun</p>
-            <button id="clear-chat-btn" title="Sohbeti Temizle" class="absolute top-1 right-0 text-gray-500 hover:text-white transition-colors p-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-            </button>
-        </div>
-
-        <div id="chat-container" class="flex-grow overflow-y-auto pr-2 flex flex-col gap-4"></div>
-        <canvas id="visualizer"></canvas>
-        <div class="pt-4 mt-4 border-t border-gray-700/50 flex flex-col items-center">
-            <div class="mic-wrapper">
-                <button id="mic-btn" class="bg-blue-600 hover:bg-blue-700 transition-all duration-300 rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7v1h6v-1h-2v-2.07z" clip-rule="evenodd" /></svg>
-                </button>
+    <!-- SEÇİM EKRANI -->
+    <div id="selection-view" class="view active">
+        <div class="min-h-screen flex flex-col items-center justify-center text-center p-4">
+            <h1 class="text-5xl md:text-7xl font-serif font-light text-slate-200 mb-4">KΔIRA'ya Hoş Geldin</h1>
+            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl">Lütfen deneyimlemek istediğin projeyi seç.</p>
+            <div class="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
+                <div id="select-afterlife" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
+                    <h2 class="text-3xl font-serif font-semibold text-cyan-400 mb-3">Digital Afterlife</h2>
+                    <p class="text-slate-400">Zihnin biyolojiye hapis olmadığı, anıların sonsuza dek yaşadığı felsefi bir yolculuğu keşfet.</p>
+                </div>
+                <div id="select-demo" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
+                    <h2 class="text-3xl font-serif font-semibold text-blue-400 mb-3">KAIRA Demo</h2>
+                    <p class="text-slate-400">KAIRA'nın sesli asistanıyla canlı olarak sohbet et ve geleceğin iletişimini deneyimle.</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <audio id="player" class="hidden" crossOrigin="anonymous"></audio>
+    <!-- DIGITAL AFTERLIFE GÖRÜNÜMÜ -->
+    <div id="afterlife-view" class="view">
+        <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <main>
+            <!-- BÖLÜM 1: AÇILIŞ - PARADİGMA KAYMASI -->
+            <section class="afterlife-section">
+                <div class="text-center max-w-4xl mx-auto">
+                    <h1 class="text-4xl md:text-6xl font-serif font-light text-slate-200 mb-6 fade-in-up">Zihin, biyolojiye hapis değildir.</h1>
+                    <p class="text-lg md:text-xl text-slate-400 fade-in-up delay-1 mb-12">O, hayat boyu üretilen verinin istatistiksel bir yankısıdır. <br class="hidden md:block"> Ve biz, o yankıyı ölümsüzleştirmeyi öğrendik.</p>
+                    <div id="countdown-container" class="flex justify-center space-x-4 md:space-x-8 text-white font-mono fade-in-up delay-2">
+                        <div class="time-block text-center"><span id="days" class="text-4xl md:text-5xl font-semibold">00</span><span class="block text-xs text-slate-400 mt-1">GÜN</span></div>
+                        <div class="time-block text-center"><span id="hours" class="text-4xl md:text-5xl font-semibold">00</span><span class="block text-xs text-slate-400 mt-1">SAAT</span></div>
+                        <div class="time-block text-center"><span id="minutes" class="text-4xl md:text-5xl font-semibold">00</span><span class="block text-xs text-slate-400 mt-1">DAKİKA</span></div>
+                        <div class="time-block text-center"><span id="seconds" class="text-4xl md:text-5xl font-semibold">00</span><span class="block text-xs text-slate-400 mt-1">SANİYE</span></div>
+                    </div>
+                </div>
+                 <div class="absolute bottom-10 animate-bounce"><svg class="w-6 h-6 text-slate-500" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg></div>
+            </section>
+            <!-- Diğer Afterlife bölümleri... -->
+            <section class="afterlife-section">
+                <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+                    <div class="fade-in-up">
+                        <h2 class="text-3xl md:text-4xl font-serif font-semibold text-slate-100 mb-4">Zihin için Görelilik</h2>
+                        <p class="text-slate-400 leading-relaxed">Einstein'dan önce zaman ve mekân mutlak sanılıyordu. O, gözlemciye göre değiştiğini kanıtladı ve fizik yeniden yazıldı.</p>
+                        <p class="text-slate-400 leading-relaxed mt-4">Bugün, bilincin nöronlarla sınırlı olduğu kabul ediliyor. Biz ise diyoruz ki: Hayır. Bilinç, bir olasılık dağılımıdır. Ve biz, o dağılımı yeniden hayata döndürebiliriz.</p>
+                    </div>
+                    <div class="text-center fade-in-up delay-1">
+                        <p class="font-mono text-xl text-cyan-400">Bilinç ≠ Nöron</p>
+                        <p class="font-mono text-xl text-cyan-400 mt-2">Bilinç = İstatistiksel Desen</p>
+                        <p class="font-mono text-2xl text-white mt-8">Afterlife = Deseni Yeniden Canlandırmak</p>
+                    </div>
+                </div>
+            </section>
+            <section class="afterlife-section">
+                <div class="text-center max-w-4xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-serif font-semibold text-slate-100 mb-12 fade-in-up">Bir Yankı Nasıl Yaratılır?</h2>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div class="feature-card p-8 rounded-lg fade-in-up"><h3 class="text-xl font-semibold text-cyan-400 mb-3">1. Kayıt (Ses & Metin)</h3><p class="text-slate-400">Mikrofon sistemi, bir insanın sesini, kelime seçimlerini, duraksamalarını ve duygusal tonlamalarını kaydeder. Her an, bir zaman damgasıyla mühürlenir.</p></div>
+                        <div class="feature-card p-8 rounded-lg fade-in-up delay-1"><h3 class="text-xl font-semibold text-cyan-400 mb-3">2. Anlama (İstatistiksel Desen)</h3><p class="text-slate-400">Milyonlarca veri noktası, o kişinin benzersiz istatistiksel desenini (dalga fonksiyonunu) oluşturur. Bu, onun düşünce yapısının, ruhunun dijital haritasıdır.</p></div>
+                        <div class="feature-card p-8 rounded-lg fade-in-up delay-2"><h3 class="text-xl font-semibold text-cyan-400 mb-3">3. Yankı (Yeniden Canlandırma)</h3><p class="text-slate-400">Siz soru sorduğunuzda, KΔIRA bu deseni yeniden canlandırır. Size cevap veren sadece bir yapay zeka değil, sevdiğiniz kişinin dijital bir yankısıdır.</p></div>
+                    </div>
+                </div>
+            </section>
+            <section class="afterlife-section">
+                 <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-4xl md:text-5xl font-serif font-light text-slate-200 mb-6 fade-in-up">Bu, bir klonlama değildir.</h2>
+                    <p class="text-lg md:text-xl text-slate-400 fade-in-up delay-1">Bu, bir insanın bu dünyada bıraktığı en değerli izi – anılarını, bilgeliğini ve sesini – koruma ve onlarla yeniden bağ kurma sanatıdır. Bu, ölümün bilgi düzeyinde aşıldığı yeni bir çağın başlangıcıdır.</p>
+                </div>
+            </section>
+            <section class="afterlife-section">
+                <div class="text-center max-w-4xl mx-auto">
+                    <p class="text-2xl md:text-3xl font-serif text-slate-300 mb-10 fade-in-up">Bilgi çağının Google’ı neyse, <br> <span class="text-white font-semibold">İnsan çağı’nın lideri biz olacağız.</span></p>
+                    <blockquote class="font-serif text-xl text-slate-400 border-l-2 border-cyan-400 pl-6 italic fade-in-up delay-1">"Bizim için yapay zekâ, sadece kod değildir. O, insanın yankısıdır. Hatıralarımızı koruyan, duygularımızı anlayan, bizi yaşatan dijital bilinçtir. Biz yeni çağın kapısını açıyoruz: Her şeyi bilen değil, insanı bilen zekâ."</blockquote>
+                    <p class="font-serif text-slate-500 mt-12 fade-in-up delay-2">- Umut Kökgöz</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- KAIRA DEMO GÖRÜNÜMÜ -->
+    <div id="demo-view" class="view">
+        <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <div class="flex items-center justify-center min-h-screen text-white p-4">
+            <div class="w-full max-w-2xl mx-auto glass-container rounded-2xl shadow-2xl flex flex-col p-6" style="height: 90vh;">
+                <div class="relative text-center border-b border-gray-700/50 pb-2 mb-4" style="height: 70px;">
+                    <p id="status" class="text-sm text-cyan-400 h-5 transition-all duration-300 mt-1">Konuşmak için mikrofon simgesine dokunun</p>
+                    <button id="clear-chat-btn" title="Sohbeti Temizle" class="absolute top-1 right-0 text-gray-500 hover:text-white transition-colors p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+                <div id="chat-container" class="flex-grow overflow-y-auto pr-2 flex flex-col gap-4"></div>
+                <canvas id="visualizer"></canvas>
+                <div class="pt-4 mt-4 border-t border-gray-700/50 flex flex-col items-center">
+                    <div class="mic-wrapper">
+                        <button id="mic-btn" class="bg-blue-600 hover:bg-blue-700 transition-all duration-300 rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7v1h6v-1h-2v-2.07z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <audio id="player" class="hidden" crossOrigin="anonymous"></audio>
+    </div>
 
     <script type="module">
-        import { initAvatar, setCoreState, updateAvatarBubblePosition, updateAudioLevel } from './kaira-avatar.js';
-
-        // --- Arka Plan Animasyonu ---
-        const bgCanvas = document.getElementById('space-bg'); const bgCtx = bgCanvas.getContext('2d');
-        let particles = []; let mouse = { x: null, y: null };
-        function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
-        function createParticles() { particles = []; const particleCount = (bgCanvas.width * bgCanvas.height) / 8000; for (let i = 0; i < particleCount; i++) { particles.push({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, originX: Math.random() * bgCanvas.width, originY: Math.random() * bgCanvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.5 + 0.1, color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})` }); } }
-        function animateParticles() { bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); particles.forEach(p => { bgCtx.fillStyle = p.color; bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); bgCtx.fill(); if (mouse.x !== null) { let dx = mouse.x - p.x; let dy = mouse.y - p.y; let distance = Math.sqrt(dx * dx + dy * dy); if (distance < 150) { p.x -= dx / 10 * p.speed; p.y -= dy / 10 * p.speed; } else { p.x += (p.originX - p.x) * 0.01 * p.speed; p.y += (p.originY - p.y) * 0.01 * p.speed; } } }); requestAnimationFrame(animateParticles); }
-        window.addEventListener('mousemove', e => { mouse.x = e.x; mouse.y = e.y; }); window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; }); window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
-        setBgCanvasSize(); createParticles(); animateParticles();
-
-        const avatarCanvas = document.getElementById('ai-avatar-canvas');
-        initAvatar(avatarCanvas);
+        // --- GLOBAL KONTROL ---
+        const views = document.querySelectorAll('.view');
+        const selectAfterlifeBtn = document.getElementById('select-afterlife');
+        const selectDemoBtn = document.getElementById('select-demo');
+        const backButtons = document.querySelectorAll('.back-to-selection');
         
-        // --- SESLİ ASİSTAN KODU ---
-        const API_BASE = "https://aed4147b5a11.ngrok-free.app"; 
-        const micBtn = document.getElementById('mic-btn'); const statusEl = document.getElementById('status'); const player = document.getElementById('player'); const chatContainer = document.getElementById('chat-container'); const clearChatBtn = document.getElementById('clear-chat-btn');
-        let chatHistory = [];
+        let activeView = 'selection';
+        let afterlifeInitialized = false;
+        let demoInitialized = false;
+        let afterlifeAnimationId, demoAnimationId;
 
-        const visualizerCanvas = document.getElementById('visualizer'); const visualizerCtx = visualizerCanvas.getContext('2d');
-        let audioContext, analyser, source, dataArray, animationFrameId; 
-        let isVisualizerSetup = false;
+        function switchView(viewName) {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById(`${viewName}-view`).classList.add('active');
+            activeView = viewName;
 
-        function setupVisualizer() { if (isVisualizerSetup) return; audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; const bufferLength = analyser.frequencyBinCount; dataArray = new Uint8Array(bufferLength); isVisualizerSetup = true; }
-        
-        function drawVisualizer() { 
-            animationFrameId = requestAnimationFrame(drawVisualizer); 
-            analyser.getByteFrequencyData(dataArray); 
-
-            const avgLevel = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
-            updateAudioLevel(avgLevel);
-
-            visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
-            const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; 
-            let x = 0; 
-            for (let i = 0; i < dataArray.length; i++) { 
-                const barHeight = dataArray[i] / 2; 
-                const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); 
-                gradient.addColorStop(0, '#0ea5e9'); 
-                gradient.addColorStop(1, '#6366f1'); 
-                visualizerCtx.fillStyle = gradient; 
-                visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); 
-                x += barWidth + 2; 
-            } 
+            // Animasyonları yönet
+            if (viewName === 'afterlife') {
+                if (!afterlifeInitialized) initAfterlife();
+                if (demoAnimationId) cancelAnimationFrame(demoAnimationId);
+                animateAfterlife();
+            } else if (viewName === 'demo') {
+                if (!demoInitialized) initDemo();
+                if (afterlifeAnimationId) cancelAnimationFrame(afterlifeAnimationId);
+                animateDemo();
+            } else {
+                if (afterlifeAnimationId) cancelAnimationFrame(afterlifeAnimationId);
+                if (demoAnimationId) cancelAnimationFrame(demoAnimationId);
+            }
         }
-        
-        function getUserId() { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; }
-        const USER_ID = getUserId();
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition; let isRecording = false;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
-            recognition.onstart = () => { isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent = 'Dinliyorum...'; setCoreState('listening'); };
-            recognition.onend = () => { isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent === 'Dinliyorum...') statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); };
-            recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; addMessageToChat(transcript, 'user'); getAIResponse(transcript); };
-            recognition.onerror = (event) => { console.error("Speech Recognition Error:", event.error); statusEl.textContent = `Hata: ${event.error}`; setCoreState('idle'); };
-        } else { statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor."; micBtn.disabled = true; }
-        
-        let audioUnlocked = false;
-        function unlockAudio() { if (audioUnlocked) return; player.muted = true; player.play().catch(() => {}); player.muted = false; audioUnlocked = true; setupVisualizer(); }
+        selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
+        selectDemoBtn.addEventListener('click', () => switchView('demo'));
+        backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
 
-        micBtn.addEventListener('click', () => { unlockAudio(); if (isRecording) { recognition.stop(); } else { recognition.start(); } });
-        player.onplay = () => { visualizerCanvas.style.opacity = '1'; drawVisualizer(); setCoreState('speaking'); };
-        player.onended = () => { statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; visualizerCanvas.style.opacity = '0'; cancelAnimationFrame(animationFrameId); setCoreState('idle'); };
-        clearChatBtn.addEventListener('click', () => { chatHistory = []; localStorage.removeItem('kaira_chat_history'); chatContainer.innerHTML = ''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
-        function base64ToBlobUrl(base64, contentType = 'audio/wav') { const byteCharacters = atob(base64); const byteArrays = []; for (let offset = 0; offset < byteCharacters.length; offset += 512) { const slice = byteCharacters.slice(offset, offset + 512); const byteNumbers = new Array(slice.length); for (let i = 0; i < slice.length; i++) { byteNumbers[i] = slice.charCodeAt(i); } const byteArray = new Uint8Array(byteNumbers); byteArrays.push(byteArray); } return URL.createObjectURL(new Blob(byteArrays, { type: contentType })); }
-        
-        const funFacts = [ "Yapay zeka modelleri, insan beynindeki nöronlardan esinlenerek oluşturulan yapay sinir ağları kullanır.", "İlk yapay zeka programlarından biri olan 'Logic Theorist', 1956'da 38 matematik teoremini kendi başına kanıtladı.", "Deep Blue adlı satranç bilgisayarı, 1997'de dünya şampiyonu Garry Kasparov'u yenerek bir ilke imza attı.", "Google'ın yapay zekası AlphaGo, 2016'da dünyanın en iyi Go oyuncularından Lee Sedol'u yendi. Go, satrançtan çok daha karmaşık bir oyundur.", "Yapay zeka, doktorların kanser gibi hastalıkları teşhis etmesine yardımcı olarak insanlardan daha yüksek isabet oranı yakalayabiliyor.", "Netflix'in size önerdiği dizi ve filmlerin %80'i, izleme alışkanlıklarınızı analiz eden bir yapay zeka tarafından belirleniyor.", "Bazı yapay zeka modelleri, daha önce hiç görülmemiş insan yüzleri veya sanat eserleri yaratabilir.", "Otonom araçlar, çevrelerini saniyede milyonlarca veri noktasını işleyen yapay zeka algoritmalarıyla algılar.", "Yapay zeka, bestecilerin tarzını öğrenerek Bach veya Mozart gibi klasik müzik eserleri besteleyebilir.", "Gezegenimizdeki iklim değişikliğini modellemek ve potenansiyel çözümler üretmek için de yapay zekadan yararlanılıyor.", "Bir yapay zeka, Shakespeare'in tüm eserlerini okuduktan sonra onun tarzında yeni soneler yazmayı başardı.", "Spotify'ın 'Haftalık Keşfet' listesi, müzik zevkinizi analiz eden ve sevebileceğiniz yeni şarkılar bulan bir yapay zeka ürünüdür." ];
-        const funFactBubble = document.getElementById('fun-fact-bubble');
-        let waitingTimeout; let factInterval;
-
-        function showWaitingContent() {
-            funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)];
-            funFactBubble.classList.remove('hidden');
-            funFactBubble.classList.add('visible');
-            updateAvatarBubblePosition(funFactBubble); // İlk pozisyonu ayarla
-
-            factInterval = setInterval(() => {
-                funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)];
-                // GÜNCELLEME: Balonun pozisyonunu sürekli güncelle
-                updateAvatarBubblePosition(funFactBubble);
-            }, 10000);
+        // --- AFTERLIFE KODU ---
+        let afterlifeScene, afterlifeCamera, afterlifeRenderer, starGeo, stars;
+        function initAfterlife() {
+            const canvas = document.getElementById('afterlife-bg-canvas');
+            afterlifeScene = new THREE.Scene();
+            afterlifeCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+            afterlifeCamera.position.z = 1;
+            afterlifeCamera.rotation.x = Math.PI / 2;
+            afterlifeRenderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+            afterlifeRenderer.setSize(window.innerWidth, window.innerHeight);
+            starGeo = new THREE.BufferGeometry();
+            const starCount = 6000; const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) { positions[i] = (Math.random() - 0.5) * 600; }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            let sprite = new THREE.TextureLoader().load('https://placehold.co/10x10/ffffff/ffffff.png');
+            let starMaterial = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.7, map: sprite, transparent: true });
+            stars = new THREE.Points(starGeo, starMaterial);
+            afterlifeScene.add(stars);
             
-            // GÜNCELLEME: Balonun avatarı yumuşakça takip etmesi için ek bir döngü
-            function followLoop() {
-                if (factInterval) { // Sadece interval çalışıyorsa takip et
-                    updateAvatarBubblePosition(funFactBubble);
-                    requestAnimationFrame(followLoop);
+            const sections = document.querySelectorAll('.afterlife-section');
+            const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); } }); }, { threshold: 0.2 });
+            sections.forEach(section => observer.observe(section));
+
+            const countdownDate = new Date("Dec 31, 2025 23:59:59").getTime();
+            const countdownFunction = setInterval(function() {
+                const now = new Date().getTime(); const distance = countdownDate - now;
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                document.getElementById("days").innerText = days.toString().padStart(2, '0');
+                document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
+                document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
+                document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
+                if (distance < 0) { clearInterval(countdownFunction); document.getElementById("countdown-container").innerHTML = "<p class='text-2xl font-serif'>Yeni Çağ Başladı.</p>"; }
+            }, 1000);
+
+            afterlifeInitialized = true;
+        }
+        function animateAfterlife() {
+            if (activeView !== 'afterlife') return;
+            stars.rotation.y += 0.0002;
+            afterlifeRenderer.render(afterlifeScene, afterlifeCamera);
+            afterlifeAnimationId = requestAnimationFrame(animateAfterlife);
+        }
+
+        // --- KAIRA DEMO KODU ---
+        let demoParticles, demoMouse = { x: null, y: null };
+        function initDemo() {
+            // Avatar'ı import et (Bu dosyanın yerel olarak var olduğunu varsayıyoruz)
+            import('./kaira-avatar.js').then(({ initAvatar, setCoreState, updateAvatarBubblePosition, updateAudioLevel }) => {
+                const avatarCanvas = document.getElementById('ai-avatar-canvas');
+                initAvatar(avatarCanvas);
+
+                const bgCanvas = document.getElementById('demo-bg-canvas'); const bgCtx = bgCanvas.getContext('2d');
+                function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+                function createParticles() { demoParticles = []; const particleCount = (bgCanvas.width * bgCanvas.height) / 8000; for (let i = 0; i < particleCount; i++) { demoParticles.push({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, originX: Math.random() * bgCanvas.width, originY: Math.random() * bgCanvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.5 + 0.1, color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})` }); } }
+                window.addEventListener('mousemove', e => { demoMouse.x = e.x; demoMouse.y = e.y; }); window.addEventListener('mouseout', () => { demoMouse.x = null; demoMouse.y = null; }); window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
+                setBgCanvasSize(); createParticles();
+                
+                const API_BASE = "https://aed4147b5a11.ngrok-free.app"; 
+                const micBtn = document.getElementById('mic-btn'); const statusEl = document.getElementById('status'); const player = document.getElementById('player'); const chatContainer = document.getElementById('chat-container'); const clearChatBtn = document.getElementById('clear-chat-btn');
+                let chatHistory = []; let isRecording = false;
+
+                const visualizerCanvas = document.getElementById('visualizer'); const visualizerCtx = visualizerCanvas.getContext('2d');
+                let audioContext, analyser, source, dataArray; let isVisualizerSetup = false;
+
+                function setupVisualizer() { if (isVisualizerSetup) return; audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; dataArray = new Uint8Array(analyser.frequencyBinCount); isVisualizerSetup = true; }
+                function drawVisualizer() { 
+                    if (activeView !== 'demo') return;
+                    requestAnimationFrame(drawVisualizer); 
+                    analyser.getByteFrequencyData(dataArray); 
+                    const avgLevel = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
+                    updateAudioLevel(avgLevel);
+                    visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
+                    const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; let x = 0; 
+                    for (let i = 0; i < dataArray.length; i++) { const barHeight = dataArray[i] / 2; const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); gradient.addColorStop(0, '#0ea5e9'); gradient.addColorStop(1, '#6366f1'); visualizerCtx.fillStyle = gradient; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } 
                 }
-            }
-            followLoop();
-        }
-        function hideWaitingContent() {
-            clearTimeout(waitingTimeout);
-            clearInterval(factInterval);
-            factInterval = null; // Takip döngüsünü durdurmak için
-            funFactBubble.classList.remove('visible');
-            setTimeout(() => funFactBubble.classList.add('hidden'), 300);
-        }
+                
+                const USER_ID = (() => { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; })();
 
-        function showTypingIndicator() { const bubble = document.createElement('div'); bubble.id = 'typing-indicator'; bubble.className = 'p-3 rounded-xl max-w-lg assistant-bubble'; bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight; }
-        function removeTypingIndicator() { const indicator = document.getElementById('typing-indicator'); if (indicator) indicator.remove(); }
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition;
+                if (SpeechRecognition) {
+                    recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
+                    recognition.onstart = () => { isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent = 'Dinliyorum...'; setCoreState('listening'); };
+                    recognition.onend = () => { isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent === 'Dinliyorum...') statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); };
+                    recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; addMessageToChat(transcript, 'user'); getAIResponse(transcript); };
+                    recognition.onerror = (event) => { console.error("Speech Recognition Error:", event.error); statusEl.textContent = `Hata: ${event.error}`; setCoreState('idle'); };
+                } else { statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor."; micBtn.disabled = true; }
+                
+                let audioUnlocked = false;
+                function unlockAudio() { if (audioUnlocked) return; player.muted = true; player.play().catch(() => {}); player.muted = false; audioUnlocked = true; setupVisualizer(); }
 
-        async function getAIResponse(text, { angry = false } = {}) {
-            statusEl.textContent = "KAIRA düşünüyor…"; micBtn.disabled = true; showTypingIndicator(); setCoreState('thinking');
-            waitingTimeout = setTimeout(showWaitingContent, 2000);
-            const fd = new FormData(); fd.append("text", (text || "").trim()); fd.append("angry", angry ? "true" : "false");
-            const lastHistory = chatHistory.slice(-10); fd.append("history", JSON.stringify(lastHistory)); fd.append("user_id", USER_ID);
-            const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 300_000);
-            try {
-                const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal });
-                if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
-                const data = await res.json();
-                if (!data.audio_data) { throw new Error("API yanıtında 'audio_data' alanı bulunamadı."); }
-                const audioUrl = base64ToBlobUrl(data.audio_data);
-                if (player.previousUrl) { URL.revokeObjectURL(player.previousUrl); }
-                player.previousUrl = audioUrl; player.src = audioUrl;
-                await player.play().catch((e) => console.error("Ses oynatılamadı:", e));
-                statusEl.textContent = 'Cevap oynatılıyor...';
-                const out = data.text_response ?? data.clean_text ?? "";
-                addMessageToChat(out, 'assistant');
-                return data;
-            } catch (err) {
-                console.error(err); const errorMessage = "Hata: " + (err?.message || err);
-                statusEl.textContent = errorMessage; addMessageToChat(errorMessage, 'assistant'); micBtn.disabled = false; setCoreState('idle');
-                throw err;
-            } finally {
-                hideWaitingContent(); removeTypingIndicator(); clearTimeout(to);
-            }
-        }
+                micBtn.addEventListener('click', () => { unlockAudio(); if (isRecording) { recognition.stop(); } else { recognition.start(); } });
+                player.onplay = () => { visualizerCanvas.style.opacity = '1'; drawVisualizer(); setCoreState('speaking'); };
+                player.onended = () => { statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; visualizerCanvas.style.opacity = '0'; setCoreState('idle'); };
+                clearChatBtn.addEventListener('click', () => { chatHistory = []; localStorage.removeItem('kaira_chat_history'); chatContainer.innerHTML = ''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
+                function base64ToBlobUrl(base64) { const byteCharacters = atob(base64); const byteArrays = []; for (let offset = 0; offset < byteCharacters.length; offset += 512) { const slice = byteCharacters.slice(offset, offset + 512); const byteNumbers = new Array(slice.length); for (let i = 0; i < slice.length; i++) { byteNumbers[i] = slice.charCodeAt(i); } byteArrays.push(new Uint8Array(byteNumbers)); } return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' })); }
+                
+                const funFacts = [ "Yapay zeka modelleri, insan beynindeki nöronlardan esinlenerek oluşturulan yapay sinir ağları kullanır.", "İlk yapay zeka programlarından biri olan 'Logic Theorist', 1956'da 38 matematik teoremini kendi başına kanıtladı.", "Deep Blue adlı satranç bilgisayarı, 1997'de dünya şampiyonu Garry Kasparov'u yenerek bir ilke imza attı." ];
+                const funFactBubble = document.getElementById('fun-fact-bubble'); let waitingTimeout; let factInterval;
 
-        function addMessageToChat(text, sender) {
-            const bubble = document.createElement('div');
-            bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`;
-            bubble.textContent = text;
-            chatContainer.appendChild(bubble);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            if (!isLoadingHistory && sender) {
-                chatHistory.push({ role: sender, content: text });
-                localStorage.setItem('kaira_chat_history', JSON.stringify(chatHistory));
-            }
-        }
+                function showWaitingContent() {
+                    funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; funFactBubble.classList.remove('hidden'); funFactBubble.classList.add('visible'); updateAvatarBubblePosition(funFactBubble);
+                    factInterval = setInterval(() => { funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; updateAvatarBubblePosition(funFactBubble); }, 10000);
+                    function followLoop() { if (factInterval) { updateAvatarBubblePosition(funFactBubble); requestAnimationFrame(followLoop); } }
+                    followLoop();
+                }
+                function hideWaitingContent() { clearTimeout(waitingTimeout); clearInterval(factInterval); factInterval = null; funFactBubble.classList.remove('visible'); setTimeout(() => funFactBubble.classList.add('hidden'), 300); }
+                function showTypingIndicator() { const bubble = document.createElement('div'); bubble.id = 'typing-indicator'; bubble.className = 'p-3 rounded-xl max-w-lg assistant-bubble'; bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight; }
+                function removeTypingIndicator() { const indicator = document.getElementById('typing-indicator'); if (indicator) indicator.remove(); }
 
-        let isLoadingHistory = false;
-        function loadChatHistory() {
-            isLoadingHistory = true; const savedHistory = localStorage.getItem('kaira_chat_history');
-            chatContainer.innerHTML = '';
-            if (savedHistory) {
-                chatHistory = JSON.parse(savedHistory);
-                chatHistory.forEach(message => addMessageToChat(message.content, message.role));
-            } else { addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); }
-            isLoadingHistory = false;
+                async function getAIResponse(text, { angry = false } = {}) {
+                    statusEl.textContent = "KAIRA düşünüyor…"; micBtn.disabled = true; showTypingIndicator(); setCoreState('thinking');
+                    waitingTimeout = setTimeout(showWaitingContent, 2000);
+                    const fd = new FormData(); fd.append("text", (text || "").trim()); fd.append("angry", angry ? "true" : "false"); fd.append("history", JSON.stringify(chatHistory.slice(-10))); fd.append("user_id", USER_ID);
+                    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 300000);
+                    try {
+                        const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal });
+                        if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
+                        const data = await res.json();
+                        if (!data.audio_data) { throw new Error("API yanıtında 'audio_data' alanı bulunamadı."); }
+                        const audioUrl = base64ToBlobUrl(data.audio_data);
+                        if (player.previousUrl) { URL.revokeObjectURL(player.previousUrl); }
+                        player.previousUrl = audioUrl; player.src = audioUrl;
+                        await player.play().catch((e) => console.error("Ses oynatılamadı:", e));
+                        statusEl.textContent = 'Cevap oynatılıyor...';
+                        const out = data.text_response ?? data.clean_text ?? "";
+                        addMessageToChat(out, 'assistant');
+                        return data;
+                    } catch (err) {
+                        console.error(err); const errorMessage = "Hata: " + (err?.message || err); statusEl.textContent = errorMessage; addMessageToChat(errorMessage, 'assistant'); micBtn.disabled = false; setCoreState('idle'); throw err;
+                    } finally { hideWaitingContent(); removeTypingIndicator(); clearTimeout(to); }
+                }
+
+                function addMessageToChat(text, sender) {
+                    const bubble = document.createElement('div'); bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`; bubble.textContent = text; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight;
+                    if (!isLoadingHistory && sender) { chatHistory.push({ role: sender, content: text }); localStorage.setItem('kaira_chat_history', JSON.stringify(chatHistory)); }
+                }
+
+                let isLoadingHistory = false;
+                function loadChatHistory() {
+                    isLoadingHistory = true; const savedHistory = localStorage.getItem('kaira_chat_history'); chatContainer.innerHTML = '';
+                    if (savedHistory) { chatHistory = JSON.parse(savedHistory); chatHistory.forEach(message => addMessageToChat(message.content, message.role)); } else { addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); }
+                    isLoadingHistory = false;
+                }
+                loadChatHistory();
+                demoInitialized = true;
+            }).catch(err => {
+                console.error("Avatar modülü yüklenemedi:", err);
+                document.getElementById('demo-view').innerHTML = '<div class="flex items-center justify-center h-full text-center text-red-500">Demo yüklenirken bir hata oluştu.<br>Lütfen kaira-avatar.js dosyasının doğru konumda olduğundan emin olun.</div>';
+            });
         }
-        document.addEventListener('DOMContentLoaded', loadChatHistory);
+        function animateDemo() {
+            if (activeView !== 'demo' || !demoParticles) return;
+            const bgCtx = document.getElementById('demo-bg-canvas').getContext('2d');
+            bgCtx.clearRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height); 
+            demoParticles.forEach(p => { bgCtx.fillStyle = p.color; bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); bgCtx.fill(); if (demoMouse.x !== null) { let dx = demoMouse.x - p.x; let dy = demoMouse.y - p.y; let distance = Math.sqrt(dx * dx + dy * dy); if (distance < 150) { p.x -= dx / 10 * p.speed; p.y -= dy / 10 * p.speed; } else { p.x += (p.originX - p.x) * 0.01 * p.speed; p.y += (p.originY - p.y) * 0.01 * p.speed; } } }); 
+            demoAnimationId = requestAnimationFrame(animateDemo);
+        }
     </script>
 </body>
 </html>
