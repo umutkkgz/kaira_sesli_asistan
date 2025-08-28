@@ -1,3 +1,4 @@
+/* KAIRA SCOPED PATCH: This stylesheet is now scoped under .hubble-skin to avoid global overrides. */
 /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 html {
     line-height: 1;
@@ -155,7 +156,7 @@ summary {
     display: none
 }
 
-:root {
+ .hubble-skin {
     --color-white: #fff;
     --color-black: #000;
     --color-gray-nasa: #17171b;
@@ -430,44 +431,7 @@ summary {
     }
 }
 
-@font-face {
-    font-family: Roboto;
-    font-weight: 300;
-    src: url(/_next/static/media/Roboto-Light.1ad50b89.ttf) format("truetype")
-}
-
-@font-face {
-    font-family: Roboto;
-    font-weight: 300;
-    font-style: italic;
-    src: url(/_next/static/media/Roboto-LightItalic.266c1538.ttf) format("truetype")
-}
-
-@font-face {
-    font-family: Roboto;
-    font-weight: 400;
-    src: url(/_next/static/media/Roboto-Regular.8ff69652.ttf) format("truetype")
-}
-
-@font-face {
-    font-family: Roboto;
-    font-weight: 500;
-    src: url(/_next/static/media/Roboto-Medium.9204c2aa.ttf) format("truetype")
-}
-
-@font-face {
-    font-family: Roboto;
-    font-weight: 700;
-    src: url(/_next/static/media/Roboto-Bold.c36a3fe0.ttf) format("truetype")
-}
-
-@font-face {
-    font-family: Roboto;
-    font-weight: 900;
-    src: url(/_next/static/media/Roboto-Black.6ed32619.ttf) format("truetype")
-}
-
-:root {
+ .hubble-skin {
     --font-family: "Roboto",Arial,Helvetica,sans-serif;
     --font-weight-light: 300;
     --font-weight-regular: 300;
@@ -515,7 +479,7 @@ summary {
     }
 }
 
-* {
+ .hubble-skin * {
     font-family: var(--font-family);
     color: var(--color-text);
     font-weight: var(--font-weight-regular);
@@ -599,12 +563,8 @@ summary {
     text-decoration: none
 }
 
-:root,body {
+ .hubble-skin {
     background: var(--color-black)
-}
-
-#__next,:root,body {
-    height: 100%
 }
 
 body {
