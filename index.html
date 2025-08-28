@@ -1114,6 +1114,7 @@
             const marsContainer = document.getElementById('mars-container');
             const marsTab = document.querySelector('#nasa-view .nasa-tab[data-target="mars-container"]');
             let marsBound = false;
+            ensureAladinReady();
             // --- Aladin helpers (local or CDN) ---
             let __aladin, __exoLayers = [];
             function initAladin(){
@@ -1121,10 +1122,25 @@
               if (!el || !window.A || typeof A.aladin !== 'function') return;
               __aladin = A.aladin('#aladin-map', { survey: 'P/DSS2/color', fov: 5, target: 'M42' });
             }
+            async function fetchAndPlotExoplanets(){
+              const infoEl = document.getElementById('exo-info');
+              try{
+                if (infoEl) infoEl.textContent = 'Ötegezegen verisi alınıyor…';
+                const res = await fetch(`${base}/api/get-exoplanets`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : [];
+                if (list.length) { window.plotExoplanetsOnMap(list); }
+                if (infoEl) infoEl.textContent = list.length ? `${list.length} ötegezegen işaretlendi.` : 'Ötegezegen verisi bulunamadı.';
+              } catch(e){
+                console.warn('Exoplanet fetch failed:', e);
+                if (infoEl) infoEl.textContent = 'Ötegezegen verisi alınamadı.';
+              }
+            }
             function ensureAladinReady(){
-              if (window.A && typeof A.aladin === 'function') { initAladin(); return; }
+              if (window.A && typeof A.aladin === 'function') { initAladin(); fetchAndPlotExoplanets(); return; }
               let tries = 0; const t = setInterval(() => {
-                if (window.A && typeof A.aladin === 'function') { clearInterval(t); initAladin(); }
+                if (window.A && typeof A.aladin === 'function') { clearInterval(t); initAladin(); fetchAndPlotExoplanets(); }
                 else if (++tries > 50) { clearInterval(t); console.warn('Aladin yüklenmedi.'); }
               }, 100);
             }
