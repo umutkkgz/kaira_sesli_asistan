@@ -965,15 +965,23 @@
           requestAnimationFrame(() => {
             if (ui) ui.style.opacity = '1';
             if (subtitle) subtitle.style.opacity = '1';
+            if (btn) { btn.style.opacity = '1'; btn.style.transform = 'scale(1)'; }
             const stampEl = document.getElementById('anti-leak-overlay');
             if (stampEl) stampEl.setAttribute('data-stamp', new Date().toISOString().slice(0,10));
           });
           function closeIntro(){
+            if (intro.dataset.closed === '1') return; // idempotent
+            intro.dataset.closed = '1';
             intro.classList.add('fade-out');
             setTimeout(() => { try { intro.remove(); } catch(_){} }, 650);
           }
           if (btn) btn.addEventListener('click', closeIntro);
-          intro.addEventListener('keydown', (e) => { if (e.key === 'Enter') closeIntro(); });
+          window.addEventListener('keydown', (e) => { if (e.key === 'Enter') closeIntro(); });
+          // Auto-close intro (default 2000ms). URL overrides: ?skipIntro=1 or ?introMs=3000
+          const urlp = new URLSearchParams(location.search);
+          if (urlp.get('skipIntro') === '1') { closeIntro(); return; }
+          const ms = Number(urlp.get('introMs') || 2000);
+          if (Number.isFinite(ms) && ms > 0) setTimeout(closeIntro, ms);
         }
         // init immediately (DOM is ready because this script is placed at the end of body)
         initIntroOverlay();
