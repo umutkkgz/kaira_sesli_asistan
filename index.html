@@ -230,6 +230,23 @@
             transform: rotate(-30deg); font-size: 28px; letter-spacing: 2px; text-transform: uppercase;
             color: #ffffff; opacity: 0.25;
         }
+        /* NASA Platform Stilleri (Adım 2/5) */
+        .nasa-tab { 
+            padding: 0.5rem 1rem; 
+            border-radius: 0.5rem; 
+            cursor: not-allowed; 
+            transition: background-color 0.3s, color 0.3s; 
+            border: 1px solid transparent; 
+            background-color: rgba(31,41,55,0.6); /* gray-800-ish */
+            color: #9ca3af; /* gray-400 */
+        }
+        .nasa-tab.active { 
+            background-color: rgba(59,130,246,0.2); /* blue-500 tint */ 
+            color: #60a5fa; /* blue-400 */ 
+            border-color: rgba(59,130,246,0.5);
+        }
+        .nasa-content { display: none; }
+        .nasa-content.active { display: block; }
     </style>
 </head>
 <body class="antialiased">
@@ -262,6 +279,10 @@
                 <div id="select-chat" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
                     <h2 class="text-3xl font-serif font-semibold text-green-400 mb-3">Evrensel Sohbet Arayüzü</h2>
                     <p class="text-slate-400">Farklı yapay zeka modelleriyle tek bir yerden sohbet edin ve yeteneklerini karşılaştırın.</p>
+                </div>
+                <div id="select-nasa" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
+                    <h2 class="text-3xl font-serif font-semibold text-blue-400 mb-3">KΔIRA Gözlem Platformu</h2>
+                    <p class="text-slate-400">NASA verileriyle uzayı ve Dünya’yı keşfet.</p>
                 </div>
             </div>
         </div>
@@ -435,6 +456,71 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- NASA GÖZLEM PLATFORMU (ADIM 1) -->
+    <div id="nasa-view" class="view">
+        <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <div class="container mx-auto px-4 py-8 max-w-6xl">
+            <header class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-white">K<span class="text-red-400">Δ</span>IRA Gözlem Platformu</h1>
+                <p class="text-gray-400 mt-2">NASA'nın Gözünden Evren</p>
+            </header>
+            <div class="mb-6 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+                <label class="block text-sm font-medium text-gray-300 mb-2">API Durumu</label>
+                <div id="nasa-api-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-400">Anahtarlar sunucudan bekleniyor...</div>
+            </div>
+            <nav class="flex justify-center space-x-2 md:space-x-4 mb-6 bg-gray-800 p-2 rounded-lg border border-gray-700">
+                <button class="nasa-tab active" data-target="apod-container" disabled>Günün Fotoğrafı</button>
+                <button class="nasa-tab" data-target="mars-container" disabled>Mars Keşfi</button>
+                <button class="nasa-tab" data-target="library-container" disabled>Evrenin Kütüphanesi</button>
+            </nav>
+            <main>
+                <div id="apod-container" class="nasa-content active"><div class="text-center text-gray-500 p-8">Adım 2’de etkinleştirilecek.</div></div>
+                <div id="mars-container" class="nasa-content">
+                  <section class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 md:p-6 mb-4">
+                    <div class="grid md:grid-cols-4 gap-3 items-end">
+                      <div>
+                        <label class="block text-sm text-gray-300 mb-1">Rover</label>
+                        <select id="mars-rover" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                          <option value="curiosity" selected>Curiosity</option>
+                          <option value="perseverance">Perseverance</option>
+                          <option value="opportunity">Opportunity</option>
+                          <option value="spirit">Spirit</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-sm text-gray-300 mb-1">Tarih (Dünya)</label>
+                        <input id="mars-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                      </div>
+                      <div>
+                        <label class="block text-sm text-gray-300 mb-1">Kamera</label>
+                        <select id="mars-camera" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                          <option value="">Hepsi</option>
+                          <option value="FHAZ">FHAZ (Front Hazard)</option>
+                          <option value="RHAZ">RHAZ (Rear Hazard)</option>
+                          <option value="MAST">MAST (Mastcam)</option>
+                          <option value="NAVCAM">NAVCAM (Navigation)</option>
+                          <option value="CHEMCAM">CHEMCAM</option>
+                          <option value="MAHLI">MAHLI</option>
+                          <option value="MARDI">MARDI</option>
+                          <option value="PANCAM">PANCAM</option>
+                          <option value="MINITES">MINITES</option>
+                        </select>
+                      </div>
+                      <div class="flex gap-2">
+                        <button id="mars-latest" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-2 rounded-lg">En Son</button>
+                        <button id="mars-fetch" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded-lg">Getir</button>
+                      </div>
+                    </div>
+                  </section>
+                  <section id="mars-results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></section>
+                </div>
+                <div id="library-container" class="nasa-content"><div class="text-center text-gray-500 p-8">Adım 4’te etkinleştirilecek.</div></div>
+            </main>
         </div>
     </div>
     
@@ -930,6 +1016,7 @@
         const selectDemoBtn = document.getElementById('select-demo');
         const selectEditorBtn = document.getElementById('select-editor');
         const selectChatBtn = document.getElementById('select-chat'); // Yeni
+        const selectNasaBtn = document.getElementById('select-nasa');
         const backButtons = document.querySelectorAll('.back-to-selection');
         
         let activeView = 'selection';
@@ -938,6 +1025,7 @@
         let editorInitialized = false;
         let chatInitialized = false; // Yeni
         let afterlifeAnimationId, demoAnimationId;
+        let nasaInitialized = false;
 
         function switchView(viewName) {
             views.forEach(v => v.classList.remove('active'));
@@ -964,13 +1052,229 @@
                     chatInitialized = true;
                 }
             }
+            else if (viewName === 'nasa') {
+                if (!nasaInitialized) { initNasa(); nasaInitialized = true; }
+            }
         }
 
         selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
         selectDemoBtn.addEventListener('click', () => switchView('demo'));
         selectEditorBtn.addEventListener('click', () => switchView('editor'));
         selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
+        selectNasaBtn.addEventListener('click', () => switchView('nasa'));
         backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
+        function initNasa(){
+            // --- Gemini translation helper ---
+            async function translateWithGemini(text, apiKey){
+              try{
+                if (!text || !apiKey) return null;
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const payload = {
+                  systemInstruction: { parts: [{ text: "Aşağıdaki metni doğal ve akıcı bir Türkçeye çevir. Sadece çeviriyi ver, açıklama ekleme." }] },
+                  contents: [ { role: 'user', parts: [{ text }] } ]
+                };
+                const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!res.ok) {
+                  const t = await res.text().catch(()=> '');
+                  throw new Error(`Gemini HTTP ${res.status} — ${t}`);
+                }
+                const data = await res.json();
+                const out = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                return (out && out.trim()) ? out.trim() : null;
+              } catch(err){
+                console.warn('Çeviri başarısız:', err);
+                return null;
+              }
+            }
+
+            const apiStatus = document.getElementById('nasa-api-status');
+            const base = window.API_PROXY_BASE || '';
+            const apodContainer = document.getElementById('apod-container');
+            const apodTab = document.querySelector('#nasa-view .nasa-tab[data-target="apod-container"]');
+            // --- Mars tab additions ---
+            const marsContainer = document.getElementById('mars-container');
+            const marsTab = document.querySelector('#nasa-view .nasa-tab[data-target="mars-container"]');
+            let marsBound = false;
+
+            function escapeHTML(s){
+                return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+            function activateNasaTab(targetId){
+                const tabs = document.querySelectorAll('#nasa-view .nasa-tab');
+                const sections = document.querySelectorAll('#nasa-view .nasa-content');
+                tabs.forEach(t => t.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                const tab = document.querySelector(`#nasa-view .nasa-tab[data-target="${targetId}"]`);
+                const section = document.getElementById(targetId);
+                if (tab) tab.classList.add('active');
+                if (section) section.classList.add('active');
+            }
+            function renderApodLoading(){
+                apodContainer.innerHTML = '<div class="text-center text-gray-400 p-8">Yükleniyor...</div>';
+            }
+            function renderApodError(msg){
+                apodContainer.innerHTML = `<div class="text-center text-red-400 p-8">Hata: ${escapeHTML(msg)}</div>`;
+            }
+            function renderApod(data){
+                let mediaHtml = '';
+                if (data.media_type === 'image') {
+                    const src = data.hdurl || data.url;
+                    mediaHtml = `<img src="${src}" alt="${escapeHTML(data.title||'APOD')}" class="w-full rounded-xl border border-gray-700" />`;
+                } else if (data.media_type === 'video') {
+                    const src = data.url;
+                    mediaHtml = `<div class="aspect-video w-full"><iframe src="${src}" class="w-full h-full rounded-xl border border-gray-700" allowfullscreen referrerpolicy="no-referrer"></iframe></div>`;
+                } else {
+                    mediaHtml = '<div class="text-gray-400">Bu içerik desteklenmiyor.</div>';
+                }
+                apodContainer.innerHTML = `
+                   <article class="bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden">
+                     <div class="p-4 md:p-6">
+                       <h2 class="text-2xl font-semibold text-white mb-1">${escapeHTML(data.title||'Günün Fotoğrafı')}</h2>
+                       <p class="text-sm text-gray-400 mb-4">${escapeHTML(data.date||'')}</p>
+                       <div class="mb-4">${mediaHtml}</div>
+                       <p class="text-gray-300 leading-relaxed">${escapeHTML(data.explanation||'')}</p>
+                       ${data.hdurl ? `<div class="mt-4"><a href="${data.hdurl}" target="_blank" rel="noopener" class="text-blue-400 hover:underline">HD görüntüyü aç</a></div>` : ''}
+                     </div>
+                   </article>`;
+            }
+            async function fetchApod(date){
+                try{
+                    renderApodLoading();
+                    const apiKey = window.KAIRA_NASA?.nasaApiKey;
+                    if (!apiKey) throw new Error('NASA API anahtarı yok.');
+                    const q = new URLSearchParams({ api_key: apiKey, thumbs: 'true' });
+                    if (date) q.set('date', date);
+                    const res = await fetch(`https://api.nasa.gov/planetary/apod?${q.toString()}`);
+                    if (!res.ok) {
+                        const txt = await res.text().catch(()=> '');
+                        throw new Error(`HTTP ${res.status} — ${txt}`);
+                    }
+                    const data = await res.json();
+                    const gKey = window.KAIRA_NASA?.googleApiKey || null;
+                    let trTitle = null, trExpl = null;
+                    if (gKey) {
+                      trTitle = await translateWithGemini(data.title, gKey).catch(()=>null);
+                      trExpl  = await translateWithGemini(data.explanation, gKey).catch(()=>null);
+                    }
+                    renderApod({
+                      ...data,
+                      title: trTitle || data.title,
+                      explanation: trExpl || data.explanation
+                    });
+                } catch(e){
+                    renderApodError(e?.message || e);
+                }
+            }
+
+            // --- Mars helpers ---
+            function renderMarsLoading(){
+              const results = document.getElementById('mars-results');
+              if (results) results.innerHTML = '<div class="col-span-full text-center text-gray-400 p-8">Yükleniyor...</div>';
+            }
+            function renderMarsError(msg){
+              const results = document.getElementById('mars-results');
+              if (results) results.innerHTML = `<div class="col-span-full text-center text-red-400 p-8">Hata: ${escapeHTML(msg)}</div>`;
+            }
+            function renderMarsPhotos(photos){
+              const results = document.getElementById('mars-results');
+              if (!results) return;
+              if (!photos || !photos.length){
+                results.innerHTML = '<div class="col-span-full text-center text-gray-400 p-8">Sonuç bulunamadı. Farklı tarih/kamera deneyin veya "En Son"a basın.</div>';
+                return;
+              }
+              const html = photos.map(p => `
+                <article class="bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden">
+                  <img src="${p.img_src}" alt="${escapeHTML(p.camera?.full_name||'Mars')}" class="w-full h-48 object-cover" />
+                  <div class="p-4">
+                    <h3 class="text-white font-semibold mb-1">${escapeHTML(p.rover?.name||'Rover')} • ${escapeHTML(p.camera?.name||'Kamera')}</h3>
+                    <p class="text-gray-400 text-sm">${escapeHTML(p.earth_date||'')}</p>
+                  </div>
+                </article>
+              `).join('');
+              results.innerHTML = html;
+            }
+            async function fetchMars(params={}){
+              try{
+                renderMarsLoading();
+                const apiKey = window.KAIRA_NASA?.nasaApiKey;
+                if (!apiKey) throw new Error('NASA API anahtarı yok.');
+                const rover = (params.rover||'curiosity').toLowerCase();
+                let url;
+                if (params.latest) {
+                  url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/latest_photos?api_key=${apiKey}`;
+                } else {
+                  const q = new URLSearchParams({ api_key: apiKey });
+                  if (params.earth_date) q.set('earth_date', params.earth_date);
+                  if (params.camera) q.set('camera', params.camera);
+                  url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${rover}/photos?${q.toString()}`;
+                }
+                const res = await fetch(url);
+                if (!res.ok) {
+                  const txt = await res.text().catch(()=> '');
+                  throw new Error(`HTTP ${res.status} — ${txt}`);
+                }
+                const data = await res.json();
+                const photos = data.latest_photos || data.photos || [];
+                renderMarsPhotos(photos);
+              } catch(e){
+                renderMarsError(e?.message || e);
+              }
+            }
+            function bindMarsControls(){
+              if (marsBound) return; marsBound = true;
+              const roverSel = document.getElementById('mars-rover');
+              const dateInp = document.getElementById('mars-date');
+              const camSel  = document.getElementById('mars-camera');
+              const btnLatest = document.getElementById('mars-latest');
+              const btnFetch  = document.getElementById('mars-fetch');
+              if (btnLatest) btnLatest.addEventListener('click', () => fetchMars({ rover: roverSel.value, latest: true }));
+              if (btnFetch) btnFetch.addEventListener('click', () => {
+                fetchMars({ rover: roverSel.value, earth_date: dateInp.value || undefined, camera: camSel.value || undefined });
+              });
+            }
+
+            async function fetchNasaKeys(){
+                apiStatus.textContent = 'Anahtarlar sunucudan bekleniyor...';
+                try{
+                    const headers = { 'ngrok-skip-browser-warning': 'true' };
+                    const [nasaRes, googleRes] = await Promise.all([
+                        fetch(`${base}/api/get-nasa-key`, { headers }),
+                        fetch(`${base}/api/get-google-key`, { headers })
+                    ]);
+                    const nasaData = await nasaRes.json().catch(()=>({}));
+                    const googleData = await googleRes.json().catch(()=>({}));
+                    window.KAIRA_NASA = {
+                        nasaApiKey: (nasaRes.ok && nasaData.apiKey) ? nasaData.apiKey : null,
+                        googleApiKey: (googleRes.ok && googleData.apiKey) ? googleData.apiKey : null
+                    };
+                    if (window.KAIRA_NASA.nasaApiKey) {
+                        apiStatus.textContent = 'Bağlantı kuruldu';
+                        apiStatus.classList.remove('text-gray-400');
+                        apiStatus.classList.add('text-green-400');
+                        if (apodTab) {
+                            apodTab.disabled = false;
+                            apodTab.style.cursor = 'pointer';
+                            apodTab.addEventListener('click', () => { activateNasaTab('apod-container'); fetchApod().catch(()=>{}); }, { once: true });
+                        }
+                        activateNasaTab('apod-container');
+                        fetchApod().catch(()=>{});
+                        // --- Mars enablement ---
+                        if (marsTab) {
+                          marsTab.disabled = false;
+                          marsTab.style.cursor = 'pointer';
+                          marsTab.addEventListener('click', () => { activateNasaTab('mars-container'); bindMarsControls(); fetchMars({ latest: true, rover: 'curiosity' }); }, { once: true });
+                        }
+                    } else {
+                        throw new Error(nasaData?.error || 'NASA API anahtarı alınamadı.');
+                    }
+                } catch(e){
+                    apiStatus.textContent = 'Hata: ' + (e?.message || e);
+                    apiStatus.classList.add('text-red-400');
+                }
+            }
+
+            fetchNasaKeys();
+        }
 
         // --- AFTERLIFE & DEMO KODLARI ---
         let afterlifeScene, afterlifeCamera, afterlifeRenderer, stars, meteors = [];
