@@ -1121,7 +1121,6 @@
             const marsContainer = document.getElementById('mars-container');
             const marsTab = document.querySelector('#nasa-view .nasa-tab[data-target="mars-container"]');
             let marsBound = false;
-            ensureAladinReady();
             // --- Aladin helpers (local or CDN) ---
             let __aladin, __exoLayers = [];
             function initAladin(){
@@ -1181,6 +1180,7 @@
                 }
               }, 100);
             }
+            ensureAladinReady();
             // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
             window.plotExoplanetsOnMap = function(planets){
               try{
