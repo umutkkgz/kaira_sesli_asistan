@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KΔIRA - Giriş Animasyonu</title>
-    
-    <!-- Gerekli Kütüphaneler: Three.js (3D için) ve GSAP (Animasyon için) -->
+    <title>KΔIRA | Birleşik Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Aladin Lite (CDN-only for diagnostics) -->
+    <!-- Aladin Lite (CDN-only) moved into the main head -->
     <link rel="stylesheet" href="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.min.css">
     <script src="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.min.js"></script>
     <script id="aladin-cdn-sanity">
-      // Step 2: simple sanity check for CDN-loaded Aladin
       window.addEventListener('load', function(){
         var ok = !!(window.A && typeof A.aladin === 'function');
         console.log('[Aladin] CDN sanity:', ok ? 'OK' : 'MISSING');
@@ -23,129 +24,18 @@
         } catch(_){}
       });
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-    
-    <style>
-        /* Sayfanın tamamını kaplaması ve kaydırma çubuklarını kaldırması için temel stiller */
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #000000;
-            font-family: 'Inter', sans-serif; /* Projenin fontuyla uyumlu */
-            cursor: move; /* Etkileşimi belirtmek için imleci değiştir */
-        }
 
-        /* Animasyonun ana konteyneri. Her şey bunun içinde olacak. */
-        #intro-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 9999; /* Diğer tüm içeriklerin üzerinde olmasını sağlar */
-            background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-
-        /* 3D sahnenin render edileceği canvas */
-        #bg-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Logo ve buton gibi arayüz elemanlarının konteyneri */
-        #ui-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* Başlangıçta görünmez olacak, animasyonla ortaya çıkacak */
-            opacity: 0;
-        }
-
-        /* KAIRA Logo Stili */
-        #logo {
-            font-size: 6vw; /* Ekran boyutuna göre ölçeklenir */
-            font-weight: 700;
-            letter-spacing: 0.5rem;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            color: #e2e8f0; /* Projenin rengiyle uyumlu */
-        }
-        
-        /* Logodaki Delta (Δ) sembolünün özel rengi */
-        #logo .delta {
-            color: #22d3ee; /* Projenin cyan rengi */
-            text-shadow: 0 0 20px #22d3ee;
-        }
-
-        /* YENİ: Alt Başlık Stili */
-        #subtitle {
-            font-size: 1.2vw;
-            font-weight: 300;
-            letter-spacing: 0.2rem;
-            color: #94a3b8; /* slate-400 */
-            margin-bottom: 3rem;
-            text-transform: uppercase;
-            opacity: 0; /* Animasyonla görünecek */
-        }
-
-        /* Giriş Butonu Stili */
-        #enter-button {
-            background: rgba(34, 211, 238, 0.1); /* Cyan renginin şeffaf hali */
-            border: 1px solid rgba(34, 211, 238, 0.4);
-            color: #e2e8f0;
-            padding: 1rem 2.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            letter-spacing: 0.1rem;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-            text-transform: uppercase;
-            /* Başlangıçta görünmez ve küçük olacak */
-            opacity: 0;
-            transform: scale(0.8);
-        }
-
-        #enter-button:hover {
-            background: rgba(34, 211, 238, 0.2);
-            transform: scale(1.05);
-        }
+    <!-- Intro-only styles moved here to avoid duplicate <html> documents -->
+    <style id="intro-only-styles">
+      #intro-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background-color: #000000; display: flex; justify-content: center; align-items: center; color: white; }
+      #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+      #ui-container { position: relative; z-index: 10; text-align: center; display: flex; flex-direction: column; align-items: center; opacity: 0; }
+      #logo { font-size: 6vw; font-weight: 700; letter-spacing: 0.5rem; text-transform: uppercase; margin-bottom: 1rem; color: #e2e8f0; }
+      #logo .delta { color: #22d3ee; text-shadow: 0 0 20px #22d3ee; }
+      #subtitle { font-size: 1.2vw; font-weight: 300; letter-spacing: 0.2rem; color: #94a3b8; margin-bottom: 3rem; text-transform: uppercase; opacity: 0; }
+      #enter-button { background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.4); color: #e2e8f0; padding: 1rem 2.5rem; font-size: 1rem; font-weight: 600; letter-spacing: 0.1rem; border-radius: 50px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; text-transform: uppercase; opacity: 0; transform: scale(0.8); }
+      #enter-button:hover { background: rgba(34, 211, 238, 0.2); transform: scale(1.05); }
     </style>
-</head>
-<body>
-
-    <!-- Bu bölüm, sitenin ana giriş animasyonunu içerir. -->
-    <!-- Kullanıcı butona tıkladığında bu konteyner kaybolur ve alttaki site içeriği görünür. -->
-    <div id="intro-container">
-        <canvas id="bg-canvas"></canvas>
-        <div id="ui-container">
-            <h1 id="logo">K<span class="delta">Δ</span>IRA</h1>
-            <p id="subtitle">Dijital Bilinç Başlatılıyor</p>
-            <button id="enter-button">DENEYİMİ BAŞLAT</button>
-        </div>
-    </div>
-
-<!DOCTYPE html>
-<html lang="tr" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KΔIRA | Birleşik Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <!-- React için Gerekli Scriptler -->
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
@@ -266,6 +156,16 @@
     </style>
 </head>
 <body class="antialiased">
+
+    <!-- Intro overlay moved inside the single document body -->
+    <div id="intro-container">
+        <canvas id="bg-canvas"></canvas>
+        <div id="ui-container">
+            <h1 id="logo">K<span class="delta">Δ</span>IRA</h1>
+            <p id="subtitle">Dijital Bilinç Başlatılıyor</p>
+            <button id="enter-button">DENEYİMİ BAŞLAT</button>
+        </div>
+    </div>
 
     <!-- Arka Plan Canvasları -->
     <canvas id="afterlife-bg-canvas"></canvas>
