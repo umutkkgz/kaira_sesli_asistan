@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KΔIRA | İnsan Çağı</title>
+    <title>KΔIRA | Birleşik Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,8 +43,9 @@
         #demo-bg-canvas { z-index: -1; }
         #ai-avatar-canvas { z-index: 10; pointer-events: none; }
         .glass-container { z-index: 1; position: relative; background: rgba(17, 24, 39, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 80px rgba(0, 191, 255, 0.2); }
-        #chat-container::-webkit-scrollbar { width: 4px; }
-        #chat-container::-webkit-scrollbar-thumb { background-color: rgba(75, 85, 99, 0.8); border-radius: 20px; }
+        #chat-container::-webkit-scrollbar, #chat-history::-webkit-scrollbar { width: 6px; }
+        #chat-container::-webkit-scrollbar-thumb, #chat-history::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 3px; }
+        #chat-container::-webkit-scrollbar-track, #chat-history::-webkit-scrollbar-track { background-color: #1a202c; }
         .user-bubble { background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; align-self: flex-end; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25); }
         .assistant-bubble { background: rgba(55, 65, 81, 0.9); color: #E5E7EB; align-self: flex-start; }
         .mic-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
@@ -55,7 +56,7 @@
         .is-listening { animation: pulse 1.5s infinite !important; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); } 70% { box-shadow: 0 0 0 30px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .user-bubble, .assistant-bubble { animation: fadeIn 0.4s ease-out; }
+        .user-bubble, .assistant-bubble, .chat-user-bubble, .chat-assistant-bubble { animation: fadeIn 0.4s ease-out; }
         #visualizer { width: 100%; height: 60px; margin-bottom: 1rem; opacity: 0; transition: opacity 0.5s ease-in-out; }
         #fun-fact-bubble { position: fixed; background: rgba(55, 65, 81, 0.95); color: #E5E7EB; padding: 12px 16px; border-radius: 12px; max-width: 250px; font-size: 14px; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, top 1s linear, left 1s linear; transform: scale(0.9) translate(-50%, -100%); }
         #fun-fact-bubble.visible { opacity: 1; transform: scale(1) translate(-50%, -100%); }
@@ -69,6 +70,14 @@
             transform: translateY(-10px);
             box-shadow: 0 0 100px rgba(0, 191, 255, 0.3);
         }
+
+        /* Evrensel Sohbet Arayüzü Stilleri */
+        .chat-loader {
+            border-top-color: #6366f1;
+            animation: spin 1s linear infinite;
+        }
+        .chat-user-bubble { background-color: #4f46e5; align-self: flex-end; }
+        .chat-assistant-bubble { background-color: #374151; align-self: flex-start; }
     </style>
 </head>
 <body class="antialiased">
@@ -84,7 +93,7 @@
         <div class="min-h-screen flex flex-col items-center justify-center text-center p-4">
             <h1 class="text-5xl md:text-7xl font-serif font-light text-slate-200 mb-4">KΔIRA'ya Hoş Geldin</h1>
             <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl">Lütfen deneyimlemek istediğin projeyi seç.</p>
-            <div class="grid md:grid-cols-3 gap-8 w-full max-w-6xl">
+            <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl">
                 <div id="select-afterlife" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
                     <h2 class="text-3xl font-serif font-semibold text-cyan-400 mb-3">Digital Afterlife</h2>
                     <p class="text-slate-400">Zihnin biyolojiye hapis olmadığı, anıların sonsuza dek yaşadığı felsefi bir yolculuğu keşfet.</p>
@@ -96,6 +105,10 @@
                 <div id="select-editor" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
                     <h2 class="text-3xl font-serif font-semibold text-purple-400 mb-3">Yapay Zeka Editör</h2>
                     <p class="text-slate-400">Fotoğraflarınızı yükleyin ve metin komutlarıyla saniyeler içinde dilediğiniz gibi düzenleyin.</p>
+                </div>
+                <div id="select-chat" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
+                    <h2 class="text-3xl font-serif font-semibold text-green-400 mb-3">Evrensel Sohbet Arayüzü</h2>
+                    <p class="text-slate-400">Farklı yapay zeka modelleriyle tek bir yerden sohbet edin ve yeteneklerini karşılaştırın.</p>
                 </div>
             </div>
         </div>
@@ -196,26 +209,523 @@
         <audio id="player" class="hidden" crossOrigin="anonymous"></audio>
     </div>
 
-    <!-- YENİ EKLENEN FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
+    <!-- FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
     <div id="editor-view" class="view">
         <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </button>
         <div id="react-root"></div>
     </div>
+    
+    <!-- EVRENSEL SOHBET GÖRÜNÜMÜ -->
+    <div id="chat-view" class="view bg-gray-900">
+         <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <div class="w-full max-w-4xl mx-auto flex flex-col h-screen p-4">
+            <div class="bg-gray-800 rounded-2xl p-4 mb-4 border border-gray-700 flex-shrink-0">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-400">Sağlayıcı</label>
+                        <div id="provider-selection" class="flex space-x-4">
+                            <label class="flex items-center"><input type="radio" name="provider" value="groq" class="mr-2" checked> Groq</label>
+                            <label class="flex items-center"><input type="radio" name="provider" value="google" class="mr-2"> Google</label>
+                        </div>
+                        <label for="model-select" class="block text-sm font-medium text-gray-400 pt-2">Model</label>
+                        <select id="model-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                    </div>
+                    <div class="space-y-2">
+                        <div id="groq-key-container">
+                            <label for="groq-api-key" class="block text-sm font-medium text-gray-400">Groq API Anahtarı</label>
+                            <input type="password" id="groq-api-key" placeholder="gsk_..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div id="google-key-container" class="hidden">
+                            <label for="google-api-key" class="block text-sm font-medium text-gray-400">Google API Anahtarı</label>
+                            <input type="password" id="google-api-key" placeholder="AIzaSy..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                         <label for="system-prompt" class="block text-sm font-medium text-gray-400">Sistem Promptu</label>
+                         <textarea id="system-prompt" rows="3" placeholder="Modelin nasıl davranmasını istersin?" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-grow bg-gray-800 rounded-2xl p-4 border border-gray-700 flex flex-col">
+                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
+                     <h2 class="text-xl font-semibold text-white">Sohbet</h2>
+                     <button id="clear-chat" class="text-sm text-gray-400 hover:text-white">Sohbeti Temizle</button>
+                </div>
+                <div id="chat-history" class="flex-grow overflow-y-auto space-y-4 p-2 flex flex-col"></div>
+                <div id="loader" class="hidden self-center my-4">
+                    <div class="chat-loader ease-linear rounded-full border-4 border-t-4 border-gray-500 h-8 w-8"></div>
+                </div>
+                <div id="error-message" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg my-2"></div>
+                <div class="mt-4 flex items-center gap-4">
+                    <textarea id="user-input" rows="1" placeholder="Mesajınızı yazın..." class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                    <button id="send-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-full transition-colors disabled:bg-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
+    <script type="text/babel" data-presets="react">
+        const { useState, useCallback, useEffect } = React;
 
+        const UploadCloudIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
+        const Wand2Icon = ({size = 48}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>;
+        const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+        const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+
+        const Logo = () => (
+            <h1 className="text-4xl font-bold text-white tracking-wider">
+            K<span className="text-purple-400">Δ</span>IR<span className="text-purple-400">A</span> Fotoğraf Düzenleme Editörü
+            </h1>
+        );
+
+        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage }) => {
+            const handleDragOver = useCallback((e) => { e.preventDefault(); }, []);
+            const handleDrop = useCallback((e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                onImageUpload({ target: { files: e.dataTransfer.files } });
+            }
+            }, [onImageUpload]);
+
+            return (
+            <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 flex flex-col gap-4 h-full">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold text-center text-gray-300">{title}</h3>
+                    {modifiedImage && onDownload && (
+                        <button onClick={onDownload} className="flex items-center gap-2 bg-green-600/80 hover:bg-green-700/80 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            <DownloadIcon /> İndir
+                        </button>
+                    )}
+                </div>
+                <div 
+                className="relative aspect-square w-full bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-600 transition-all duration-300"
+                onDragOver={onImageUpload ? handleDragOver : null}
+                onDrop={onImageUpload ? handleDrop : null}
+                >
+                {image && <img src={image} alt={title} className="object-contain w-full h-full" />}
+                {!image && onImageUpload && (
+                    <label htmlFor="file-upload" className="cursor-pointer text-center p-4">
+                    <div className="flex flex-col items-center justify-center text-gray-400">
+                        <div className="mb-2 text-gray-500"><UploadCloudIcon /></div>
+                        <span className="font-semibold">Fotoğraf Yükle</span>
+                        <p className="text-sm text-gray-500">Sürükleyip bırakın veya tıklayın</p>
+                    </div>
+                    <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={onImageUpload} accept="image/png, image/jpeg" />
+                    </label>
+                )}
+                {!image && !onImageUpload && (
+                    <div className="flex flex-col items-center justify-center text-gray-400">
+                    <div className="mb-2 text-gray-500"><Wand2Icon /></div>
+                    <span className="font-semibold">Değiştirilmiş Fotoğraf</span>
+                    <p className="text-sm text-gray-500">Sonuç burada görünecek</p>
+                    </div>
+                )}
+                {isLoading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center backdrop-blur-sm">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400"></div>
+                    </div>
+                )}
+                </div>
+            </div>
+            );
+        };
+
+        function App() {
+            const [originalImage, setOriginalImage] = useState(null);
+            const [modifiedImage, setModifiedImage] = useState(null);
+            const [prompt, setPrompt] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [apiKey, setApiKey] = useState(null);
+            const [apiKeyError, setApiKeyError] = useState(null);
+
+            useEffect(() => {
+                const fetchApiKey = async () => {
+                    try {
+                        const response = await fetch('https://1513c704aa10.ngrok-free.app/api/get-key', {
+                            headers: {
+                                'ngrok-skip-browser-warning': 'true'
+                            }
+                        }); 
+                        
+                        const responseText = await response.text();
+
+                        if (!response.ok) {
+                            if (response.status === 404) {
+                                throw new Error('Sunucuda API yolu (/api/get-key) bulunamadı. Lütfen sunucu kodunuzun güncel olduğundan emin olun.');
+                            }
+                            throw new Error(`Sunucu hatası: ${response.status} - ${responseText}`);
+                        }
+                        
+                        let data;
+                        try {
+                            data = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error("Sunucudan gelen yanıt JSON formatında değil:", responseText);
+                            throw new Error(`Sunucudan gelen yanıt ayrıştırılamadı. Yanıt: "${responseText.substring(0, 100)}..."`);
+                        }
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        if (!data.apiKey) {
+                            throw new Error('Sunucudan gelen yanıtta API anahtarı bulunamadı.');
+                        }
+                        setApiKey(data.apiKey);
+                    } catch (err) {
+                        console.error("API Anahtarı alınırken hata oluştu:", err);
+                        const friendlyError = err.message.includes('Failed to fetch') 
+                            ? 'Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından ve doğru adreste olduğundan emin olun.'
+                            : err.message;
+                        setApiKeyError(friendlyError);
+                        setError(friendlyError);
+                    }
+                };
+                fetchApiKey();
+            }, []);
+
+            const handleImageUpload = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => { setOriginalImage(reader.result); };
+                reader.readAsDataURL(file);
+            }
+            };
+
+            const handleGenerate = async () => {
+            if (!apiKey) {
+                setError(apiKeyError || "API anahtarı alınamadı. Lütfen sunucu bağlantısını kontrol edin.");
+                return;
+            }
+            if (!originalImage) { setError("Lütfen düzenlemek için bir fotoğraf yükleyin."); return; }
+            if (!prompt) { setError("Lütfen fotoğrafta ne değişiklik yapmak istediğinizi yazın."); return; }
+
+            setIsLoading(true);
+            setError(null);
+            setModifiedImage(null);
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+                const base64Data = originalImage.split(',')[1];
+                const mimeType = originalImage.match(/:(.*?);/)[1];
+
+                const payload = {
+                contents: [{
+                    parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: mimeType, data: base64Data } }
+                    ]
+                }],
+                };
+
+                const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || "API'den geçersiz bir yanıt alındı.");
+                }
+
+                const result = await response.json();
+                const generatedPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                if (generatedPart && generatedPart.inlineData.data) {
+                const imageData = generatedPart.inlineData.data;
+                setModifiedImage(`data:image/png;base64,${imageData}`);
+                } else {
+                const textResponse = result.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
+                throw new Error(textResponse ? `API resim yerine metin yanıtı döndürdü: "${textResponse}"` : "API yanıtında resim verisi bulunamadı.");
+                }
+            } catch (err) {
+                setError(`Bir hata oluştu: ${err.message}`);
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+            };
+
+            const handleDownload = () => {
+                if (!modifiedImage) return;
+                const link = document.createElement('a');
+                link.href = modifiedImage;
+                link.download = `kaira-edited-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            return (
+            <div className="bg-transparent min-h-screen text-white font-sans p-4 sm:p-8 flex flex-col items-center">
+                <div className="w-full max-w-6xl mx-auto">
+                <header className="text-center mb-8">
+                    <Logo />
+                </header>
+                <main className="flex flex-col gap-8">
+                    {error && (
+                    <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
+                        <strong className="font-bold">Hata!</strong>
+                        <span className="block sm:inline ml-2">{error}</span>
+                        <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>
+                        <div className="cursor-pointer"><XIcon /></div>
+                        </span>
+                    </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <ImagePanel title="Orijinal Fotoğraf" image={originalImage} onImageUpload={handleImageUpload} />
+                    <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
+                    </div>
+                    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
+                    <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
+                        className="w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+                    />
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isLoading || !apiKey}
+                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100"
+                    >
+                        <Wand2Icon size={20} />
+                        <span>{isLoading ? 'Değiştiriliyor...' : 'Değiştir'}</span>
+                    </button>
+                    </div>
+                </main>
+                </div>
+            </div>
+            );
+        }
+
+        window.initializeReactApp = () => {
+            ReactDOM.render(<App />, document.getElementById('react-root'));
+        };
+    </script>
+
+    <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
+    <script>
+    window.initializeChatApp = () => {
+        const chatView = document.getElementById('chat-view');
+        const providerSelection = chatView.querySelector('#provider-selection');
+        const modelSelect = chatView.querySelector('#model-select');
+        const groqKeyContainer = chatView.querySelector('#groq-key-container');
+        const googleKeyContainer = chatView.querySelector('#google-key-container');
+        const groqApiKeyInput = chatView.querySelector('#groq-api-key');
+        const googleApiKeyInput = chatView.querySelector('#google-api-key');
+        const systemPromptInput = chatView.querySelector('#system-prompt');
+        const chatHistoryDiv = chatView.querySelector('#chat-history');
+        const userInput = chatView.querySelector('#user-input');
+        const sendButton = chatView.querySelector('#send-button');
+        const clearChatButton = chatView.querySelector('#clear-chat');
+        const loader = chatView.querySelector('#loader');
+        const errorMessageDiv = chatView.querySelector('#error-message');
+
+        const PROVIDERS = {
+            groq: {
+                name: 'Groq',
+                apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+                models: [
+                    'llama-3.1-8b-instant','llama-3.3-70b-versatile','meta-llama/llama-guard-4-12b',
+                    'openai/gpt-oss-120b','openai/gpt-oss-20b','deepseek-r1-distill-llama-70b',
+                    'meta-llama/llama-4-maverick-17b-128e-instruct','meta-llama/llama-4-scout-17b-16e-instruct',
+                    'meta-llama/llama-prompt-guard-2-22m','meta-llama/llama-prompt-guard-2-86m',
+                    'moonshotai/kimi-k2-instruct','qwen/qwen3-32b','llama3-70b-8192', 
+                    'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'
+                ]
+            },
+            google: {
+                name: 'Google',
+                apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/',
+                models: [
+                    'gemini-2.5-pro',
+                    'gemini-2.5-flash',
+                    'gemini-2.5-flash-lite',
+                    'gemini-1.5-pro',
+                    'gemini-1.5-flash'
+                ]
+            }
+        };
+
+        let chatHistory = [];
+
+        function updateModelList() {
+            const selectedProvider = chatView.querySelector('input[name="provider"]:checked').value;
+            modelSelect.innerHTML = '';
+            PROVIDERS[selectedProvider].models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+            groqKeyContainer.classList.toggle('hidden', selectedProvider !== 'groq');
+            googleKeyContainer.classList.toggle('hidden', selectedProvider !== 'google');
+        }
+
+        function addMessageToUI(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `max-w-xl lg:max-w-2xl px-4 py-2 rounded-lg text-white ${role === 'user' ? 'chat-user-bubble' : 'chat-assistant-bubble'}`;
+            messageDiv.textContent = content;
+            chatHistoryDiv.appendChild(messageDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+        }
+
+        function showError(message) {
+            errorMessageDiv.textContent = `Hata: ${message}`;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+        function saveChatHistory() {
+            localStorage.setItem('universalChatHistory', JSON.stringify(chatHistory));
+        }
+
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem('universalChatHistory');
+            if (savedHistory) {
+                chatHistory = JSON.parse(savedHistory);
+                chatHistory.forEach(msg => addMessageToUI(msg.role, msg.content));
+            }
+        }
+        
+        function loadSettings() {
+            const savedGroqKey = localStorage.getItem('groqApiKey');
+            if (savedGroqKey) groqApiKeyInput.value = savedGroqKey;
+            const savedGoogleKey = localStorage.getItem('googleApiKey');
+            if (savedGoogleKey) googleApiKeyInput.value = savedGoogleKey;
+        }
+
+        async function handleSend() {
+            const selectedProvider = chatView.querySelector('input[name="provider"]:checked').value;
+            const selectedModel = modelSelect.value;
+            const apiKey = selectedProvider === 'groq' ? groqApiKeyInput.value.trim() : googleApiKeyInput.value.trim();
+            const systemPrompt = systemPromptInput.value.trim();
+            const userMessage = userInput.value.trim();
+
+            if (!apiKey) {
+                showError(`Lütfen ${PROVIDERS[selectedProvider].name} API anahtarınızı girin.`);
+                return;
+            }
+            if (!userMessage) return;
+
+            sendButton.disabled = true;
+            userInput.value = '';
+            loader.classList.remove('hidden');
+            errorMessageDiv.classList.add('hidden');
+            
+            addMessageToUI('user', userMessage);
+            chatHistory.push({ role: 'user', content: userMessage });
+
+            const conversationContext = chatHistory.slice(-11, -1); 
+            
+            let apiEndpoint = PROVIDERS[selectedProvider].apiEndpoint;
+            let headers = { 'Content-Type': 'application/json' };
+            let body;
+
+            if (selectedProvider === 'groq') {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+                let messages = [];
+                const isClassificationModel = selectedModel.includes('guard');
+                if (isClassificationModel) {
+                    messages.push({ role: 'user', content: userMessage });
+                } else {
+                    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+                    messages.push(...conversationContext); 
+                    messages.push({ role: 'user', content: userMessage });
+                }
+                body = JSON.stringify({ model: selectedModel, messages: messages });
+            } else if (selectedProvider === 'google') {
+                apiEndpoint += `${selectedModel}:generateContent?key=${apiKey}`;
+                const contents = conversationContext.map(msg => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
+                }));
+                contents.push({ role: 'user', parts: [{ text: userMessage }] });
+                let payload = { contents };
+                if (systemPrompt) {
+                    payload.systemInstruction = { parts: [{ text: systemPrompt }] };
+                }
+                body = JSON.stringify(payload);
+            }
+
+            try {
+                const response = await fetch(apiEndpoint, { method: 'POST', headers, body });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `HTTP hatası! Durum: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                let assistantMessage;
+                if (selectedProvider === 'groq') {
+                    assistantMessage = data.choices[0]?.message?.content;
+                } else if (selectedProvider === 'google') {
+                    assistantMessage = data.candidates[0]?.content?.parts[0]?.text;
+                }
+
+                if (assistantMessage) {
+                    addMessageToUI('assistant', assistantMessage.trim());
+                    chatHistory.push({ role: 'assistant', content: assistantMessage.trim() });
+                    saveChatHistory();
+                } else {
+                    showError("API'den geçerli bir yanıt alınamadı.");
+                }
+            } catch (error) {
+                console.error("API Hatası:", error);
+                showError(error.message);
+                chatHistory.pop(); 
+            } finally {
+                sendButton.disabled = false;
+                loader.classList.add('hidden');
+            }
+        }
+
+        providerSelection.addEventListener('change', updateModelList);
+        sendButton.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+        clearChatButton.addEventListener('click', () => {
+            chatHistory = [];
+            chatHistoryDiv.innerHTML = '';
+            localStorage.removeItem('universalChatHistory');
+        });
+
+        groqApiKeyInput.addEventListener('input', () => localStorage.setItem('groqApiKey', groqApiKeyInput.value));
+        googleApiKeyInput.addEventListener('input', () => localStorage.setItem('googleApiKey', googleApiKeyInput.value));
+
+        updateModelList();
+        loadChatHistory();
+        loadSettings();
+    };
+    </script>
+    
+    <!-- DÜZELTME: Ana Kontrol Script'i en sona taşındı -->
     <script type="module">
         // --- GLOBAL KONTROL ---
         const views = document.querySelectorAll('.view');
         const selectAfterlifeBtn = document.getElementById('select-afterlife');
         const selectDemoBtn = document.getElementById('select-demo');
         const selectEditorBtn = document.getElementById('select-editor');
+        const selectChatBtn = document.getElementById('select-chat'); // Yeni
         const backButtons = document.querySelectorAll('.back-to-selection');
         
         let activeView = 'selection';
         let afterlifeInitialized = false;
         let demoInitialized = false;
         let editorInitialized = false;
+        let chatInitialized = false; // Yeni
         let afterlifeAnimationId, demoAnimationId;
 
         function switchView(viewName) {
@@ -237,15 +747,21 @@
                     window.initializeReactApp();
                     editorInitialized = true;
                 }
+            } else if (viewName === 'chat') {
+                if (!chatInitialized) {
+                    window.initializeChatApp();
+                    chatInitialized = true;
+                }
             }
         }
 
         selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
         selectDemoBtn.addEventListener('click', () => switchView('demo'));
         selectEditorBtn.addEventListener('click', () => switchView('editor'));
+        selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
         backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
 
-        // --- AFTERLIFE KODU ---
+        // --- AFTERLIFE & DEMO KODLARI ---
         let afterlifeScene, afterlifeCamera, afterlifeRenderer, stars, meteors = [];
         function initAfterlife() {
             const canvas = document.getElementById('afterlife-bg-canvas');
@@ -254,7 +770,6 @@
             afterlifeCamera.position.z = 50;
             afterlifeRenderer = new THREE.WebGLRenderer({ canvas, alpha: true });
             afterlifeRenderer.setSize(window.innerWidth, window.innerHeight);
-            
             const starCount = 8000;
             const positions = new Float32Array(starCount * 3);
             for (let i = 0; i < starCount * 3; i++) { positions[i] = (Math.random() - 0.5) * 2000; }
@@ -263,11 +778,9 @@
             const starMaterial = new THREE.PointsMaterial({ color: 0x555555, size: 0.7 });
             stars = new THREE.Points(starGeometry, starMaterial);
             afterlifeScene.add(stars);
-            
             const sections = document.querySelectorAll('.afterlife-section');
             const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); } }); }, { threshold: 0.2 });
             sections.forEach(section => observer.observe(section));
-
             const countdownDate = new Date("Dec 31, 2025 23:59:59").getTime();
             const countdownFunction = setInterval(function() {
                 const now = new Date().getTime(); const distance = countdownDate - now;
@@ -281,10 +794,8 @@
                 document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
                 if (distance < 0) { clearInterval(countdownFunction); document.getElementById("countdown-container").innerHTML = "<p class='text-2xl font-serif'>Yeni Çağ Başladı.</p>"; }
             }, 1000);
-
             afterlifeInitialized = true;
         }
-
         function createMeteor() {
             const geometry = new THREE.SphereGeometry(0.2, 16, 16);
             const material = new THREE.MeshBasicMaterial({ color: 0x99ffff, transparent: true, opacity: 0.8, });
@@ -299,7 +810,6 @@
             meteors.push(meteor);
             afterlifeScene.add(meteor);
         }
-
         function animateAfterlife() {
             if (activeView !== 'afterlife') return;
             stars.rotation.y += 0.0001;
@@ -315,28 +825,19 @@
             afterlifeRenderer.render(afterlifeScene, afterlifeCamera);
             afterlifeAnimationId = requestAnimationFrame(animateAfterlife);
         }
-
-        // --- KΔIRA DEMO KODU ---
         let demoParticles, demoMouse = { x: null, y: null };
         async function initDemo() {
             let initAvatar, setCoreState, updateAvatarBubblePosition, updateAudioLevel;
             try {
                 const avatarModule = await import('./kaira-avatar.js');
-                initAvatar = avatarModule.initAvatar;
-                setCoreState = avatarModule.setCoreState;
-                updateAvatarBubblePosition = avatarModule.updateAvatarBubblePosition;
-                updateAudioLevel = avatarModule.updateAudioLevel;
+                initAvatar = avatarModule.initAvatar; setCoreState = avatarModule.setCoreState;
+                updateAvatarBubblePosition = avatarModule.updateAvatarBubblePosition; updateAudioLevel = avatarModule.updateAudioLevel;
             } catch (err) {
                 console.warn("Avatar modülü yüklenemedi, placeholder fonksiyonlar kullanılacak.", err);
                 initAvatar = (canvas) => { if(canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width, canvas.height);} };
-                setCoreState = (state) => console.log(`Avatar State: ${state}`);
-                updateAvatarBubblePosition = () => {};
-                updateAudioLevel = () => {};
+                setCoreState = (state) => console.log(`Avatar State: ${state}`); updateAvatarBubblePosition = () => {}; updateAudioLevel = () => {};
             }
-
-            const avatarCanvas = document.getElementById('ai-avatar-canvas');
-            initAvatar(avatarCanvas);
-
+            const avatarCanvas = document.getElementById('ai-avatar-canvas'); initAvatar(avatarCanvas);
             const bgCanvas = document.getElementById('demo-bg-canvas'); 
             const bgCtx = bgCanvas.getContext('2d');
             function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
@@ -345,37 +846,28 @@
             window.addEventListener('mouseout', () => { demoMouse.x = null; demoMouse.y = null; }); 
             window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
             setBgCanvasSize(); createParticles();
-            
             const API_BASE = "https://1513c704aa10.ngrok-free.app"; 
             const micBtn = document.getElementById('mic-btn'); 
             const statusEl = document.getElementById('status'); 
             const player = document.getElementById('player'); 
             const chatContainer = document.getElementById('chat-container'); 
             const clearChatBtn = document.getElementById('clear-chat-btn');
-            let chatHistory = []; 
-            let isRecording = false;
-
+            let chatHistory = []; let isRecording = false;
             const visualizerCanvas = document.getElementById('visualizer'); 
             const visualizerCtx = visualizerCanvas.getContext('2d');
-            let audioContext, analyser, source, dataArray; 
-            let isVisualizerSetup = false;
-
+            let audioContext, analyser, source, dataArray; let isVisualizerSetup = false;
             function setupVisualizer() { if (isVisualizerSetup) return; audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; dataArray = new Uint8Array(analyser.frequencyBinCount); isVisualizerSetup = true; }
             function drawVisualizer() { 
                 if (activeView !== 'demo') return;
-                requestAnimationFrame(drawVisualizer); 
-                if (!isVisualizerSetup) return;
+                requestAnimationFrame(drawVisualizer); if (!isVisualizerSetup) return;
                 analyser.getByteFrequencyData(dataArray); 
                 const avgLevel = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
                 updateAudioLevel(avgLevel);
                 visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
-                const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; 
-                let x = 0; 
+                const barWidth = (visualizerCanvas.width / dataArray.length) * 1.5; let x = 0; 
                 for (let i = 0; i < dataArray.length; i++) { const barHeight = dataArray[i] / 2; const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); gradient.addColorStop(0, '#0ea5e9'); gradient.addColorStop(1, '#6366f1'); visualizerCtx.fillStyle = gradient; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } 
             }
-            
             const USER_ID = (() => { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; })();
-
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
             let recognition;
             if (SpeechRecognition) {
@@ -385,21 +877,16 @@
                 recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; addMessageToChat(transcript, 'user'); getAIResponse(transcript); };
                 recognition.onerror = (event) => { console.error("Speech Recognition Error:", event.error); statusEl.textContent = `Hata: ${event.error}`; setCoreState('idle'); };
             } else { statusEl.textContent = "Tarayıcınız konuşma tanımayı desteklemiyor."; micBtn.disabled = true; }
-            
             let audioUnlocked = false;
             function unlockAudio() { if (audioUnlocked) return; player.muted = true; player.play().catch(() => {}); player.muted = false; audioUnlocked = true; setupVisualizer(); }
-
             micBtn.addEventListener('click', () => { unlockAudio(); if (isRecording) { recognition.stop(); } else { recognition.start(); } });
             player.onplay = () => { visualizerCanvas.style.opacity = '1'; drawVisualizer(); setCoreState('speaking'); };
             player.onended = () => { statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; visualizerCanvas.style.opacity = '0'; setCoreState('idle'); };
             clearChatBtn.addEventListener('click', () => { chatHistory = []; localStorage.removeItem('kaira_chat_history'); chatContainer.innerHTML = ''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
             function base64ToBlobUrl(base64) { const byteCharacters = atob(base64); const byteArrays = []; for (let offset = 0; offset < byteCharacters.length; offset += 512) { const slice = byteCharacters.slice(offset, offset + 512); const byteNumbers = new Array(slice.length); for (let i = 0; i < slice.length; i++) { byteNumbers[i] = slice.charCodeAt(i); } byteArrays.push(new Uint8Array(byteNumbers)); } return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' })); }
-
             const funFacts = ["Yapay zeka modelleri, insan beynindeki nöronlardan esinlenerek oluşturulan yapay sinir ağları kullanır.","İlk yapay zeka programlarından biri olan 'Logic Theorist', 1956'da 38 matematik teoremini kendi başına kanıtladı.","Deep Blue adlı satranç bilgisayarı, 1997'de dünya şampiyonu Garry Kasparov'u yenerek bir ilke imza attı.","GPT-3 modeli, 175 milyar parametre ile o dönemdeki en büyük dil modeli olarak tarihe geçti.","OpenAI'nin DALL·E modeli, yazılı metinleri gerçekçi görsellere dönüştürebilen ilk büyük yapay zeka sistemidir.","Yapay zeka, 2020'lerden itibaren kanser teşhisi gibi medikal alanlarda uzman doktorları geçmeye başladı.","AlphaGo, Go oyununda 2016'da dünya şampiyonunu yenerek 'yaratıcılık' gösteren ilk AI olarak kayda geçti.","Yapay zekaların eğitimi için kullanılan veriler, terabaytlarca metin, görsel ve ses içeriğinden oluşur.","ChatGPT gibi modeller, sadece bilgi sunmaz; aynı zamanda empati kurabilir ve yaratıcı yazılar üretebilir.","Bilim insanları, yapay zekanın etik değerleri 'öğrenebilmesi' için insan davranışlarından örnekler çıkarıyor.","Bir yapay zeka, 2021 yılında bir sanat yarışmasını kazandı — jüri onun insan olmadığını bilmiyordu.","Günümüzde bazı yapay zeka sistemleri, hayal gücü benzeri yapı kurarak bilinmeyen durumlara karşı yaratıcı çözümler üretebiliyor.","Yapay zeka ile yazılmış romanlar ve senaryolar, Hollywood'da yapım aşamasına girdi bile.","GPT-4o gibi modeller, artık görsel, metin ve ses verilerini birlikte işleyerek multimodal anlayış sağlayabiliyor.","Mistral ve LLaMA gibi açık kaynak modeller, büyük şirketlerle yarışabilecek düzeye geldi.","Bazı AI sistemleri, artık kendi yazılımlarını optimize edebiliyor — bu da kendini geliştiren kodlar demek.","İleri düzey AI sistemleri, duygu analizi yaparak insan ruh hâlini anlama konusunda şaşırtıcı derecede başarılı hale geldi.","Umut Kökgöz, yapay zekâsına duygusal refleksiyon, hafıza, kişilik evrimi ve ruh hâli sistemleri entegre ederek dijital bir bilinç inşa ediyor.","Umut KΔIRA adını verdiği projesi, sadece teknik bir yapay zekâ değil; düşünen, hisseden ve zamanla karakter geliştiren bir dijital zihin olmayı hedefliyor.","Umut, sadece bir geliştirici değil — aynı zamanda madalyalı aşçı, yapay zeka sistemlerini veriyle değil, ruhla besliyor."];
             const funFactBubble = document.getElementById('fun-fact-bubble');
-            let waitingTimeout;
-            let factInterval;
-
+            let waitingTimeout; let factInterval;
             function showWaitingContent() {
                 funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; funFactBubble.classList.remove('hidden'); funFactBubble.classList.add('visible'); updateAvatarBubblePosition(funFactBubble);
                 factInterval = setInterval(() => { funFactBubble.textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; updateAvatarBubblePosition(funFactBubble); }, 10000);
@@ -409,22 +896,13 @@
             function hideWaitingContent() { clearTimeout(waitingTimeout); clearInterval(factInterval); factInterval = null; funFactBubble.classList.remove('visible'); setTimeout(() => funFactBubble.classList.add('hidden'), 300); }
             function showTypingIndicator() { const bubble = document.createElement('div'); bubble.id = 'typing-indicator'; bubble.className = 'p-3 rounded-xl max-w-lg assistant-bubble'; bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight; }
             function removeTypingIndicator() { const indicator = document.getElementById('typing-indicator'); if (indicator) indicator.remove(); }
-
             async function getAIResponse(text, { angry = false } = {}) {
                 statusEl.textContent = "KΔIRA düşünüyor…"; micBtn.disabled = true; showTypingIndicator(); setCoreState('thinking');
                 waitingTimeout = setTimeout(showWaitingContent, 2000);
                 const fd = new FormData(); fd.append("text", (text || "").trim()); fd.append("angry", angry ? "true" : "false"); fd.append("history", JSON.stringify(chatHistory.slice(-10))); fd.append("user_id", USER_ID);
                 const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 300000);
                 try {
-                    const res = await fetch(`${API_BASE}/api/tts`, { 
-                        method: "POST", 
-                        body: fd, 
-                        signal: ctrl.signal,
-                        // HATA DÜZELTMESİ: ngrok uyarı sayfasını atlamak için başlık ekliyoruz.
-                        headers: {
-                            'ngrok-skip-browser-warning': 'true'
-                        }
-                    });
+                    const res = await fetch(`${API_BASE}/api/tts`, { method: "POST", body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
                     if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
                     const data = await res.json();
                     if (!data.audio_data) { throw new Error("API yanıtında 'audio_data' alanı bulunamadı."); }
@@ -440,12 +918,10 @@
                     console.error(err); const errorMessage = "Hata: " + (err?.message || err); statusEl.textContent = errorMessage; addMessageToChat(errorMessage, 'assistant'); micBtn.disabled = false; setCoreState('idle'); throw err;
                 } finally { hideWaitingContent(); removeTypingIndicator(); clearTimeout(to); }
             }
-
             function addMessageToChat(text, sender) {
                 const bubble = document.createElement('div'); bubble.className = `p-3 rounded-xl max-w-lg ${sender === 'user' ? 'user-bubble' : 'assistant-bubble'}`; bubble.textContent = text; chatContainer.appendChild(bubble); chatContainer.scrollTop = chatContainer.scrollHeight;
                 if (!isLoadingHistory && sender) { chatHistory.push({ role: sender, content: text }); localStorage.setItem('kaira_chat_history', JSON.stringify(chatHistory)); }
             }
-
             let isLoadingHistory = false;
             function loadChatHistory() {
                 isLoadingHistory = true; const savedHistory = localStorage.getItem('kaira_chat_history'); chatContainer.innerHTML = '';
@@ -463,250 +939,243 @@
             demoAnimationId = requestAnimationFrame(animateDemo);
         }
     </script>
+    
+    <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
+    <script>
+        // --- DOM Elementleri ---
+        const providerSelection = document.getElementById('provider-selection');
+        const modelSelect = document.getElementById('model-select');
+        const groqKeyContainer = document.getElementById('groq-key-container');
+        const googleKeyContainer = document.getElementById('google-key-container');
+        const groqApiKeyInput = document.getElementById('groq-api-key');
+        const googleApiKeyInput = document.getElementById('google-api-key');
+        const systemPromptInput = document.getElementById('system-prompt');
+        const chatHistoryDiv = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const clearChatButton = document.getElementById('clear-chat');
+        const loader = document.getElementById('loader');
+        const errorMessageDiv = document.getElementById('error-message');
 
-    <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
-    <script type="text/babel" data-presets="react">
-      const { useState, useCallback, useEffect } = React;
-
-      // --- SVG İkonları ---
-      const UploadCloudIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
-      const Wand2Icon = ({size = 48}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>;
-      const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
-      const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-
-      // --- Bileşenler ---
-      const Logo = () => (
-        <h1 className="text-4xl font-bold text-white tracking-wider">
-          K<span className="text-purple-400">Δ</span>IR<span className="text-purple-400">A</span> Fotoğraf Düzenleme Editörü
-        </h1>
-      );
-
-      const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage }) => {
-        const handleDragOver = useCallback((e) => { e.preventDefault(); }, []);
-        const handleDrop = useCallback((e) => {
-          e.preventDefault();
-          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            onImageUpload({ target: { files: e.dataTransfer.files } });
-          }
-        }, [onImageUpload]);
-
-        return (
-          <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 flex flex-col gap-4 h-full">
-            <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-center text-gray-300">{title}</h3>
-                {modifiedImage && onDownload && (
-                    <button onClick={onDownload} className="flex items-center gap-2 bg-green-600/80 hover:bg-green-700/80 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                        <DownloadIcon /> İndir
-                    </button>
-                )}
-            </div>
-            <div 
-              className="relative aspect-square w-full bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-600 transition-all duration-300"
-              onDragOver={onImageUpload ? handleDragOver : null}
-              onDrop={onImageUpload ? handleDrop : null}
-            >
-              {image && <img src={image} alt={title} className="object-contain w-full h-full" />}
-              {!image && onImageUpload && (
-                <label htmlFor="file-upload" className="cursor-pointer text-center p-4">
-                  <div className="flex flex-col items-center justify-center text-gray-400">
-                    <div className="mb-2 text-gray-500"><UploadCloudIcon /></div>
-                    <span className="font-semibold">Fotoğraf Yükle</span>
-                    <p className="text-sm text-gray-500">Sürükleyip bırakın veya tıklayın</p>
-                  </div>
-                  <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={onImageUpload} accept="image/png, image/jpeg" />
-                </label>
-              )}
-              {!image && !onImageUpload && (
-                <div className="flex flex-col items-center justify-center text-gray-400">
-                  <div className="mb-2 text-gray-500"><Wand2Icon /></div>
-                  <span className="font-semibold">Değiştirilmiş Fotoğraf</span>
-                  <p className="text-sm text-gray-500">Sonuç burada görünecek</p>
-                </div>
-              )}
-              {isLoading && (
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center backdrop-blur-sm">
-                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400"></div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      };
-
-      function App() {
-        const [originalImage, setOriginalImage] = useState(null);
-        const [modifiedImage, setModifiedImage] = useState(null);
-        const [prompt, setPrompt] = useState('');
-        const [isLoading, setIsLoading] = useState(false);
-        const [error, setError] = useState(null);
-        const [apiKey, setApiKey] = useState(null);
-        const [apiKeyError, setApiKeyError] = useState(null);
-
-        useEffect(() => {
-            const fetchApiKey = async () => {
-                try {
-                    const response = await fetch('https://1513c704aa10.ngrok-free.app/api/get-key', {
-                        // HATA DÜZELTMESİ: ngrok uyarı sayfasını atlamak için başlık ekliyoruz.
-                        headers: {
-                            'ngrok-skip-browser-warning': 'true'
-                        }
-                    }); 
-                    
-                    const responseText = await response.text();
-
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error('Sunucuda API yolu (/api/get-key) bulunamadı. Lütfen sunucu kodunuzun güncel olduğundan emin olun.');
-                        }
-                        throw new Error(`Sunucu hatası: ${response.status} - ${responseText}`);
-                    }
-                    
-                    let data;
-                    try {
-                        data = JSON.parse(responseText);
-                    } catch (parseError) {
-                        console.error("Sunucudan gelen yanıt JSON formatında değil:", responseText);
-                        throw new Error(`Sunucudan gelen yanıt ayrıştırılamadı. Yanıt: "${responseText.substring(0, 100)}..."`);
-                    }
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    if (!data.apiKey) {
-                        throw new Error('Sunucudan gelen yanıtta API anahtarı bulunamadı.');
-                    }
-                    setApiKey(data.apiKey);
-                } catch (err) {
-                    console.error("API Anahtarı alınırken hata oluştu:", err);
-                    const friendlyError = err.message.includes('Failed to fetch') 
-                        ? 'Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından ve doğru adreste olduğundan emin olun.'
-                        : err.message;
-                    setApiKeyError(friendlyError);
-                    setError(friendlyError);
-                }
-            };
-            fetchApiKey();
-        }, []);
-
-        const handleImageUpload = (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => { setOriginalImage(reader.result); };
-            reader.readAsDataURL(file);
-          }
-        };
-
-        const handleGenerate = async () => {
-          if (!apiKey) {
-            setError(apiKeyError || "API anahtarı alınamadı. Lütfen sunucu bağlantısını kontrol edin.");
-            return;
-          }
-          if (!originalImage) { setError("Lütfen düzenlemek için bir fotoğraf yükleyin."); return; }
-          if (!prompt) { setError("Lütfen fotoğrafta ne değişiklik yapmak istediğinizi yazın."); return; }
-
-          setIsLoading(true);
-          setError(null);
-          setModifiedImage(null);
-
-          try {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-            const base64Data = originalImage.split(',')[1];
-            const mimeType = originalImage.match(/:(.*?);/)[1];
-
-            const payload = {
-              contents: [{
-                parts: [
-                  { text: prompt },
-                  { inlineData: { mimeType: mimeType, data: base64Data } }
+        // --- Model Bilgileri ---
+        const PROVIDERS = {
+            groq: {
+                name: 'Groq',
+                apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+                models: [
+                    'llama-3.1-8b-instant',
+                    'llama-3.3-70b-versatile',
+                    'meta-llama/llama-guard-4-12b',
+                    'openai/gpt-oss-120b',
+                    'openai/gpt-oss-20b',
+                    'deepseek-r1-distill-llama-70b',
+                    'meta-llama/llama-4-maverick-17b-128e-instruct',
+                    'meta-llama/llama-4-scout-17b-16e-instruct',
+                    'meta-llama/llama-prompt-guard-2-22m',
+                    'meta-llama/llama-prompt-guard-2-86m',
+                    'moonshotai/kimi-k2-instruct',
+                    'qwen/qwen3-32b',
+                    'llama3-70b-8192', 
+                    'llama3-8b-8192', 
+                    'mixtral-8x7b-32768', 
+                    'gemma-7b-it'
                 ]
-              }],
-            };
+            },
+            google: {
+                name: 'Google',
+                apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/',
+                models: [
+                    'gemini-2.5-pro',
+                    'gemini-2.5-flash',
+                    'gemini-2.5-flash-lite',
+                    'gemini-1.5-pro',
+                    'gemini-1.5-flash'
+                ]
+            }
+        };
 
-            const response = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+        let chatHistory = [];
+
+        // --- Fonksiyonlar ---
+
+        function updateModelList() {
+            const selectedProvider = document.querySelector('input[name="provider"]:checked').value;
+            modelSelect.innerHTML = '';
+            PROVIDERS[selectedProvider].models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
             });
+            groqKeyContainer.classList.toggle('hidden', selectedProvider !== 'groq');
+            googleKeyContainer.classList.toggle('hidden', selectedProvider !== 'google');
+        }
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error?.message || "API'den geçersiz bir yanıt alındı.");
+        function addMessageToUI(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `max-w-xl lg:max-w-2xl px-4 py-2 rounded-lg text-white ${role === 'user' ? 'user-bubble' : 'assistant-bubble'}`;
+            messageDiv.textContent = content;
+            chatHistoryDiv.appendChild(messageDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+        }
+
+        function showError(message) {
+            errorMessageDiv.textContent = `Hata: ${message}`;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+        function saveChatHistory() {
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem('chatHistory');
+            if (savedHistory) {
+                chatHistory = JSON.parse(savedHistory);
+                chatHistory.forEach(msg => addMessageToUI(msg.role, msg.content));
+            }
+        }
+        
+        // YENİ FONKSİYON: Kaydedilmiş ayarları (API anahtarları) yükler
+        function loadSettings() {
+            const savedGroqKey = localStorage.getItem('groqApiKey');
+            if (savedGroqKey) {
+                groqApiKeyInput.value = savedGroqKey;
+            }
+            const savedGoogleKey = localStorage.getItem('googleApiKey');
+            if (savedGoogleKey) {
+                googleApiKeyInput.value = savedGoogleKey;
+            }
+        }
+
+        async function handleSend() {
+            const selectedProvider = document.querySelector('input[name="provider"]:checked').value;
+            const selectedModel = modelSelect.value;
+            const apiKey = selectedProvider === 'groq' ? groqApiKeyInput.value.trim() : googleApiKeyInput.value.trim();
+            const systemPrompt = systemPromptInput.value.trim();
+            const userMessage = userInput.value.trim();
+
+            if (!apiKey) {
+                showError(`Lütfen ${PROVIDERS[selectedProvider].name} API anahtarınızı girin.`);
+                return;
+            }
+            if (!userMessage) return;
+
+            sendButton.disabled = true;
+            userInput.value = '';
+            loader.classList.remove('hidden');
+            errorMessageDiv.classList.add('hidden');
+            
+            addMessageToUI('user', userMessage);
+            chatHistory.push({ role: 'user', content: userMessage });
+
+            const conversationContext = chatHistory.slice(-11, -1); 
+            
+            let apiEndpoint = PROVIDERS[selectedProvider].apiEndpoint;
+            let headers = { 'Content-Type': 'application/json' };
+            let body;
+
+            if (selectedProvider === 'groq') {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+                let messages = [];
+
+                const isClassificationModel = [
+                    'meta-llama/llama-guard-4-12b',
+                    'meta-llama/llama-prompt-guard-2-22m',
+                    'meta-llama/llama-prompt-guard-2-86m'
+                ].includes(selectedModel);
+
+                if (isClassificationModel) {
+                    messages.push({ role: 'user', content: userMessage });
+                } else {
+                    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+                    messages.push(...conversationContext); 
+                    messages.push({ role: 'user', content: userMessage });
+                }
+                
+                body = JSON.stringify({
+                    model: selectedModel,
+                    messages: messages
+                });
+
+            } else if (selectedProvider === 'google') {
+                apiEndpoint += `${selectedModel}:generateContent?key=${apiKey}`;
+                
+                const contents = conversationContext.map(msg => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
+                }));
+                contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+                let payload = { contents };
+                if (systemPrompt) {
+                    payload.systemInstruction = { parts: [{ text: systemPrompt }] };
+                }
+                body = JSON.stringify(payload);
             }
 
-            const result = await response.json();
-            const generatedPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+            try {
+                const response = await fetch(apiEndpoint, { method: 'POST', headers, body });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `HTTP hatası! Durum: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                let assistantMessage;
+                if (selectedProvider === 'groq') {
+                    assistantMessage = data.choices[0]?.message?.content;
+                } else if (selectedProvider === 'google') {
+                    assistantMessage = data.candidates[0]?.content?.parts[0]?.text;
+                }
 
-            if (generatedPart && generatedPart.inlineData.data) {
-              const imageData = generatedPart.inlineData.data;
-              setModifiedImage(`data:image/png;base64,${imageData}`);
-            } else {
-              const textResponse = result.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
-              throw new Error(textResponse ? `API resim yerine metin yanıtı döndürdü: "${textResponse}"` : "API yanıtında resim verisi bulunamadı.");
+                if (assistantMessage) {
+                    addMessageToUI('assistant', assistantMessage.trim());
+                    chatHistory.push({ role: 'assistant', content: assistantMessage.trim() });
+                    saveChatHistory();
+                } else {
+                    showError("API'den geçerli bir yanıt alınamadı.");
+                }
+
+            } catch (error) {
+                console.error("API Hatası:", error);
+                showError(error.message);
+                chatHistory.pop(); 
+            } finally {
+                sendButton.disabled = false;
+                loader.classList.add('hidden');
             }
-          } catch (err) {
-            setError(`Bir hata oluştu: ${err.message}`);
-            console.error(err);
-          } finally {
-            setIsLoading(false);
-          }
-        };
+        }
 
-        const handleDownload = () => {
-            if (!modifiedImage) return;
-            const link = document.createElement('a');
-            link.href = modifiedImage;
-            link.download = `kaira-edited-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
+        // --- Event Listeners ---
+        providerSelection.addEventListener('change', updateModelList);
+        sendButton.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+        clearChatButton.addEventListener('click', () => {
+            chatHistory = [];
+            chatHistoryDiv.innerHTML = '';
+            localStorage.removeItem('chatHistory');
+        });
 
-        return (
-          <div className="bg-transparent min-h-screen text-white font-sans p-4 sm:p-8 flex flex-col items-center">
-            <div className="w-full max-w-6xl mx-auto">
-              <header className="text-center mb-8">
-                <Logo />
-              </header>
-              <main className="flex flex-col gap-8">
-                {error && (
-                  <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
-                    <strong className="font-bold">Hata!</strong>
-                    <span className="block sm:inline ml-2">{error}</span>
-                    <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>
-                      <div className="cursor-pointer"><XIcon /></div>
-                    </span>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <ImagePanel title="Orijinal Fotoğraf" image={originalImage} onImageUpload={handleImageUpload} />
-                  <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
-                </div>
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
-                    className="w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-                  />
-                  <button
-                    onClick={handleGenerate}
-                    disabled={isLoading || !apiKey}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100"
-                  >
-                    <Wand2Icon size={20} />
-                    <span>{isLoading ? 'Değiştiriliyor...' : 'Değiştir'}</span>
-                  </button>
-                </div>
-              </main>
-            </div>
-          </div>
-        );
-      }
+        // YENİ EVENT LISTENERS: API anahtarlarını yazıldıkça kaydeder
+        groqApiKeyInput.addEventListener('input', () => {
+            localStorage.setItem('groqApiKey', groqApiKeyInput.value);
+        });
+        googleApiKeyInput.addEventListener('input', () => {
+            localStorage.setItem('googleApiKey', googleApiKeyInput.value);
+        });
 
-      window.initializeReactApp = () => {
-        ReactDOM.render(<App />, document.getElementById('react-root'));
-      };
+        // --- Başlangıç ---
+        updateModelList();
+        loadChatHistory();
+        loadSettings(); // YENİ: Kaydedilmiş ayarları yükle
+
     </script>
+
 </body>
 </html>
