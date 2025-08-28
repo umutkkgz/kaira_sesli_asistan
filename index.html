@@ -35,6 +35,9 @@
       #subtitle { font-size: 1.2vw; font-weight: 300; letter-spacing: 0.2rem; color: #94a3b8; margin-bottom: 3rem; text-transform: uppercase; opacity: 0; }
       #enter-button { background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.4); color: #e2e8f0; padding: 1rem 2.5rem; font-size: 1rem; font-weight: 600; letter-spacing: 0.1rem; border-radius: 50px; cursor: pointer; transition: background-color 0.3s ease, transform 0.3s ease; text-transform: uppercase; opacity: 0; transform: scale(0.8); }
       #enter-button:hover { background: rgba(34, 211, 238, 0.2); transform: scale(1.05); }
+      /* fade-out for intro overlay */
+      #intro-container.fade-out { animation: introFadeOut .6s ease forwards; }
+      @keyframes introFadeOut { to { opacity: 0; visibility: hidden; } }
     </style>
     
     <!-- React için Gerekli Scriptler -->
@@ -951,6 +954,30 @@
         let afterlifeAnimationId, demoAnimationId;
         let nasaInitialized = false;
 
+        // — Intro overlay bootstrap (shows button, closes on click/Enter) —
+        function initIntroOverlay(){
+          const intro = document.getElementById('intro-container');
+          if (!intro) return;
+          const btn = document.getElementById('enter-button');
+          const ui  = document.getElementById('ui-container');
+          const subtitle = document.getElementById('subtitle');
+          // reveal UI elements smoothly
+          requestAnimationFrame(() => {
+            if (ui) ui.style.opacity = '1';
+            if (subtitle) subtitle.style.opacity = '1';
+            const stampEl = document.getElementById('anti-leak-overlay');
+            if (stampEl) stampEl.setAttribute('data-stamp', new Date().toISOString().slice(0,10));
+          });
+          function closeIntro(){
+            intro.classList.add('fade-out');
+            setTimeout(() => { try { intro.remove(); } catch(_){} }, 650);
+          }
+          if (btn) btn.addEventListener('click', closeIntro);
+          intro.addEventListener('keydown', (e) => { if (e.key === 'Enter') closeIntro(); });
+        }
+        // init immediately (DOM is ready because this script is placed at the end of body)
+        initIntroOverlay();
+
         function switchView(viewName) {
             views.forEach(v => v.classList.remove('active'));
             document.getElementById(`${viewName}-view`).classList.add('active');
@@ -1024,6 +1051,7 @@
             // --- Aladin helpers (local or CDN) ---
             let __aladin, __exoLayers = [];
             function initAladin(){
+              if (__aladin) { console.log('[Aladin] already initialized'); return; }
               const el = document.getElementById('aladin-map');
               if (!el || !window.A || typeof A.aladin !== 'function') return;
               __aladin = A.aladin('#aladin-map', { survey: 'P/DSS2/color', fov: 5, target: 'M42' });
@@ -1059,21 +1087,42 @@
                 if (infoEl) infoEl.textContent = 'Ötegezegen verisi alınamadı.';
               }
             }
+            function whenMapReady(run){
+              let tries = 0;
+              (function tick(){
+                const el = document.getElementById('aladin-map');
+                if (!el){
+                  if (++tries > 100) return run(null); // give up after ~10s
+                  return setTimeout(tick, 100);
+                }
+                const cs = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                const visible = rect.width > 0 && rect.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden';
+                if (visible) return run(el);
+                if (++tries > 100) return run(el);
+                setTimeout(tick, 100);
+              })();
+            }
+
             function ensureAladinReady(){
-              if (window.A && typeof A.aladin === 'function') {
-                console.log('[Aladin] ready immediately');
+              function proceed(){
+                console.log('[Aladin] proceeding to init…');
                 initAladin();
                 fetchAndPlotExoplanets();
-                return;
               }
-              let tries = 0; 
+
+              if (window.A && typeof A.aladin === 'function') {
+                console.log('[Aladin] lib ready; waiting for map visibility…');
+                return whenMapReady(() => proceed());
+              }
+
+              let tries = 0;
               const t = setInterval(() => {
                 tries++;
                 if (window.A && typeof A.aladin === 'function') {
-                  console.log('[Aladin] ready after', tries, 'checks');
                   clearInterval(t);
-                  initAladin();
-                  fetchAndPlotExoplanets();
+                  console.log('[Aladin] lib became ready after', tries, 'checks; waiting for map visibility…');
+                  whenMapReady(() => proceed());
                 } else if (tries > 50) { // ~5s
                   clearInterval(t);
                   console.warn('[Aladin] yüklenmedi (timeout).');
