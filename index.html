@@ -1083,6 +1083,7 @@
         selectNasaBtn.addEventListener('click', () => switchView('nasa'));
         backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
         function initNasa(){
+            console.log('[NASA] initNasa() start');
             // --- Gemini translation helper ---
             async function translateWithGemini(text, apiKey){
               try{
@@ -1108,6 +1109,7 @@
 
             const apiStatus = document.getElementById('nasa-api-status');
             const base = window.API_PROXY_BASE || '';
+            console.log('[NASA] API base =', base);
             const apodContainer = document.getElementById('apod-container');
             const apodTab = document.querySelector('#nasa-view .nasa-tab[data-target="apod-container"]');
             // --- Mars tab additions ---
@@ -1125,23 +1127,45 @@
             async function fetchAndPlotExoplanets(){
               const infoEl = document.getElementById('exo-info');
               try{
-                if (infoEl) infoEl.textContent = 'Ötegezegen verisi alınıyor…';
-                const res = await fetch(`${base}/api/get-exoplanets`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const endpoint = `${base}/api/get-exoplanets`;
+                console.log('[Exo] Fetching:', endpoint);
+                if (infoEl) infoEl.textContent = `Ötegezegen verisi alınıyor… (${endpoint})`;
+
+                const res = await fetch(endpoint, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                console.log('[Exo] HTTP status:', res.status);
+                if (!res.ok) {
+                  const txt = await res.text().catch(()=> '');
+                  throw new Error('HTTP ' + res.status + ' — ' + txt);
+                }
                 const data = await res.json();
                 const list = Array.isArray(data) ? data : [];
+                console.log('[Exo] Received items:', list.length);
                 if (list.length) { window.plotExoplanetsOnMap(list); }
                 if (infoEl) infoEl.textContent = list.length ? `${list.length} ötegezegen işaretlendi.` : 'Ötegezegen verisi bulunamadı.';
               } catch(e){
-                console.warn('Exoplanet fetch failed:', e);
+                console.error('[Exo] Fetch failed:', e);
                 if (infoEl) infoEl.textContent = 'Ötegezegen verisi alınamadı.';
               }
             }
             function ensureAladinReady(){
-              if (window.A && typeof A.aladin === 'function') { initAladin(); fetchAndPlotExoplanets(); return; }
-              let tries = 0; const t = setInterval(() => {
-                if (window.A && typeof A.aladin === 'function') { clearInterval(t); initAladin(); fetchAndPlotExoplanets(); }
-                else if (++tries > 50) { clearInterval(t); console.warn('Aladin yüklenmedi.'); }
+              if (window.A && typeof A.aladin === 'function') {
+                console.log('[Aladin] ready immediately');
+                initAladin();
+                fetchAndPlotExoplanets();
+                return;
+              }
+              let tries = 0; 
+              const t = setInterval(() => {
+                tries++;
+                if (window.A && typeof A.aladin === 'function') {
+                  console.log('[Aladin] ready after', tries, 'checks');
+                  clearInterval(t);
+                  initAladin();
+                  fetchAndPlotExoplanets();
+                } else if (tries > 50) { // ~5s
+                  clearInterval(t);
+                  console.warn('[Aladin] yüklenmedi (timeout).');
+                }
               }, 100);
             }
             // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
