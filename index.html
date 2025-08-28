@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Aladin Lite (CDN-only) moved into the main head -->
     <link rel="stylesheet" href="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.min.css">
-    <script src="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.min.js"></script>
+    <script src="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.js" charset="utf-8"></script>
     <script id="aladin-cdn-sanity">
       window.addEventListener('load', function(){
         var ok = !!(window.A && typeof A.aladin === 'function');
@@ -1061,8 +1061,16 @@
             function initAladin(){
               if (__aladin) { console.log('[Aladin] already initialized'); return; }
               const el = document.getElementById('aladin-map');
-              if (!el || !window.A || typeof A.aladin !== 'function') return;
-              __aladin = A.aladin('#aladin-map', { survey: 'P/DSS2/color', fov: 5, target: 'M42' });
+              if (!el) { console.warn('[Aladin] #aladin-map not found'); return; }
+              if (!window.A || typeof A.aladin !== 'function') { console.warn('[Aladin] library not loaded'); return; }
+              __aladin = A.aladin('#aladin-map', {
+                survey: 'P/DSS2/color',
+                fov: 60,
+                target: 'M42',
+                showCooGridControl: true,
+                showSimbadPointerControl: true
+              });
+              console.log('[Aladin] instance created');
             }
             async function fetchAndPlotExoplanets(){
               const infoEl = document.getElementById('exo-info');
@@ -1112,30 +1120,30 @@
               })();
             }
 
-            function ensureAladinReady(){
+            async function ensureAladinReady(){
               function proceed(){
                 console.log('[Aladin] proceeding to init…');
                 initAladin();
                 fetchAndPlotExoplanets();
               }
 
-              if (window.A && typeof A.aladin === 'function') {
-                console.log('[Aladin] lib ready; waiting for map visibility…');
-                return whenMapReady(() => proceed());
+              // Wait until the library symbol exists
+              let tries = 0;
+              while (!(window.A && typeof A.aladin === 'function') && tries < 100){
+                await new Promise(r => setTimeout(r, 100));
+                tries++;
+              }
+              if (!(window.A && typeof A.aladin === 'function')){
+                console.warn('[Aladin] library not present (timeout)');
+                return;
               }
 
-              let tries = 0;
-              const t = setInterval(() => {
-                tries++;
-                if (window.A && typeof A.aladin === 'function') {
-                  clearInterval(t);
-                  console.log('[Aladin] lib became ready after', tries, 'checks; waiting for map visibility…');
-                  whenMapReady(() => proceed());
-                } else if (tries > 50) { // ~5s
-                  clearInterval(t);
-                  console.warn('[Aladin] yüklenmedi (timeout).');
-                }
-              }, 100);
+              // Also wait A.init (v3) if present
+              if (A.init && typeof A.init.then === 'function'){
+                try { await A.init; } catch(err){ console.warn('[Aladin] A.init rejected:', err); }
+              }
+              console.log('[Aladin] lib+init ready; waiting for map visibility…');
+              whenMapReady(() => proceed());
             }
             ensureAladinReady();
             // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
@@ -1146,16 +1154,41 @@
                   window.__exoLayers.forEach(cat => { try { __aladin.removeCatalog(cat); } catch(_){} });
                 }
                 window.__exoLayers = [];
-                const cat = A.catalog({ name: 'Exoplanets', sourceSize: 10, color: '#60a5fa' });
-                const pts = planets.map(p => A.marker(Number(p.ra), Number(p.dec), {
-                  name: p.pl_name || p.hostname || 'Exoplanet',
-                  popupTitle: p.pl_name || 'Exoplanet',
-                  popupDesc: `<div><b>Yıldız:</b> ${escapeHTML(p.hostname||'-')}<br><b>Uzaklık:</b> ${String(p.sy_dist||'—')} pc<br><b>RA/Dec:</b> ${String(p.ra)}, ${String(p.dec)}</div>`
-                }));
-                cat.addSources(pts);
-                __aladin.addCatalog(cat);
-                window.__exoLayers.push(cat);
-                fitViewToPoints(planets);
+
+                const cfgs = [
+                  { name:'Yakın (≤200 pc)', color:'#22c55e',  filter:p=>Number(p.sy_dist) <= 200 },
+                  { name:'Orta (200–800 pc)', color:'#60a5fa', filter:p=>Number(p.sy_dist) > 200 && Number(p.sy_dist) <= 800 },
+                  { name:'Uzak (>800 pc)',   color:'#f472b6', filter:p=>Number(p.sy_dist) > 800 }
+                ];
+
+                const all = [];
+                cfgs.forEach(cfg => {
+                  const cat = A.catalog({ name: cfg.name, sourceSize: 10, color: cfg.color });
+                  const pts = planets.filter(cfg.filter).map(p => {
+                    const ra = Number(p.ra), dec = Number(p.dec);
+                    if (!Number.isFinite(ra) || !Number.isFinite(dec)) return null;
+                    all.push([ra,dec]);
+                    return A.marker(ra, dec, {
+                      name: p.pl_name || p.hostname || 'Exoplanet',
+                      popupTitle: p.pl_name || 'Exoplanet',
+                      popupDesc: `<div><b>Yıldız:</b> ${escapeHTML(p.hostname||'—')}<br>`+
+                                 `<b>Uzaklık:</b> ${String(p.sy_dist||'—')} pc<br>`+
+                                 `<b>RA/Dec:</b> ${String(p.ra)}, ${String(p.dec)}<br>`+
+                                 `<b>Gezegen sayısı:</b> ${String(p.sy_pnum||'—')}</div>`
+                    });
+                  }).filter(Boolean);
+                  cat.addSources(pts);
+                  __aladin.addCatalog(cat);
+                  window.__exoLayers.push(cat);
+                });
+
+                if (all.length){
+                  const mra = all.reduce((a,b)=>a+b[0],0)/all.length;
+                  const mdec = all.reduce((a,b)=>a+b[1],0)/all.length;
+                  __aladin.gotoRaDec(mra, mdec);
+                  const maxSep = Math.max(...all.map(([r,d])=>angularSep(mra,mdec,r,d)));
+                  __aladin.setFov(Math.min(120, Math.max(4, maxSep*2.2)));
+                }
               }catch(e){ console.warn('plotExoplanetsOnMap hata:', e); }
             };
             function fitViewToPoints(planets){
