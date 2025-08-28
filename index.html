@@ -416,6 +416,14 @@
                   </select>
                 </div>
               </div>
+              <div class="mt-2">
+                <div class="al-toolbar glass">
+                  <button id="tourPrev" class="al-btn">◀︎ Önceki</button>
+                  <button id="tourNext" class="al-btn">Sonraki ▶︎</button>
+                  <select id="tourSelect" class="al-btn" style="padding:6px 10px; min-width: 220px"></select>
+                  <button id="tourPlay" class="al-btn">Oto Tur</button>
+                </div>
+              </div>
               <div id="aladin-map" class="al-host" style="height:420px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;overflow:hidden">
                 <div class="al-legend">
                   <span class="al-pill"><span class="dot near"></span> Yakın</span>
@@ -1151,6 +1159,7 @@
                 console.log('[Aladin] proceeding to init…');
                 initAladin();
                 fetchAndPlotExoplanets();
+                try { gotoTour(0); } catch(_){ }
               }
 
               // Wait until the library symbol exists
@@ -1216,6 +1225,93 @@
               }
             }
             bindAladinToolbar();
+
+            // --- Sky Tour presets (≈ 22 ikonik bölge) ---
+            const TOUR_PRESETS = [
+              { name:'Galaktik Merkez (Sgr A*)',    ra:266.4168, dec:-29.0078, fov:10,  survey:'P/AllWISE/color' },
+              { name:'Orion Bulutsusu (M42)',       ra:83.8221,  dec:-5.3911,  fov:8,   survey:'P/DSS2/color' },
+              { name:'Atbaşı Bulutsusu',            ra:85.2500,  dec:-2.4500,  fov:3.8, survey:'P/DSS2/color' },
+              { name:'Pleiades (M45)',              ra:56.7500,  dec:24.1167,  fov:8,   survey:'P/DSS2/color' },
+              { name:'Andromeda Gökadası (M31)',    ra:10.6847,  dec:41.2687,  fov:6,   survey:'P/DSS2/color' },
+              { name:'Triangulum (M33)',            ra:23.4621,  dec:30.6599,  fov:5,   survey:'P/DSS2/color' },
+              { name:'Whirlpool (M51)',             ra:202.4696, dec:47.1952,  fov:4,   survey:'P/DSS2/color' },
+              { name:'Sombrero (M104)',             ra:189.9970, dec:-11.6230, fov:4,   survey:'P/DSS2/color' },
+              { name:'Pinwheel (M101)',             ra:210.8020, dec:54.3490,  fov:5,   survey:'P/DSS2/color' },
+              { name:'Kuzey Amerika (NGC 7000)',    ra:314.0000, dec:44.5000,  fov:10,  survey:'P/DSS2/color' },
+              { name:'Veil / Cygnus Loop',          ra:312.7800, dec:31.7330,  fov:8,   survey:'P/DSS2/color' },
+              { name:'Kaliforniya Bulutsusu',       ra:63.0000,  dec:36.5000,  fov:10,  survey:'P/DSS2/color' },
+              { name:'Rosette Bulutsusu',           ra:97.5000,  dec:5.0000,   fov:6,   survey:'P/DSS2/color' },
+              { name:'Kalp Bulutsusu (IC 1805)',    ra:38.4700,  dec:61.3500,  fov:6,   survey:'P/DSS2/color' },
+              { name:'Ruh Bulutsusu (IC 1848)',     ra:38.6700,  dec:60.1800,  fov:6,   survey:'P/DSS2/color' },
+              { name:'Lagün (M8)',                  ra:270.9250, dec:-24.3860, fov:5,   survey:'P/DSS2/color' },
+              { name:'Trifid (M20)',                ra:270.9500, dec:-23.0200, fov:4,   survey:'P/DSS2/color' },
+              { name:'Omega (M17)',                 ra:275.1000, dec:-16.1700, fov:4,   survey:'P/DSS2/color' },
+              { name:'Kartal (M16)',                ra:274.7000, dec:-13.8000, fov:4,   survey:'P/DSS2/color' },
+              { name:'Rho Ophiuchi',                ra:246.7800, dec:-24.5700, fov:6,   survey:'P/AllWISE/color' },
+              { name:'Büyük Macellan Bulutu',       ra:80.8940,  dec:-69.7560, fov:12,  survey:'P/DSS2/color' },
+              { name:'Küçük Macellan Bulutu',       ra:13.1860,  dec:-72.8280, fov:10,  survey:'P/DSS2/color' },
+              { name:'Kepler Alanı (FOV merkezi)',  ra:290.5000, dec:44.5000,  fov:25,  survey:'P/SDSS9/color' }
+            ];
+
+            let tourIndex = 0;
+            let tourTimer = null;
+            let tourPlaying = false;
+
+            function populateTourSelect(){
+              const sel = document.getElementById('tourSelect');
+              if (!sel) return;
+              sel.innerHTML = '';
+              TOUR_PRESETS.forEach((p, i) => {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = `${i+1}. ${p.name}`;
+                sel.appendChild(opt);
+              });
+              sel.value = String(tourIndex);
+            }
+
+            function gotoTour(i){
+              if (!__aladin) return;
+              const n = TOUR_PRESETS.length;
+              tourIndex = ((i % n) + n) % n;
+              const p = TOUR_PRESETS[tourIndex];
+              try {
+                if (p.survey) __aladin.setImageSurvey(p.survey);
+                __aladin.setFov(p.fov);
+                __aladin.gotoRaDec(p.ra, p.dec);
+                const sel = document.getElementById('tourSelect');
+                if (sel) sel.value = String(tourIndex);
+                const infoEl = document.getElementById('exo-info');
+                if (infoEl) infoEl.textContent = `Tur: ${p.name} • RA ${p.ra.toFixed(3)}°, Dec ${p.dec.toFixed(3)}° • FOV ${p.fov}°`;
+              } catch (e) { console.warn('[Tour] goto error', e); }
+            }
+
+            function nextTour(){ gotoTour(tourIndex + 1); }
+            function prevTour(){ gotoTour(tourIndex - 1); }
+
+            function stopTour(){ tourPlaying = false; if (tourTimer) { clearInterval(tourTimer); tourTimer = null; } }
+            function playTour(){
+              stopTour();
+              tourPlaying = true;
+              tourTimer = setInterval(() => { nextTour(); }, 5000); // 5 sn arayla ilerle
+            }
+
+            function bindTourControls(){
+              populateTourSelect();
+              const prev = document.getElementById('tourPrev');
+              const next = document.getElementById('tourNext');
+              const sel  = document.getElementById('tourSelect');
+              const play = document.getElementById('tourPlay');
+              if (prev) prev.addEventListener('click', prevTour);
+              if (next) next.addEventListener('click', nextTour);
+              if (sel)  sel.addEventListener('change', () => { stopTour(); gotoTour(Number(sel.value)); });
+              if (play) play.addEventListener('click', () => {
+                if (tourPlaying) { stopTour(); play.textContent = 'Oto Tur'; }
+                else { playTour(); play.textContent = 'Durdur'; }
+              });
+            }
+
+            bindTourControls();
             // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
             window.plotExoplanetsOnMap = function(planets){
               try{
