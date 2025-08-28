@@ -1132,18 +1132,26 @@
             async function fetchAndPlotExoplanets(){
               const infoEl = document.getElementById('exo-info');
               try{
-                const endpoint = `${base}/api/get-exoplanets`;
+                const endpoint = ((window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) ? window.API_PROXY_BASE.trim() : 'https://1513c704aa10.ngrok-free.app') + '/api/get-exoplanets';
                 console.log('[Exo] Fetching:', endpoint);
                 if (infoEl) infoEl.textContent = `Ötegezegen verisi alınıyor… (${endpoint})`;
 
-                const res = await fetch(endpoint, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                const ac = new AbortController();
+                const to = setTimeout(()=> ac.abort('timeout'), 15000);
+                const res = await fetch(endpoint, {
+                  headers: { 'ngrok-skip-browser-warning': 'true' },
+                  cache: 'no-store',
+                  signal: ac.signal
+                });
+                clearTimeout(to);
                 console.log('[Exo] HTTP status:', res.status);
                 if (!res.ok) {
                   const txt = await res.text().catch(()=> '');
                   throw new Error('HTTP ' + res.status + ' — ' + txt);
                 }
                 const data = await res.json();
-                const list = Array.isArray(data) ? data : [];
+                if (!Array.isArray(data)) throw new Error('Beklenmeyen JSON formatı (dizi değil)');
+                const list = data;
                 console.log('[Exo] Received items:', list.length);
                 if (list.length) { window.plotExoplanetsOnMap(list); }
                 if (infoEl) infoEl.textContent = list.length ? `${list.length} ötegezegen işaretlendi.` : 'Ötegezegen verisi bulunamadı.';
