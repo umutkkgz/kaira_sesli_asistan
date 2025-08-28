@@ -7,6 +7,17 @@
     
     <!-- Gerekli Kütüphaneler: Three.js (3D için) ve GSAP (Animasyon için) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Aladin Lite (local) + fallback -->
+    <link rel="stylesheet" href="./aladin/43a0ba91c802eb87.css">
+    <script src="./aladin/aladinLiteV3.min.js"></script>
+    <script>
+      if (!window.A || typeof A.aladin !== 'function') {
+        console.warn('Yerel Aladin bulunamadı, CDN\'e düşülüyor…');
+        var s = document.createElement('script');
+        s.src = 'https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.min.js';
+        document.head.appendChild(s);
+      }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     
     <style>
@@ -382,7 +393,7 @@
         </div>
         <audio id="player" class="hidden" crossOrigin="anonymous"></audio>
     </div>
-
+</div>
     <!-- FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
     <div id="editor-view" class="view">
         <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
@@ -461,12 +472,13 @@
 
     <!-- NASA GÖZLEM PLATFORMU (ADIM 1) -->
     <div id="nasa-view" class="view">
+        <div class="hubble-skin"></div>
         <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </button>
         <div class="container mx-auto px-4 py-8 max-w-6xl">
             <header class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-white">K<span class="text-red-400">Δ</span>IRA Gözlem Platformu</h1>
+                <h1 class="text-4xl md:text-5xl font-bold text-orange-400">K<span class="text-orange-300">Δ</span>IRA Gözlem Platformu</h1>
                 <p class="text-gray-400 mt-2">NASA'nın Gözünden Evren</p>
             </header>
             <div class="mb-6 p-4 bg-gray-800 border border-gray-700 rounded-lg">
@@ -478,6 +490,12 @@
                 <button class="nasa-tab" data-target="mars-container" disabled>Mars Keşfi</button>
                 <button class="nasa-tab" data-target="library-container" disabled>Evrenin Kütüphanesi</button>
             </nav>
+            <!-- Sky Map Section (Aladin) -->
+            <section id="aladin-section" class="mb-6 p-4 bg-gray-800/60 border border-gray-700 rounded-xl">
+              <h2 class="text-xl font-semibold text-white mb-3">Gökyüzü Haritası</h2>
+              <div id="aladin-map" style="height:420px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;overflow:hidden"></div>
+              <p class="text-gray-400 text-sm mt-2">İpucu: sürükle-pan, tekerlek-zoom, sağ tık menü.</p>
+            </section>
             <main>
                 <div id="apod-container" class="nasa-content active"><div class="text-center text-gray-500 p-8">Adım 2’de etkinleştirilecek.</div></div>
                 <div id="mars-container" class="nasa-content">
@@ -1095,6 +1113,54 @@
             const marsContainer = document.getElementById('mars-container');
             const marsTab = document.querySelector('#nasa-view .nasa-tab[data-target="mars-container"]');
             let marsBound = false;
+            // --- Aladin helpers (local or CDN) ---
+            let __aladin, __exoLayers = [];
+            function initAladin(){
+              const el = document.getElementById('aladin-map');
+              if (!el || !window.A || typeof A.aladin !== 'function') return;
+              __aladin = A.aladin('#aladin-map', { survey: 'P/DSS2/color', fov: 5, target: 'M42' });
+            }
+            function ensureAladinReady(){
+              if (window.A && typeof A.aladin === 'function') { initAladin(); return; }
+              let tries = 0; const t = setInterval(() => {
+                if (window.A && typeof A.aladin === 'function') { clearInterval(t); initAladin(); }
+                else if (++tries > 50) { clearInterval(t); console.warn('Aladin yüklenmedi.'); }
+              }, 100);
+            }
+            // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
+            window.plotExoplanetsOnMap = function(planets){
+              try{
+                if (!__aladin || !Array.isArray(planets)) return;
+                if (window.__exoLayers && window.__exoLayers.length) {
+                  window.__exoLayers.forEach(cat => { try { __aladin.removeCatalog(cat); } catch(_){} });
+                }
+                window.__exoLayers = [];
+                const cat = A.catalog({ name: 'Exoplanets', sourceSize: 10, color: '#60a5fa' });
+                const pts = planets.map(p => A.marker(Number(p.ra), Number(p.dec), {
+                  name: p.pl_name || p.hostname || 'Exoplanet',
+                  popupTitle: p.pl_name || 'Exoplanet',
+                  popupDesc: `<div><b>Yıldız:</b> ${escapeHTML(p.hostname||'-')}<br><b>Uzaklık:</b> ${String(p.sy_dist||'—')} pc<br><b>RA/Dec:</b> ${String(p.ra)}, ${String(p.dec)}</div>`
+                }));
+                cat.addSources(pts);
+                __aladin.addCatalog(cat);
+                window.__exoLayers.push(cat);
+                fitViewToPoints(planets);
+              }catch(e){ console.warn('plotExoplanetsOnMap hata:', e); }
+            };
+            function fitViewToPoints(planets){
+              const r = planets.map(p => Number(p.ra)).filter(n => !Number.isNaN(n));
+              const d = planets.map(p => Number(p.dec)).filter(n => !Number.isNaN(n));
+              if (!r.length || !d.length || !__aladin) return;
+              const mra = r.reduce((a,b)=>a+b,0)/r.length, mdec = d.reduce((a,b)=>a+b,0)/d.length;
+              __aladin.gotoRaDec(mra, mdec);
+              const maxSep = Math.max(...planets.map(p => angularSep(mra, mdec, Number(p.ra), Number(p.dec))));
+              __aladin.setFov(Math.min(60, Math.max(2, maxSep * 2.5)));
+            }
+            function angularSep(ra1, dec1, ra2, dec2){
+              const d2r = Math.PI/180; ra1*=d2r; dec1*=d2r; ra2*=d2r; dec2*=d2r;
+              const s = Math.acos(Math.sin(dec1)*Math.sin(dec2) + Math.cos(dec1)*Math.cos(dec2)*Math.cos(ra1-ra2));
+              return s / d2r;
+            }
 
             function escapeHTML(s){
                 return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1274,6 +1340,7 @@
             }
 
             fetchNasaKeys();
+            ensureAladinReady();
         }
 
         // --- AFTERLIFE & DEMO KODLARI ---
