@@ -401,7 +401,28 @@
             <!-- Sky Map Section (Aladin) -->
             <section id="aladin-section" class="mb-6 p-4 bg-gray-800/60 border border-gray-700 rounded-xl">
               <h2 class="text-xl font-semibold text-white mb-3">Gökyüzü Haritası</h2>
-              <div id="aladin-map" style="height:420px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;overflow:hidden"></div>
+              <div class="mb-2">
+                <div class="al-toolbar glass">
+                  <button id="btnGrid" class="al-btn">Izgara</button>
+                  <button id="btnFullSky" class="al-btn">Full Sky</button>
+                  <button id="btnOrion" class="al-btn">Orion</button>
+                  <button id="btnClearExo" class="al-btn">Temizle</button>
+                  <select id="surveySelect" class="al-btn" style="padding:6px 10px">
+                    <option value="P/DSS2/color" selected>DSS2</option>
+                    <option value="P/SDSS9/color">SDSS9</option>
+                    <option value="P/AllWISE/color">AllWISE</option>
+                    <option value="P/2MASS/color">2MASS</option>
+                    <option value="P/PanSTARRS/DR1/color-z-zg-g">Pan-STARRS</option>
+                  </select>
+                </div>
+              </div>
+              <div id="aladin-map" class="al-host" style="height:420px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;overflow:hidden">
+                <div class="al-legend">
+                  <span class="al-pill"><span class="dot near"></span> Yakın</span>
+                  <span class="al-pill"><span class="dot mid"></span> Orta</span>
+                  <span class="al-pill"><span class="dot far"></span> Uzak</span>
+                </div>
+              </div>
               <p class="text-gray-400 text-sm mt-2">İpucu: sürükle-pan, tekerlek-zoom, sağ tık menü.</p>
               <div id="exo-info" class="text-gray-400 text-sm mt-1"></div>
             </section>
@@ -1067,10 +1088,15 @@
                 survey: 'P/DSS2/color',
                 fov: 60,
                 target: 'M42',
-                showCooGridControl: true,
-                showSimbadPointerControl: true
+                // Built-in controls are hidden via CSS; also disable their rendering hooks
+                showCooGridControl: false,
+                showSimbadPointerControl: false,
+                showFullscreenControl: false,
+                showZoomControl: false
               });
-              console.log('[Aladin] instance created');
+              // Start with grid hidden; you control it via your external button if needed
+              try { __aladin.setCooGridVisible(false); } catch(_){}
+              console.log('[Aladin] instance created (external toolbar mode)');
             }
             async function fetchAndPlotExoplanets(){
               const infoEl = document.getElementById('exo-info');
@@ -1146,6 +1172,50 @@
               whenMapReady(() => proceed());
             }
             ensureAladinReady();
+            // --- External toolbar bindings ---
+            function bindAladinToolbar(){
+              const btnGrid = document.getElementById('btnGrid');
+              const btnFull = document.getElementById('btnFullSky');
+              const btnOrion = document.getElementById('btnOrion');
+              const btnClear = document.getElementById('btnClearExo');
+              const surveySel = document.getElementById('surveySelect');
+
+              if (btnGrid){
+                let gridOn = false;
+                btnGrid.addEventListener('click', () => {
+                  if (!__aladin) return;
+                  gridOn = !gridOn;
+                  try { __aladin.setCooGridVisible(gridOn); } catch(_){}
+                  btnGrid.classList.toggle('ring-1', gridOn);
+                  btnGrid.classList.toggle('ring-blue-400', gridOn);
+                });
+              }
+              if (btnFull){
+                btnFull.addEventListener('click', () => { if(__aladin){ __aladin.setFov(360); __aladin.gotoRaDec(0,0); }});
+              }
+              if (btnOrion){
+                btnOrion.addEventListener('click', () => { if(__aladin){ __aladin.setFov(8); __aladin.gotoRaDec(83.822, -5.391); }});
+              }
+              if (btnClear){
+                btnClear.addEventListener('click', () => {
+                  try {
+                    if (window.__exoLayers && window.__exoLayers.length){
+                      window.__exoLayers.forEach(cat => { try { __aladin.removeCatalog(cat); } catch(_){} });
+                      window.__exoLayers = [];
+                    }
+                    const infoEl = document.getElementById('exo-info');
+                    if (infoEl) infoEl.textContent = 'Katmanlar temizlendi.';
+                  } catch(_){}
+                });
+              }
+              if (surveySel){
+                surveySel.addEventListener('change', () => {
+                  const v = surveySel.value;
+                  if (__aladin && v){ try { __aladin.setImageSurvey(v); } catch(_){} }
+                });
+              }
+            }
+            bindAladinToolbar();
             // Plot helper you can call from anywhere: window.plotExoplanetsOnMap(list)
             window.plotExoplanetsOnMap = function(planets){
               try{
@@ -1225,28 +1295,89 @@
             function renderApodError(msg){
                 apodContainer.innerHTML = `<div class="text-center text-red-400 p-8">Hata: ${escapeHTML(msg)}</div>`;
             }
-            function renderApod(data){
-                let mediaHtml = '';
-                if (data.media_type === 'image') {
-                    const src = data.hdurl || data.url;
-                    mediaHtml = `<img src="${src}" alt="${escapeHTML(data.title||'APOD')}" class="w-full rounded-xl border border-gray-700" />`;
-                } else if (data.media_type === 'video') {
-                    const src = data.url;
-                    mediaHtml = `<div class="aspect-video w-full"><iframe src="${src}" class="w-full h-full rounded-xl border border-gray-700" allowfullscreen referrerpolicy="no-referrer"></iframe></div>`;
-                } else {
-                    mediaHtml = '<div class="text-gray-400">Bu içerik desteklenmiyor.</div>';
-                }
-                apodContainer.innerHTML = `
-                   <article class="bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden">
-                     <div class="p-4 md:p-6">
-                       <h2 class="text-2xl font-semibold text-white mb-1">${escapeHTML(data.title||'Günün Fotoğrafı')}</h2>
-                       <p class="text-sm text-gray-400 mb-4">${escapeHTML(data.date||'')}</p>
-                       <div class="mb-4">${mediaHtml}</div>
-                       <p class="text-gray-300 leading-relaxed">${escapeHTML(data.explanation||'')}</p>
-                       ${data.hdurl ? `<div class="mt-4"><a href="${data.hdurl}" target="_blank" rel="noopener" class="text-blue-400 hover:underline">HD görüntüyü aç</a></div>` : ''}
-                     </div>
-                   </article>`;
+
+            // === INSERTED: NASA & Google Key Fetch Helpers ===
+            async function getNasaAndGoogleKeys(){
+              const base = window.API_PROXY_BASE || '';
+              const opts = { headers: { 'ngrok-skip-browser-warning': 'true' } };
+              let nasaKey = null, googleKey = null;
+              try {
+                const r1 = await fetch(`${base}/api/get-nasa-key`, opts);
+                if (r1.ok) { const j = await r1.json(); nasaKey = j.apiKey || null; }
+              } catch(_){}
+              try {
+                const r2 = await fetch(`${base}/api/get-google-key`, opts);
+                if (r2.ok) { const j = await r2.json(); googleKey = j.apiKey || null; }
+              } catch(_){}
+              return { nasaKey, googleKey };
             }
+
+            async function fetchApodAndRender(){
+              try{
+                renderApodLoading();
+                const { nasaKey, googleKey } = await getNasaAndGoogleKeys();
+                if (apiStatus) {
+                  apiStatus.textContent = `APOD: ${(nasaKey? 'özel anahtar' : 'DEMO_KEY')} • Çeviri: ${googleKey? 'Gemini aktif' : 'kapalı'}`;
+                }
+                const key = nasaKey || 'DEMO_KEY';
+                const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}&thumbs=true`;
+                const res = await fetch(url, { cache:'no-store' });
+                if (!res.ok) throw new Error(`NASA APOD HTTP ${res.status}`);
+                const data = await res.json();
+                let tr = null;
+                if (googleKey && data?.explanation) {
+                  tr = await translateWithGemini(data.explanation, googleKey);
+                }
+                renderApod(data, tr);
+                activateNasaTab('apod-container');
+                if (apodTab){ apodTab.disabled = false; apodTab.style.cursor = 'pointer'; }
+              }catch(err){
+                console.error('[APOD] fetch error:', err);
+                renderApodError(err.message || String(err));
+              }
+            }
+            function renderApod(data, translatedText){
+  if (!apodContainer) return;
+  const title   = data?.title || 'Astronomy Picture of the Day';
+  const date    = data?.date  || '';
+  const explain = translatedText || data?.explanation || '';
+  const credit  = data?.copyright ? `© ${escapeHTML(data.copyright)}` : '';
+  let mediaHtml = '';
+
+  if (data?.media_type === 'image') {
+    const src = data.hdurl || data.url || data.thumbnail_url || '';
+    mediaHtml = `<img src="${src}" alt="${escapeHTML(title)}" class="w-full rounded-xl border border-gray-700" />`;
+  } else if (data?.media_type === 'video') {
+    const src = data.url || '';
+    mediaHtml = `<div class="aspect-video w-full">
+      <iframe src="${src}" class="w-full h-full rounded-xl border border-gray-700"
+        allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+        allowfullscreen referrerpolicy="no-referrer"></iframe>
+    </div>`;
+  } else {
+    mediaHtml = `<div class="text-center text-gray-400">
+      Desteklenmeyen medya türü: ${escapeHTML(String(data?.media_type))}
+    </div>`;
+  }
+
+  apodContainer.innerHTML = `
+    <div class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 md:p-6">
+      <div class="flex items-baseline justify-between gap-3">
+        <div>
+          <h3 class="text-2xl font-semibold text-white mb-1">${escapeHTML(title)}</h3>
+          <p class="text-gray-400 text-sm">${escapeHTML(date)} ${credit ? '• '+credit : ''}</p>
+        </div>
+        <button id="apod-refresh" class="al-btn">Yenile</button>
+      </div>
+      <div class="mt-3">${mediaHtml}</div>
+      <p class="text-gray-300 leading-relaxed mt-4 whitespace-pre-wrap">${escapeHTML(explain)}</p>
+      <div class="mt-3 text-xs text-gray-500">Kaynak: NASA APOD</div>
+    </div>
+  `;
+
+  const btn = document.getElementById('apod-refresh');
+  if (btn) btn.addEventListener('click', () => fetchApodAndRender());
+}
             async function fetchApod(date){
                 try{
                     renderApodLoading();
