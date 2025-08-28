@@ -199,6 +199,37 @@
         }
         .chat-user-bubble { background-color: #4f46e5; align-self: flex-end; }
         .chat-assistant-bubble { background-color: #374151; align-self: flex-start; }
+
+        /* === Anti-copy baseline (casual users) === */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, textarea, select, [contenteditable], .allow-select {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+        /* Disable printing */
+        @media print { html, body { display: none !important; } }
+
+        /* Watermark / anti-leak overlay (captured by screenshots) */
+        #anti-leak-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.12;
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 180px, rgba(255,255,255,.15) 180px, rgba(255,255,255,.15) 200px),
+                repeating-linear-gradient(-45deg, transparent, transparent 180px, rgba(255,255,255,.15) 180px, rgba(255,255,255,.15) 200px);
+        }
+        #anti-leak-overlay::before {
+            content: 'KΔIRA • UMUT KÖKGÖZ • ' attr(data-stamp) ' • NO REPRODUCTION';
+            position: absolute; top: -10%; left: -10%; width: 140%; height: 140%;
+            display: grid; place-items: center; white-space: nowrap;
+            transform: rotate(-30deg); font-size: 28px; letter-spacing: 2px; text-transform: uppercase;
+            color: #ffffff; opacity: 0.25;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -208,6 +239,7 @@
     <canvas id="demo-bg-canvas"></canvas>
     <canvas id="ai-avatar-canvas"></canvas>
     <div id="fun-fact-bubble" class="hidden"></div>
+    <div id="anti-leak-overlay" data-stamp=""></div>
 
     <!-- SEÇİM EKRANI -->
     <div id="selection-view" class="view active">
@@ -355,20 +387,35 @@
                         <label for="model-select" class="block text-sm font-medium text-gray-400 pt-2">Model</label>
                         <select id="model-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
                     </div>
-                    <div class="space-y-2">
-                        <div id="groq-key-container">
-                            <label for="groq-api-key" class="block text-sm font-medium text-gray-400">Groq API Anahtarı</label>
-                            <input type="password" id="groq-api-key" placeholder="gsk_..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div id="google-key-container" class="hidden">
-                            <label for="google-api-key" class="block text-sm font-medium text-gray-400">Google API Anahtarı</label>
-                            <input type="password" id="google-api-key" placeholder="AIzaSy..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
+                   <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-400">API Durumu</label>
+                    <div id="api-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        Anahtarlar sunucudan bekleniyor...
                     </div>
+                </div>
                     <div class="space-y-2">
                          <label for="system-prompt" class="block text-sm font-medium text-gray-400">Sistem Promptu</label>
                          <textarea id="system-prompt" rows="3" placeholder="Modelin nasıl davranmasını istersin?" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
                     </div>
+                </div>
+                <!-- API Anahtarı Alanları (opsiyonel giriş + sunucudan çekme) -->
+                <div class="mt-4 grid md:grid-cols-2 gap-4">
+                    <div id="groq-key-container">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Groq API Key (opsiyonel)</label>
+                        <div class="relative">
+                            <input id="groq-api-key" type="password" placeholder="gsk_..." autocomplete="off" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                        </div>
+                    </div>
+                    <div id="google-key-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Google (Gemini) API Key (opsiyonel)</label>
+                        <div class="relative">
+                            <input id="google-api-key" type="password" placeholder="AIza..." autocomplete="off" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                    <button id="fetch-keys-btn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg">Sunucudan Anahtarları Al</button>
+                    <span class="text-xs text-gray-400">Anahtarlar parola gibi maskelenir ve localStorage'a kaydedilir.</span>
                 </div>
             </div>
             <div class="flex-grow bg-gray-800 rounded-2xl p-4 border border-gray-700 flex flex-col">
@@ -633,16 +680,13 @@
         };
     </script>
 
+    <script>window.API_PROXY_BASE = 'https://1513c704aa10.ngrok-free.app';</script>
     <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
     <script>
     window.initializeChatApp = () => {
         const chatView = document.getElementById('chat-view');
         const providerSelection = chatView.querySelector('#provider-selection');
         const modelSelect = chatView.querySelector('#model-select');
-        const groqKeyContainer = chatView.querySelector('#groq-key-container');
-        const googleKeyContainer = chatView.querySelector('#google-key-container');
-        const groqApiKeyInput = chatView.querySelector('#groq-api-key');
-        const googleApiKeyInput = chatView.querySelector('#google-api-key');
         const systemPromptInput = chatView.querySelector('#system-prompt');
         const chatHistoryDiv = chatView.querySelector('#chat-history');
         const userInput = chatView.querySelector('#user-input');
@@ -650,6 +694,22 @@
         const clearChatButton = chatView.querySelector('#clear-chat');
         const loader = chatView.querySelector('#loader');
         const errorMessageDiv = chatView.querySelector('#error-message');
+
+        // --- API Key alanları ve butonlar (yerel referanslar) ---
+        const groqKeyContainer = chatView.querySelector('#groq-key-container');
+        const googleKeyContainer = chatView.querySelector('#google-key-container');
+        const groqApiKeyInput = chatView.querySelector('#groq-api-key');
+        const googleApiKeyInput = chatView.querySelector('#google-api-key');
+        const apiStatusDiv = chatView.querySelector('#api-status');
+        const fetchKeysBtn = chatView.querySelector('#fetch-keys-btn');
+        const toggleGroqKeyBtn = chatView.querySelector('#toggle-groq-key');
+        const toggleGoogleKeyBtn = chatView.querySelector('#toggle-google-key');
+
+        function toggleMask(inputEl, btnEl){
+            if (!inputEl || !btnEl) return;
+            inputEl.type = inputEl.type === 'password' ? 'text' : 'password';
+            btnEl.classList.toggle('text-yellow-300');
+        }
 
         const PROVIDERS = {
             groq: {
@@ -722,6 +782,31 @@
             if (savedGroqKey) groqApiKeyInput.value = savedGroqKey;
             const savedGoogleKey = localStorage.getItem('googleApiKey');
             if (savedGoogleKey) googleApiKeyInput.value = savedGoogleKey;
+        }
+
+        async function fetchApiKeys() {
+            apiStatusDiv.textContent = "Anahtarlar sunucudan bekleniyor...";
+            const base = window.API_PROXY_BASE || '';
+            try {
+                const opts = { headers: { 'ngrok-skip-browser-warning': 'true' } };
+                const [groqRes, googleRes] = await Promise.all([
+                    fetch(`${base}/api/get-groq-key`, opts),
+                    fetch(`${base}/api/get-google-key`, opts)
+                ]);
+                const groqData = await groqRes.json();
+                const googleData = await googleRes.json();
+                if (groqData.apiKey) {
+                    groqApiKeyInput.value = groqData.apiKey;
+                    localStorage.setItem('groqApiKey', groqData.apiKey);
+                }
+                if (googleData.apiKey) {
+                    googleApiKeyInput.value = googleData.apiKey;
+                    localStorage.setItem('googleApiKey', googleData.apiKey);
+                }
+                apiStatusDiv.textContent = "Anahtarlar başarıyla alındı!";
+            } catch (err) {
+                apiStatusDiv.textContent = "Anahtarlar alınamadı: " + (err.message || err);
+            }
         }
 
         async function handleSend() {
@@ -826,9 +911,14 @@
         groqApiKeyInput.addEventListener('input', () => localStorage.setItem('groqApiKey', groqApiKeyInput.value));
         googleApiKeyInput.addEventListener('input', () => localStorage.setItem('googleApiKey', googleApiKeyInput.value));
 
+        if (fetchKeysBtn) fetchKeysBtn.addEventListener('click', fetchApiKeys);
+        if (toggleGroqKeyBtn) toggleGroqKeyBtn.addEventListener('click', () => toggleMask(groqApiKeyInput, toggleGroqKeyBtn));
+        if (toggleGoogleKeyBtn) toggleGoogleKeyBtn.addEventListener('click', () => toggleMask(googleApiKeyInput, toggleGoogleKeyBtn));
+
         updateModelList();
         loadChatHistory();
         loadSettings();
+        fetchApiKeys();
     };
     </script>
     
@@ -1059,6 +1149,36 @@
             demoParticles.forEach(p => { bgCtx.fillStyle = p.color; bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); bgCtx.fill(); if (demoMouse.x !== null) { let dx = demoMouse.x - p.x; let dy = demoMouse.y - p.y; let distance = Math.sqrt(dx * dx + dy * dy); if (distance < 150) { p.x -= dx / 10 * p.speed; p.y -= dy / 10 * p.speed; } else { p.x += (p.originX - p.x) * 0.01 * p.speed; p.y += (p.originY - p.y) * 0.01 * p.speed; } } }); 
             demoAnimationId = requestAnimationFrame(animateDemo);
         }
+        // --- Client-side hardening (casual deterrence) ---
+        (function harden(){
+            // Watermark stamp
+            const overlay = document.getElementById('anti-leak-overlay');
+            if (overlay) {
+                const stamp = new Date().toISOString().replace('T',' ').split('.')[0];
+                overlay.setAttribute('data-stamp', stamp);
+            }
+            // Stop common easy-leak vectors
+            const stop = (e)=>{ e.preventDefault(); e.stopPropagation(); return false; };
+            ['contextmenu','copy','cut','paste','dragstart'].forEach(evt => document.addEventListener(evt, stop, {capture:true}));
+            // Key combos (Ctrl/Cmd + S/P/U/C/X/A, DevTools, PrintScreen)
+            document.addEventListener('keydown', (e)=>{
+                const k = (e.key || '').toLowerCase();
+                const ctrl = e.ctrlKey || e.metaKey;
+                if (k==='f12' || k==='printscreen' || (ctrl && ['s','p','u','i','j','k','c','x','a'].includes(k)) || (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k))) {
+                    e.preventDefault(); e.stopPropagation(); return false;
+                }
+            }, {capture:true});
+            // Attempt to clear clipboard on PrintScreen (best-effort; OS screenshots still possible)
+            document.addEventListener('keyup', (e)=>{
+                if ((e.key||'').toLowerCase()==='printscreen') {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText('Screenshots are disabled').catch(()=>{});
+                    }
+                }
+            });
+            // Anti-embedding (clickjacking)
+            try { if (window.top !== window.self) window.top.location = window.location; } catch(_){ /* ignore */ }
+        })();
     </script>
     
     <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
@@ -1077,6 +1197,15 @@
         const clearChatButton = document.getElementById('clear-chat');
         const loader = document.getElementById('loader');
         const errorMessageDiv = document.getElementById('error-message');
+        const apiStatusDiv = document.getElementById('api-status');
+const fetchKeysBtn = document.getElementById('fetch-keys-btn');
+const toggleGroqKeyBtn = document.getElementById('toggle-groq-key');
+const toggleGoogleKeyBtn = document.getElementById('toggle-google-key');
+
+function toggleMask(inputEl, btnEl){
+    inputEl.type = inputEl.type === 'password' ? 'text' : 'password';
+    btnEl.classList.toggle('text-yellow-300');
+}
 
         // --- Model Bilgileri ---
         const PROVIDERS = {
