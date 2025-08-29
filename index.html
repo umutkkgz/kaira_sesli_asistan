@@ -1199,6 +1199,28 @@
         backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
         function initNasa(){
             console.log('[NASA] initNasa() start');
+            // ---- NASA Tabs binding (robust delegation) ----
+            const nasaView = document.getElementById('nasa-view');
+            const nav = nasaView.querySelector('nav');
+            const sections = nasaView.querySelectorAll('.nasa-content');
+            function setActiveTab(targetId){
+              nasaView.querySelectorAll('.nasa-tab').forEach(b => b.classList.toggle('active', b.dataset.target === targetId));
+              sections.forEach(s => s.classList.toggle('active', s.id === targetId));
+            }
+            if (nav && !nav.dataset.bound) {
+              nav.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('.nasa-tab');
+                if (!btn) return;
+                ev.preventDefault();
+                setActiveTab(btn.dataset.target);
+              });
+              nav.dataset.bound = '1';
+            }
+            // Ensure initial state reflects the active tab in the markup
+            setTimeout(() => {
+              const current = nasaView.querySelector('.nasa-tab.active')?.dataset.target || 'apod-container';
+              setActiveTab(current);
+            }, 0);
             // --- Gemini translation helper ---
             async function translateWithGemini(text, apiKey){
               try{
