@@ -156,6 +156,26 @@
         }
         .nasa-content { display: none; }
         .nasa-content.active { display: block; }
+        /* Aladin zoom controls */
+        #aladin-map { position: relative; }
+        .al-zoom {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          display: flex;
+          gap: 6px;
+          z-index: 6;
+        }
+        .al-zoom .al-btn {
+          width: 36px;
+          height: 36px;
+          padding: 0;
+          line-height: 1;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -429,6 +449,10 @@
                   <span class="al-pill"><span class="dot near"></span> Yakın</span>
                   <span class="al-pill"><span class="dot mid"></span> Orta</span>
                   <span class="al-pill"><span class="dot far"></span> Uzak</span>
+                </div>
+                <div id="zoom-controls" class="al-zoom">
+                  <button id="zoom-in" class="al-btn" aria-label="Yakınlaştır">+</button>
+                  <button id="zoom-out" class="al-btn" aria-label="Uzaklaştır">−</button>
                 </div>
               </div>
               <p class="text-gray-400 text-sm mt-2">İpucu: sürükle-pan, tekerlek-zoom, sağ tık menü.</p>
@@ -1158,6 +1182,8 @@
               function proceed(){
                 console.log('[Aladin] proceeding to init…');
                 initAladin();
+                bindGentleZoom();
+                bindZoomButtons();
                 fetchAndPlotExoplanets();
                 try { gotoTour(0); } catch(_){ }
               }
@@ -1225,6 +1251,65 @@
               }
             }
             bindAladinToolbar();
+            // Gentle wheel zoom: Aladin'in varsayılan zoom hızını yavaşlat
+            function bindGentleZoom(){
+              const host = document.getElementById('aladin-map');
+              if (!host) return;
+              if (host.__gentleZoomBound) return; // idempotent
+              host.__gentleZoomBound = true;
+
+              // getFov yoksa fallback için son FoV'u gölgeleyelim
+              let lastFov = (__aladin && __aladin.getFov && __aladin.getFov()) || 60;
+              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
+
+              // Capture fazında dinle: Aladin'in default wheel hızını baskıla
+              host.addEventListener('wheel', (e) => {
+                if (!__aladin) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                // deltaY > 0 => uzaklaş, < 0 => yaklaş
+                const dir = e.deltaY > 0 ? 1 : -1;
+
+                // Her adımda çok küçük değişim: %2.5
+                const base = 1.025; // was 1.04 — daha yumuşak: ~%2.5 adım
+
+                // Trackpad büyük delta atar; 1..4 arası adım olarak sınırlayalım
+                const steps = Math.min(4, Math.max(1, Math.abs(e.deltaY) / 180)); // was 6 & /120 — trackpad adımını da yumuşat
+
+                const current = (__aladin.getFov && __aladin.getFov()) || lastFov;
+                const pow = dir > 0 ? steps : -steps;
+                let nextFov = current * Math.pow(base, pow);
+
+                // FoV sınırları (derece)
+                nextFov = clamp(nextFov, 0.02, 360);
+
+                try { __aladin.setFov(nextFov); } catch(_){ }
+                lastFov = nextFov;
+              }, { passive: false, capture: true });
+            }
+
+            // --- Zoom button binding ---
+            function bindZoomButtons(){
+              const inBtn  = document.getElementById('zoom-in');
+              const outBtn = document.getElementById('zoom-out');
+              if (!inBtn || !outBtn) return;
+
+              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
+              const step = 1.06; // nazik adım ~%6
+
+              inBtn.addEventListener('click', () => {
+                if (!__aladin || !__aladin.getFov) return;
+                const f = __aladin.getFov();
+                try { __aladin.setFov(clamp(f / step, 0.02, 360)); } catch(_) {}
+              });
+
+              outBtn.addEventListener('click', () => {
+                if (!__aladin || !__aladin.getFov) return;
+                const f = __aladin.getFov();
+                try { __aladin.setFov(clamp(f * step, 0.02, 360)); } catch(_) {}
+              });
+            }
 
             // --- Sky Tour presets (≈ 22 ikonik bölge) ---
             const TOUR_PRESETS = [
