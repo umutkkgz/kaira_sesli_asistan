@@ -165,7 +165,7 @@
           display: flex;
           flex-direction: column; /* üst üste */
           gap: 8px;
-          z-index: 1000; /* canvas'ın üstünde kalsın */
+          z-index: 2147483647; /* en üstte kal */
           pointer-events: auto; /* tıklanabilir */
         }
         .al-zoom .al-btn {
@@ -181,8 +181,20 @@
           background: rgba(0,0,0,0.5);
           border: 1px solid rgba(255,255,255,0.25);
           box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+          cursor: pointer;
+          pointer-events: auto;
         }
+#zoom-controls {
+  position: absolute;
+  z-index: 2147483647; /* ekstra güvence */
+  pointer-events: auto;
+}
         .al-legend { pointer-events: none; }
+
+#aladin-map canvas {
+  position: relative;
+  z-index: 0; /* overlay butonlardan düşük */
+}
     </style>
 </head>
 <body class="antialiased">
@@ -1138,6 +1150,16 @@
               // Start with grid hidden; you control it via your external button if needed
               try { __aladin.setCooGridVisible(false); } catch(_){}
               console.log('[Aladin] instance created (external toolbar mode)');
+              try {
+                const host = document.getElementById('aladin-map');
+                const zc = document.getElementById('zoom-controls');
+                if (host && zc) {
+                  host.appendChild(zc); // en sona taşı (overlay üstte olsun)
+                  zc.style.pointerEvents = 'auto';
+                  zc.style.zIndex = '2147483647';
+                  zc.style.position = 'absolute';
+                }
+              } catch(_) {}
             }
             async function fetchAndPlotExoplanets(){
               const infoEl = document.getElementById('exo-info');
@@ -1296,23 +1318,39 @@
             }
             // --- Zoom button binding ---
             function bindZoomButtons(){
-              const inBtn  = document.getElementById('zoom-in');
-              const outBtn = document.getElementById('zoom-out');
-              if (!inBtn || !outBtn) return;
-              const step = 1.06; // nazik adım ~%6
-              inBtn.addEventListener('click', () => {
-                if (!__aladin) return;
-                const f = getFovSafe();
-                setFovSafe(f / step); // + => zoom in (FoV küçülür)
-                console.log('[zoom +] from', f, 'to', getFovSafe());
-              });
-              outBtn.addEventListener('click', () => {
-                if (!__aladin) return;
-                const f = getFovSafe();
-                setFovSafe(f * step); // − => zoom out (FoV büyür)
-                console.log('[zoom −] from', f, 'to', getFovSafe());
-              });
-            }
+  const inBtn  = document.getElementById('zoom-in');
+  const outBtn = document.getElementById('zoom-out');
+  if (!inBtn || !outBtn) return;
+  if (inBtn.dataset.bound === '1' && outBtn.dataset.bound === '1') return; // double-bind koruması
+  inBtn.dataset.bound = '1';
+  outBtn.dataset.bound = '1';
+
+  const step = 1.04; // daha nazik adım ~%4
+
+  function onPlus(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (!__aladin) return;
+    const f = getFovSafe();
+    setFovSafe(f / step); // + => zoom in
+    console.log('[zoom +] from', f, 'to', getFovSafe());
+  }
+
+  function onMinus(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (!__aladin) return;
+    const f = getFovSafe();
+    setFovSafe(f * step); // − => zoom out
+    console.log('[zoom −] from', f, 'to', getFovSafe());
+  }
+
+  inBtn.addEventListener('pointerdown', onPlus, { passive: false });
+  outBtn.addEventListener('pointerdown', onMinus, { passive: false });
+  // Bazı cihazlarda pointerdown tetiklenmemesi durumuna karşı click de ekle
+  inBtn.addEventListener('click', onPlus, { passive: false });
+  outBtn.addEventListener('click', onMinus, { passive: false });
+}
 
             // --- Sky Tour presets (≈ 22 ikonik bölge) ---
             const TOUR_PRESETS = [
