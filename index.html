@@ -1292,10 +1292,19 @@
             }
 
             // Helper for consistent FoV updates
+            function getFovSafe(){
+              let f;
+              try { f = (__aladin && __aladin.getFov) ? __aladin.getFov() : __fovShadow; } catch(_) { f = __fovShadow; }
+              if (!Number.isFinite(f) || f <= 0) f = __fovShadow || 60;
+              return f;
+            }
             function setFovSafe(val){
               if (!__aladin) return;
-              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
-              const v = clamp(val, 0.02, 360);
+              let v = Number(val);
+              if (!Number.isFinite(v) || v <= 0) v = getFovSafe();
+              // Clamp to sensible bounds (degrees)
+              if (v < 0.02) v = 0.02;
+              else if (v > 360) v = 360;
               try { __aladin.setFov(v); __fovShadow = v; } catch(_) {}
             }
             // --- Zoom button binding ---
@@ -1303,20 +1312,16 @@
               const inBtn  = document.getElementById('zoom-in');
               const outBtn = document.getElementById('zoom-out');
               if (!inBtn || !outBtn) return;
-
-              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
               const step = 1.06; // nazik adım ~%6
-
               inBtn.addEventListener('click', () => {
                 if (!__aladin) return;
-                const f = (__aladin.getFov && __aladin.getFov()) || __fovShadow;
-                setFovSafe(f / step);
+                const f = getFovSafe();
+                setFovSafe(f / step); // + => zoom in (FoV küçülür)
               });
-
               outBtn.addEventListener('click', () => {
                 if (!__aladin) return;
-                const f = (__aladin.getFov && __aladin.getFov()) || __fovShadow;
-                setFovSafe(f * step);
+                const f = getFovSafe();
+                setFovSafe(f * step); // − => zoom out (FoV büyür)
               });
             }
 
