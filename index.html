@@ -1049,10 +1049,10 @@
           }
           if (btn) btn.addEventListener('click', closeIntro);
           window.addEventListener('keydown', (e) => { if (e.key === 'Enter') closeIntro(); });
-          // Auto-close intro (default 2000ms). URL overrides: ?skipIntro=1 or ?introMs=3000
+          // Auto-close intro (default 8000ms). URL overrides: ?skipIntro=1 or ?introMs=3000
           const urlp = new URLSearchParams(location.search);
           if (urlp.get('skipIntro') === '1') { closeIntro(); return; }
-          const ms = Number(urlp.get('introMs') || 2000);
+          const ms = Number(urlp.get('introMs') || 8000);
           if (Number.isFinite(ms) && ms > 0) setTimeout(closeIntro, ms);
         }
         // init immediately (DOM is ready because this script is placed at the end of body)
