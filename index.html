@@ -233,10 +233,18 @@
 #site-content { position: relative; will-change: clip-path; }
 #site-content.reveal-prep { clip-path: circle(0% at 50% 50%); }
 #site-content.reveal-open { animation: siteReveal 1.2s cubic-bezier(.2,.7,0,1) forwards; }
-@keyframes siteReveal {
-  from { clip-path: circle(0% at 50% 50%); }
-  to   { clip-path: circle(150% at 50% 50%); }
-}
+        @keyframes siteReveal {
+          from { clip-path: circle(0% at 50% 50%); }
+          to   { clip-path: circle(150% at 50% 50%); }
+        }
+
+        /* Make fixed canvases obey the reveal clip during transition */
+        .reveal-mode #afterlife-bg-canvas,
+        .reveal-mode #demo-bg-canvas,
+        .reveal-mode #ai-avatar-canvas,
+        .reveal-mode #anti-leak-overlay {
+          position: absolute !important; /* temporarily not fixed */
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -1094,6 +1102,9 @@
               intro.dataset.bh = '1';
               intro.classList.add('blackhole');
 
+              // Enable reveal-mode so fixed canvases participate in clip animation
+              document.body.classList.add('reveal-mode');
+
               // site reveal (center-out)
               const site = document.getElementById('site-content');
               if (site) {
@@ -1107,6 +1118,7 @@
 
               // give time for the suck/expand animation, then remove overlay
               setTimeout(() => { try { closeIntro(); } catch(_){} }, 1200);
+              setTimeout(() => { document.body.classList.remove('reveal-mode'); }, 1400);
             }
           }
           function closeIntro(){
