@@ -1111,6 +1111,7 @@
             let marsBound = false;
             // --- Aladin helpers (local or CDN) ---
             let __aladin, __exoLayers = [];
+            let __fovShadow = 60; // current FoV shadow (degrees)
             function initAladin(){
               if (__aladin) { console.log('[Aladin] already initialized'); return; }
               const el = document.getElementById('aladin-map');
@@ -1126,6 +1127,7 @@
                 showFullscreenControl: false,
                 showZoomControl: false
               });
+              try { __fovShadow = (__aladin && __aladin.getFov) ? __aladin.getFov() : 60; } catch(_) { __fovShadow = 60; }
               // Start with grid hidden; you control it via your external button if needed
               try { __aladin.setCooGridVisible(false); } catch(_){}
               console.log('[Aladin] instance created (external toolbar mode)');
@@ -1289,6 +1291,13 @@
               }, { passive: false, capture: true });
             }
 
+            // Helper for consistent FoV updates
+            function setFovSafe(val){
+              if (!__aladin) return;
+              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
+              const v = clamp(val, 0.02, 360);
+              try { __aladin.setFov(v); __fovShadow = v; } catch(_) {}
+            }
             // --- Zoom button binding ---
             function bindZoomButtons(){
               const inBtn  = document.getElementById('zoom-in');
@@ -1299,15 +1308,15 @@
               const step = 1.06; // nazik adım ~%6
 
               inBtn.addEventListener('click', () => {
-                if (!__aladin || !__aladin.getFov) return;
-                const f = __aladin.getFov();
-                try { __aladin.setFov(clamp(f / step, 0.02, 360)); } catch(_) {}
+                if (!__aladin) return;
+                const f = (__aladin.getFov && __aladin.getFov()) || __fovShadow;
+                setFovSafe(f / step);
               });
 
               outBtn.addEventListener('click', () => {
-                if (!__aladin || !__aladin.getFov) return;
-                const f = __aladin.getFov();
-                try { __aladin.setFov(clamp(f * step, 0.02, 360)); } catch(_) {}
+                if (!__aladin) return;
+                const f = (__aladin.getFov && __aladin.getFov()) || __fovShadow;
+                setFovSafe(f * step);
               });
             }
 
