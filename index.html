@@ -38,7 +38,7 @@
       /* fade-out for intro overlay */
       #intro-container.fade-out { animation: introFadeOut .6s ease forwards; }
       @keyframes introFadeOut { to { opacity: 0; visibility: hidden; } }
-      /* === Black Hole intro effect === */
+      /* Black Hole intro effect === */
 #bh-field, #bh-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
 #bh-core {
   width: 8vmin; height: 8vmin; border-radius: 50%; z-index: 20; opacity: 0;
@@ -71,6 +71,25 @@
 @keyframes bhBackdrop {
   0% { filter: blur(0px) brightness(1); transform: scale(1); opacity: 1; }
   100% { filter: blur(6px) brightness(0.8); transform: scale(1.05); opacity: 0; }
+}
+      /* ——— Black-hole EXIT: expanding hole mask to reveal site ——— */
+#intro-container.blackhole::after{
+  content: '';
+  position: fixed; inset: 0; background: #000; pointer-events: none; z-index: 9999;
+  /* mask: center is transparent (hole), outside is opaque; hole grows */
+  -webkit-mask: radial-gradient(circle 0vmax at 50% 50%, rgba(0,0,0,0) 0vmax, rgba(0,0,0,0) 0vmax, rgba(0,0,0,1) 0vmax);
+          mask: radial-gradient(circle 0vmax at 50% 50%, rgba(0,0,0,0) 0vmax, rgba(0,0,0,0) 0vmax, rgba(0,0,0,1) 0vmax);
+  animation: bhHole 1.1s ease-in forwards;
+}
+@keyframes bhHole {
+  0% {
+    -webkit-mask: radial-gradient(circle 0vmax at 50% 50%, rgba(0,0,0,0) 0vmax, rgba(0,0,0,0) 0vmax, rgba(0,0,0,1) 0vmax);
+            mask: radial-gradient(circle 0vmax at 50% 50%, rgba(0,0,0,0) 0vmax, rgba(0,0,0,0) 0vmax, rgba(0,0,0,1) 0vmax);
+  }
+  100% {
+    -webkit-mask: radial-gradient(circle 120vmax at 50% 50%, rgba(0,0,0,0) 120vmax, rgba(0,0,0,0) calc(120vmax - 1px), rgba(0,0,0,1) 120vmax);
+            mask: radial-gradient(circle 120vmax at 50% 50%, rgba(0,0,0,0) 120vmax, rgba(0,0,0,0) calc(120vmax - 1px), rgba(0,0,0,1) 120vmax);
+  }
 }
     </style>
     
@@ -1101,6 +1120,7 @@
               if (intro.dataset.closed === '1' || intro.dataset.bh === '1') return; // already closing/closed
               intro.dataset.bh = '1';
               intro.classList.add('blackhole');
+              intro.style.pointerEvents = 'none';
 
               // Enable reveal-mode so fixed canvases participate in clip animation
               document.body.classList.add('reveal-mode');
@@ -1117,7 +1137,7 @@
               }
 
               // give time for the suck/expand animation, then remove overlay
-              setTimeout(() => { try { closeIntro(); } catch(_){} }, 1200);
+              setTimeout(() => { try { closeIntro(); } catch(_){} }, 1400);
               setTimeout(() => { document.body.classList.remove('reveal-mode'); }, 1400);
             }
           }
