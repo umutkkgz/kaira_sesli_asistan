@@ -1228,10 +1228,10 @@
                 });
               }
               if (btnFull){
-                btnFull.addEventListener('click', () => { if(__aladin){ __aladin.setFov(360); __aladin.gotoRaDec(0,0); }});
+                btnFull.addEventListener('click', () => { if(__aladin){ setFovSafe(360); __aladin.gotoRaDec(0,0); }});
               }
               if (btnOrion){
-                btnOrion.addEventListener('click', () => { if(__aladin){ __aladin.setFov(8); __aladin.gotoRaDec(83.822, -5.391); }});
+                btnOrion.addEventListener('click', () => { if(__aladin){ setFovSafe(8); __aladin.gotoRaDec(83.822, -5.391); }});
               }
               if (btnClear){
                 btnClear.addEventListener('click', () => {
@@ -1260,10 +1260,6 @@
               if (host.__gentleZoomBound) return; // idempotent
               host.__gentleZoomBound = true;
 
-              // getFov yoksa fallback için son FoV'u gölgeleyelim
-              let lastFov = (__aladin && __aladin.getFov && __aladin.getFov()) || 60;
-              const clamp = (v,min,max) => v < min ? min : (v > max ? max : v);
-
               // Capture fazında dinle: Aladin'in default wheel hızını baskıla
               host.addEventListener('wheel', (e) => {
                 if (!__aladin) return;
@@ -1279,15 +1275,11 @@
                 // Trackpad büyük delta atar; 1..4 arası adım olarak sınırlayalım
                 const steps = Math.min(4, Math.max(1, Math.abs(e.deltaY) / 180)); // was 6 & /120 — trackpad adımını da yumuşat
 
-                const current = (__aladin.getFov && __aladin.getFov()) || lastFov;
+                const current = getFovSafe();
                 const pow = dir > 0 ? steps : -steps;
-                let nextFov = current * Math.pow(base, pow);
-
-                // FoV sınırları (derece)
-                nextFov = clamp(nextFov, 0.02, 360);
-
-                try { __aladin.setFov(nextFov); } catch(_){ }
-                lastFov = nextFov;
+                const factor = Math.pow(base, pow);
+                const nextFov = current * factor;
+                setFovSafe(nextFov);
               }, { passive: false, capture: true });
             }
 
