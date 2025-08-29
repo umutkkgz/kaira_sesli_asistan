@@ -38,6 +38,36 @@
       /* fade-out for intro overlay */
       #intro-container.fade-out { animation: introFadeOut .6s ease forwards; }
       @keyframes introFadeOut { to { opacity: 0; visibility: hidden; } }
+      /* === Black Hole intro effect === */
+#bh-field, #bh-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+#bh-core {
+  width: 8vmin; height: 8vmin; border-radius: 50%; z-index: 20; opacity: 0;
+  background: radial-gradient(closest-side, #000 60%, #0b0b0b 100%);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.95), 0 0 35px rgba(34,211,238,0.35);
+}
+#bh-field {
+  width: 20vmin; height: 20vmin; border-radius: 50%; z-index: 15; opacity: 0;
+  filter: blur(6px) saturate(140%);
+  background: conic-gradient(from 0deg, rgba(34,211,238,.25), rgba(0,0,0,0) 40%, rgba(34,211,238,.25) 70%, rgba(0,0,0,0));
+}
+
+/* active state */
+#intro-container.blackhole #bh-core { opacity: 1; animation: bhCoreGrow 1.1s ease-in forwards; }
+#intro-container.blackhole #bh-field { opacity: 1; animation: bhFieldSpin 1.2s linear infinite, bhFieldGrow 1.1s ease-in forwards; }
+#intro-container.blackhole #ui-container { animation: bhSuck 0.9s ease-in forwards; filter: blur(0px); }
+#intro-container.blackhole #bg-canvas { animation: bhBackdrop 1.1s ease-in forwards; }
+
+@keyframes bhCoreGrow { 0% { transform: translate(-50%,-50%) scale(0.6); } 100% { transform: translate(-50%,-50%) scale(35); } }
+@keyframes bhFieldSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+@keyframes bhFieldGrow {
+  0% { transform: translate(-50%,-50%) scale(1); filter: blur(6px); }
+  100% { transform: translate(-50%,-50%) scale(14); filter: blur(18px); }
+}
+@keyframes bhSuck {
+  0% { opacity: 1; transform: scale(1); filter: blur(0px); }
+  100% { opacity: 0; transform: scale(0.85) translateY(20px); filter: blur(8px); }
+}
+@keyframes bhBackdrop { 0% { filter: blur(0px) brightness(1); transform: scale(1); } 100% { filter: blur(6px) brightness(0.8); transform: scale(1.05); } }
     </style>
     
     <!-- React için Gerekli Scriptler -->
@@ -202,6 +232,8 @@
     <!-- Intro overlay moved inside the single document body -->
     <div id="intro-container">
         <canvas id="bg-canvas"></canvas>
+        <div id="bh-field"></div>
+        <div id="bh-core"></div>
         <div id="ui-container">
             <h1 id="logo">K<span class="delta">Δ</span>IRA</h1>
             <p id="subtitle">Dijital Bilinç Başlatılıyor</p>
@@ -1041,19 +1073,28 @@
             const stampEl = document.getElementById('anti-leak-overlay');
             if (stampEl) stampEl.setAttribute('data-stamp', new Date().toISOString().slice(0,10));
           });
+          function startBlackHoleTransition(){
+            const intro = document.getElementById('intro-container');
+            if (!intro) return;
+            if (intro.dataset.closed === '1' || intro.dataset.bh === '1') return; // already closing/closed
+            intro.dataset.bh = '1';
+            intro.classList.add('blackhole');
+            // give time for the suck/expand animation, then remove overlay
+            setTimeout(() => { try { closeIntro(); } catch(_){} }, 1200);
+          }
           function closeIntro(){
             if (intro.dataset.closed === '1') return; // idempotent
             intro.dataset.closed = '1';
-            intro.classList.add('fade-out');
+            if (!intro.classList.contains('blackhole')) intro.classList.add('fade-out');
             setTimeout(() => { try { intro.remove(); } catch(_){} }, 650);
           }
-          if (btn) btn.addEventListener('click', closeIntro);
-          window.addEventListener('keydown', (e) => { if (e.key === 'Enter') closeIntro(); });
+          if (btn) btn.addEventListener('click', startBlackHoleTransition);
+          window.addEventListener('keydown', (e) => { if (e.key === 'Enter') startBlackHoleTransition(); });
           // Auto-close intro (default 8000ms). URL overrides: ?skipIntro=1 or ?introMs=3000
           const urlp = new URLSearchParams(location.search);
           if (urlp.get('skipIntro') === '1') { closeIntro(); return; }
           const ms = Number(urlp.get('introMs') || 8000);
-          if (Number.isFinite(ms) && ms > 0) setTimeout(closeIntro, ms);
+          if (Number.isFinite(ms) && ms > 0) setTimeout(startBlackHoleTransition, ms);
         }
         // init immediately (DOM is ready because this script is placed at the end of body)
         initIntroOverlay();
