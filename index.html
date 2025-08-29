@@ -225,6 +225,14 @@
   position: relative;
   z-index: 0; /* overlay butonlardan düşük */
 }
+/* === Post-intro black-hole EXIT reveal === */
+#site-content { position: relative; will-change: clip-path; }
+#site-content.reveal-prep { clip-path: circle(0% at 50% 50%); }
+#site-content.reveal-open { animation: siteReveal 1.2s cubic-bezier(.2,.7,0,1) forwards; }
+@keyframes siteReveal {
+  from { clip-path: circle(0% at 50% 50%); }
+  to   { clip-path: circle(150% at 50% 50%); }
+}
     </style>
 </head>
 <body class="antialiased">
@@ -242,6 +250,7 @@
     </div>
 
     <!-- Arka Plan Canvasları -->
+<div id="site-content" class="reveal-prep">
     <canvas id="afterlife-bg-canvas"></canvas>
     <canvas id="demo-bg-canvas"></canvas>
     <canvas id="ai-avatar-canvas"></canvas>
@@ -554,7 +563,7 @@
             </main>
         </div>
     </div>
-    
+    </div>
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="text/babel" data-presets="react">
         const { useState, useCallback, useEffect } = React;
@@ -1074,13 +1083,26 @@
             if (stampEl) stampEl.setAttribute('data-stamp', new Date().toISOString().slice(0,10));
           });
           function startBlackHoleTransition(){
-            const intro = document.getElementById('intro-container');
-            if (!intro) return;
-            if (intro.dataset.closed === '1' || intro.dataset.bh === '1') return; // already closing/closed
-            intro.dataset.bh = '1';
-            intro.classList.add('blackhole');
-            // give time for the suck/expand animation, then remove overlay
-            setTimeout(() => { try { closeIntro(); } catch(_){} }, 1200);
+            {
+              const intro = document.getElementById('intro-container');
+              if (!intro) return;
+              if (intro.dataset.closed === '1' || intro.dataset.bh === '1') return; // already closing/closed
+              intro.dataset.bh = '1';
+              intro.classList.add('blackhole');
+
+              // site reveal (center-out)
+              const site = document.getElementById('site-content');
+              if (site) {
+                site.classList.add('reveal-prep');
+                setTimeout(() => {
+                  site.classList.add('reveal-open');
+                  site.classList.remove('reveal-prep');
+                }, 150); // giriş animasyonu ile hafif senkron
+              }
+
+              // give time for the suck/expand animation, then remove overlay
+              setTimeout(() => { try { closeIntro(); } catch(_){} }, 1200);
+            }
           }
           function closeIntro(){
             if (intro.dataset.closed === '1') return; // idempotent
@@ -1092,7 +1114,7 @@
           window.addEventListener('keydown', (e) => { if (e.key === 'Enter') startBlackHoleTransition(); });
           // Auto-close intro (default 8000ms). URL overrides: ?skipIntro=1 or ?introMs=3000
           const urlp = new URLSearchParams(location.search);
-          if (urlp.get('skipIntro') === '1') { closeIntro(); return; }
+          if (urlp.get('skipIntro') === '1') { const site=document.getElementById('site-content'); if(site){ site.classList.add('reveal-open'); site.classList.remove('reveal-prep'); } closeIntro(); return; }
           const ms = Number(urlp.get('introMs') || 8000);
           if (Number.isFinite(ms) && ms > 0) setTimeout(startBlackHoleTransition, ms);
         }
