@@ -56,6 +56,7 @@
 #intro-container.blackhole #bh-field { opacity: 1; animation: bhFieldSpin 1.2s linear infinite, bhFieldGrow 1.1s ease-in forwards; }
 #intro-container.blackhole #ui-container { animation: bhSuck 0.9s ease-in forwards; filter: blur(0px); }
 #intro-container.blackhole #bg-canvas { animation: bhBackdrop 1.1s ease-in forwards; }
+#intro-container.blackhole { background-color: transparent; transition: background-color .35s ease; }
 
 @keyframes bhCoreGrow { 0% { transform: translate(-50%,-50%) scale(0.6); } 100% { transform: translate(-50%,-50%) scale(35); } }
 @keyframes bhFieldSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
@@ -67,7 +68,10 @@
   0% { opacity: 1; transform: scale(1); filter: blur(0px); }
   100% { opacity: 0; transform: scale(0.85) translateY(20px); filter: blur(8px); }
 }
-@keyframes bhBackdrop { 0% { filter: blur(0px) brightness(1); transform: scale(1); } 100% { filter: blur(6px) brightness(0.8); transform: scale(1.05); } }
+@keyframes bhBackdrop {
+  0% { filter: blur(0px) brightness(1); transform: scale(1); opacity: 1; }
+  100% { filter: blur(6px) brightness(0.8); transform: scale(1.05); opacity: 0; }
+}
     </style>
     
     <!-- React için Gerekli Scriptler -->
@@ -1094,6 +1098,7 @@
               const site = document.getElementById('site-content');
               if (site) {
                 site.classList.add('reveal-prep');
+                void site.offsetHeight; // force reflow so animation reliably starts
                 setTimeout(() => {
                   site.classList.add('reveal-open');
                   site.classList.remove('reveal-prep');
