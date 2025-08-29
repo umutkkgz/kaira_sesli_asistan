@@ -264,6 +264,9 @@
         .reveal-mode #anti-leak-overlay {
           position: absolute !important; /* temporarily not fixed */
         }
+        /* --- NASA tabs: force clickability & stacking --- */
+        #nasa-view nav, #nasa-view .nasa-tab { pointer-events: auto !important; }
+        #nasa-view nav { position: relative; z-index: 50; }
     </style>
 </head>
 <body class="antialiased">
