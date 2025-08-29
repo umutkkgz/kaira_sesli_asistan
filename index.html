@@ -196,7 +196,7 @@
         .nasa-tab { 
             padding: 0.5rem 1rem; 
             border-radius: 0.5rem; 
-            cursor: not-allowed; 
+            cursor: pointer; 
             transition: background-color 0.3s, color 0.3s; 
             border: 1px solid transparent; 
             background-color: rgba(31,41,55,0.6); /* gray-800-ish */
@@ -505,9 +505,9 @@
                 <div id="nasa-api-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-400">Anahtarlar sunucudan bekleniyor...</div>
             </div>
             <nav class="flex justify-center space-x-2 md:space-x-4 mb-6 bg-gray-800 p-2 rounded-lg border border-gray-700">
-                <button class="nasa-tab active" data-target="apod-container" disabled>Günün Fotoğrafı</button>
-                <button class="nasa-tab" data-target="mars-container" disabled>Mars Keşfi</button>
-                <button class="nasa-tab" data-target="library-container" disabled>Evrenin Kütüphanesi</button>
+                <button class="nasa-tab active" data-target="apod-container">Günün Fotoğrafı</button>
+                <button class="nasa-tab" data-target="mars-container">Mars Keşfi</button>
+                <button class="nasa-tab" data-target="library-container">Evrenin Kütüphanesi</button>
             </nav>
             <!-- Sky Map Section (Aladin) -->
             <section id="aladin-section" class="mb-6 p-4 bg-gray-800/60 border border-gray-700 rounded-xl">
