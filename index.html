@@ -1127,7 +1127,7 @@
                 showFullscreenControl: false,
                 showZoomControl: false
               });
-              try { __fovShadow = (__aladin && __aladin.getFov) ? __aladin.getFov() : 60; } catch(_) { __fovShadow = 60; }
+              try { __fovShadow = (__callGetFoV() ?? 60); } catch(_) { __fovShadow = 60; }
               // Start with grid hidden; you control it via your external button if needed
               try { __aladin.setCooGridVisible(false); } catch(_){}
               console.log('[Aladin] instance created (external toolbar mode)');
@@ -1253,51 +1253,39 @@
               }
             }
             bindAladinToolbar();
-            // Gentle wheel zoom: Aladin'in varsayılan zoom hızını yavaşlat
-            function bindGentleZoom(){
-              const host = document.getElementById('aladin-map');
-              if (!host) return;
-              if (host.__gentleZoomBound) return; // idempotent
-              host.__gentleZoomBound = true;
-
-              // Capture fazında dinle: Aladin'in default wheel hızını baskıla
-              host.addEventListener('wheel', (e) => {
-                if (!__aladin) return;
-                e.preventDefault();
-                e.stopPropagation();
-
-                // deltaY > 0 => uzaklaş, < 0 => yaklaş
-                const dir = e.deltaY > 0 ? 1 : -1;
-
-                // Her adımda çok küçük değişim: %2.5
-                const base = 1.025; // was 1.04 — daha yumuşak: ~%2.5 adım
-
-                // Trackpad büyük delta atar; 1..4 arası adım olarak sınırlayalım
-                const steps = Math.min(4, Math.max(1, Math.abs(e.deltaY) / 180)); // was 6 & /120 — trackpad adımını da yumuşat
-
-                const current = getFovSafe();
-                const pow = dir > 0 ? steps : -steps;
-                const factor = Math.pow(base, pow);
-                const nextFov = current * factor;
-                setFovSafe(nextFov);
-              }, { passive: false, capture: true });
+            // --- FoV compatibility helpers (bazı build'lerde getFoV/setFoV kullanılıyor) ---
+            function __callGetFoV(){
+              try {
+                if (__aladin && typeof __aladin.getFoV === 'function') return __aladin.getFoV();
+                if (__aladin && typeof __aladin.getFov === 'function') return __aladin.getFov();
+              } catch(_) {}
+              return undefined;
             }
-
+            function __callSetFoV(v){
+              try {
+                if (__aladin && typeof __aladin.setFoV === 'function') { __aladin.setFoV(v); return true; }
+                if (__aladin && typeof __aladin.setFov === 'function') { __aladin.setFov(v); return true; }
+              } catch(_) {}
+              return false;
+            }
             // Helper for consistent FoV updates
             function getFovSafe(){
-              let f;
-              try { f = (__aladin && __aladin.getFov) ? __aladin.getFov() : __fovShadow; } catch(_) { f = __fovShadow; }
-              if (!Number.isFinite(f) || f <= 0) f = __fovShadow || 60;
-              return f;
+              {
+                let f;
+                try { f = __callGetFoV(); if (f === undefined) f = __fovShadow; } catch(_) { f = __fovShadow; }
+                if (!Number.isFinite(f) || f <= 0) f = __fovShadow || 60;
+                return f;
+              }
             }
             function setFovSafe(val){
-              if (!__aladin) return;
-              let v = Number(val);
-              if (!Number.isFinite(v) || v <= 0) v = getFovSafe();
-              // Clamp to sensible bounds (degrees)
-              if (v < 0.02) v = 0.02;
-              else if (v > 360) v = 360;
-              try { __aladin.setFov(v); __fovShadow = v; } catch(_) {}
+              {
+                if (!__aladin) return;
+                let v = Number(val);
+                if (!Number.isFinite(v) || v <= 0) v = getFovSafe();
+                if (v < 0.02) v = 0.02; else if (v > 360) v = 360; // clamp
+                const ok = __callSetFoV(v);
+                if (ok) __fovShadow = v; // yalnızca başarıyla uygulanırsa gölgeyi güncelle
+              }
             }
             // --- Zoom button binding ---
             function bindZoomButtons(){
