@@ -172,9 +172,11 @@
             user-select: none;
         }
         input, textarea, select, [contenteditable], .allow-select {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    pointer-events: auto !important;   /* tıklanıp odaklanabilsin */
+    caret-color: #fff;                 /* koyu zeminde imleç görünür olsun */
+}
         /* Disable printing */
         @media print { html, body { display: none !important; } }
 
@@ -815,11 +817,12 @@
                     </div>
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
                     <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
-                        className="w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-                    />
+    value={prompt}
+    onChange={(e) => setPrompt(e.target.value)}
+    placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
+    className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+    />
+
                     <button
                         onClick={handleGenerate}
                         disabled={isLoading || !apiKey}
@@ -2552,6 +2555,23 @@ function toggleMask(inputEl, btnEl){
               '\n• Aç/Kapat: Ctrl/Cmd+Shift+D' +
               '\n• URL ile: ?debug=1' +
               '\n• Konsol: KAIRA_DEBUG.on() / KAIRA_DEBUG.off()');
+})();
+</script>
+<script id="form-input-safety">
+(function(){
+  const TYPES = ['keydown','keypress','keyup','contextmenu'];
+  TYPES.forEach(type => {
+    window.addEventListener(type, function(e){
+      const t = e.target;
+      if (!t) return;
+      const isField = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
+      if (isField) {
+        // Form alanlarında global engelleyicileri etkisizleştir
+        e.stopImmediatePropagation();
+        // preventDefault çağırmıyoruz → doğal yazma davranışı çalışır
+      }
+    }, true); // capture phase → önce biz çalışırız
+  });
 })();
 </script>
 
