@@ -786,6 +786,91 @@
     console.warn('[KAIRA] Mikrofon/TTS için HTTPS önerilir.');
   }
 })();
+<script id="chat-logger">
+(function(){
+  // Sunucu kökü (senin ngrok adresin)
+  const SERVER = "https://1513c704aa10.ngrok-free.app";
+
+  function getProvider(){
+    const r = document.querySelector('input[name="provider"]:checked');
+    return r ? r.value : null;
+  }
+  function getModel(){
+    const s = document.getElementById('model-select');
+    return s ? s.value : null;
+  }
+  function getSys(){
+    const t = document.getElementById('system-prompt');
+    return t ? t.value : '';
+  }
+  async function sendLog(obj){
+    try{
+      await fetch(`${SERVER}/api/logs/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(obj)
+      });
+    } catch(e){ console.warn('[CHAT LOG FAIL]', e); }
+  }
+
+  const historyEl = document.getElementById('chat-history');
+  let pending = null; // son kullanıcı mesajının snapshot'ı
+
+  // Gönder butonuna basıldığında kullanıcı mesajını ve meta'yı yakala
+  document.addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('#send-button');
+    if(!btn) return;
+    const userInput = document.getElementById('user-input');
+    const text = userInput ? userInput.value : '';
+    pending = {
+      ts: new Date().toISOString(),
+      provider: getProvider(),
+      model: getModel(),
+      system_prompt: getSys(),
+      user_text: text
+    };
+  }, true);
+
+  // Sohbete yeni balon eklendiğinde asistan cevabını yakala ve logla
+  if(historyEl){
+    const obs = new MutationObserver((muts)=>{
+      for(const m of muts){
+        for(const node of m.addedNodes){
+          if(!(node instanceof Element)) continue;
+          // Asistan balonu
+          if(node.classList.contains('chat-assistant-bubble') || node.matches('.chat-assistant-bubble, [data-chat-item].assistant')){
+            const assistantText = node.textContent.trim();
+            const payload = Object.assign({}, pending || {}, {
+              assistant_text: assistantText
+            });
+            pending = null;
+            sendLog(payload);
+          }
+          // Kullanıcı balonu bazı UI'larda ayrı düşebilir
+          else if(node.classList.contains('chat-user-bubble')){
+            const t = node.textContent.trim();
+            pending = {
+              ts: new Date().toISOString(),
+              provider: getProvider(),
+              model: getModel(),
+              system_prompt: getSys(),
+              user_text: t
+            };
+          }
+        }
+      }
+    });
+    obs.observe(historyEl, { childList: true, subtree: true });
+  }
+
+  // Sohbet temizlendiğinde bilgi amaçlı kısa log at (opsiyonel)
+  document.addEventListener('kaira:chat-cleared', ()=>{
+    sendLog({ ts: new Date().toISOString(), event: 'chat_cleared', provider: getProvider(), model: getModel(), source: 'evrensel-sohbet' });
+  });
+})();
 </script>
 
     <!-- KΔIRA Demo TTS oynatma akışı (PATCHED) -->
@@ -797,15 +882,14 @@
       // Fallback/merge body payload
       const body = { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
       const ttsPayload = (typeof body === 'object' && body && body.text) ? body : { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
-      // playTTS içindeki çağrı
-const response = await fetchForever('/api/tts', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
-  },
-  body: JSON.stringify(ttsPayload)
-}, 'TTS');
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(ttsPayload)
+      });
       const data = await response.json();
       // --- TTS response compatibility layer ---
       // PATCHED robust extraction:
@@ -1156,7 +1240,7 @@ const response = await fetchForever('/api/tts', {
             useEffect(() => {
                 const fetchApiKey = async () => {
                     try {
-                        const response = await fetch('https://1513c704aa10.ngrok-free.app/api/get-key', {
+                        const response = await fetch('https://1513c704aa10.ngrok-free.app/api/get-google-key', {
                             headers: {
                                 'ngrok-skip-browser-warning': 'true'
                             }
@@ -1166,7 +1250,7 @@ const response = await fetchForever('/api/tts', {
 
                         if (!response.ok) {
                             if (response.status === 404) {
-                                throw new Error('Sunucuda API yolu (/api/get-key) bulunamadı. Lütfen sunucu kodunuzun güncel olduğundan emin olun.');
+                                throw new Error('Sunucuda API yolu (/api/get-google-key) bulunamadı. Lütfen sunucu kodunuzun güncel olduğundan emin olun.');
                             }
                             throw new Error(`Sunucu hatası: ${response.status} - ${responseText}`);
                         }
