@@ -277,6 +277,13 @@
         }
         #editor-view { position: relative; z-index: 2000; }
         #site-content { position: relative; z-index: 0; }
+        /* === Chat view typing & click safety === */
+        #chat-view, #chat-view * {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          pointer-events: auto !important;
+        }
+        #chat-view { position: relative; z-index: 2000; }
     </style>
 </head>
 <body class="antialiased">
@@ -872,6 +879,21 @@
         const loader = chatView.querySelector('#loader');
         const errorMessageDiv = chatView.querySelector('#error-message');
 
+        // Chat-only interactive event safety (capture phase)
+        ['click','mousedown','mouseup','keydown','keypress','keyup','contextmenu'].forEach(type => {
+            window.addEventListener(type, function(ev){
+                const chatActive = document.getElementById('chat-view')?.classList.contains('active');
+                if (!chatActive) return;
+                const t = ev.target;
+                if (!t) return;
+                const isInteractive = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'BUTTON' || t.isContentEditable || t.closest('[role="button"]');
+                if (isInteractive) {
+                    ev.stopImmediatePropagation();
+                    // Do NOT call preventDefault → native behavior devam eder
+                }
+            }, true);
+        });
+
         // --- API Key alanları ve butonlar (yerel referanslar) ---
         const groqKeyContainer = chatView.querySelector('#groq-key-container');
         const googleKeyContainer = chatView.querySelector('#google-key-container');
@@ -1208,6 +1230,16 @@
                     editorInitialized = true;
                 }
             } else if (viewName === 'chat') {
+                // enable safe typing/clicking in chat: remove global blockers, open debug overrides
+                if (!document.documentElement.classList.contains('debug-open')){
+                  document.documentElement.classList.add('debug-open');
+                  document.body.classList.add('debug-open');
+                }
+                document.oncontextmenu = null; window.oncontextmenu = null;
+                document.onkeydown = null; window.onkeydown = null;
+                const anti = document.getElementById('anti-leak-overlay');
+                if (anti) anti.style.display = 'none';
+                document.getElementById('chat-view')?.style.setProperty('pointer-events','auto','important');
                 if (!chatInitialized) {
                     window.initializeChatApp();
                     chatInitialized = true;
