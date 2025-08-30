@@ -729,6 +729,7 @@
             const [modifiedImage, setModifiedImage] = useState(null);
             const [prompt, setPrompt] = useState('');
             const [negativePrompt, setNegativePrompt] = useState('');
+            const [userBrief, setUserBrief] = useState('');
             const [roles, setRoles] = useState(['İçerik','Stil','Renk','Işık','İçerik']);
             const [weights, setWeights] = useState([100,60,50,50,50]);
             const [isLoading, setIsLoading] = useState(false);
@@ -742,6 +743,8 @@
               setWeights([100,60,50,50,50]);
               setModifiedImage(null);
               setPrompt('');
+              setNegativePrompt('');
+              setUserBrief('');
               setError(null);
               setIsLoading(false);
             }, []);
@@ -815,8 +818,8 @@
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const parts = [
   { text: (
-    'Aşağıdaki referans görselleri incele ve tamamen **Türkçe** bir imaj üretim talimatı yaz. ' +
-    'Biçimi şuna **aynen** benzesin (her satır ayrı olacak):\n' +
+    'Aşağıdaki referans görselleri ve verilen kullanıcı metnini birlikte değerlendir. ' +
+    'Tamamen **Türkçe** bir imaj üretim talimatı yaz. Biçim şablonu **aynen** şöyle olsun (her satır ayrı):\n' +
     'Bağlam 1’deki ...\n' +
     'Bağlam 2’deki ...\n' +
     'Bağlam 3’teki ...\n' +
@@ -825,6 +828,23 @@
     'Sadece metni döndür; kod bloğu veya açıklama ekleme.'
   ) }
 ];
+                // Kullanıcı yazısı ekle
+                if (userBrief && userBrief.trim()) {
+                  parts.push({ text: 'Kullanıcı metni:\n' + userBrief.trim() });
+                }
+                // Bağlam rolleri/ağırlıkları (Türkçe)
+                const roleMapTr = { 'İçerik':'içerik', 'Stil':'stil', 'Renk':'renk paleti', 'Işık':'ışık' };
+                const metaLinesTr = [];
+                originalImages.forEach((img, idx) => {
+                  if (img) {
+                    const r = roles[idx] || 'İçerik';
+                    const w = (weights[idx] ?? 50) / 100;
+                    metaLinesTr.push(`Bağlam ${idx+1}: rol=${roleMapTr[r]||r}, ağırlık=${w.toFixed(2)}`);
+                  }
+                });
+                if (metaLinesTr.length) {
+                  parts.push({ text: 'Bağlam rolleri/ağırlıkları:\n' + metaLinesTr.join('\n') });
+                }
                 for (const img of picked.slice(0,5)) {
                   const base64Data = img.split(',')[1];
                   const mimeMatch = img.match(/:(.*?);/);
@@ -837,15 +857,13 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error?.message || 'Öneri alınamadı');
                 const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                let parsed = null;
-                try { parsed = JSON.parse(raw); } catch(_) {}
-                if (parsed && (parsed.positive || parsed.negative)) {
-                  if (parsed.positive) setPrompt(parsed.positive.trim());
-                  if (parsed.negative) setNegativePrompt(parsed.negative.trim());
-                } else {
-                  // Fallback: düz metni pozitif olarak koy
-                  setPrompt(raw.trim());
-                }
+                const text = (raw || '').trim();
+                // Pozitif metin: son "Negatif:" satırı kaldırılarak
+                const positiveOnly = text.replace(/(?:^|\n)\s*Negatif\s*:\s*.+$/is, '').trim();
+                setPrompt(positiveOnly);
+                // Negatif satırı: ayrı alana
+                const negMatch = text.match(/(?:^|\n)\s*Negatif\s*:\s*(.+)$/i);
+                if (negMatch) setNegativePrompt(negMatch[1].trim());
               } catch (e) {
                 console.error('[Suggest]', e); setError(e.message || String(e));
               } finally {
@@ -866,15 +884,25 @@
               setError(null);
               setModifiedImage(null);
 
+              // Kullanıcı tek blok yazdıysa (son satırda "Negatif:") ayır
+              let posForTranslate = prompt;
+              let negFromBlock = '';
+              const negBlockMatch = /(?:^|\n)\s*Negatif\s*:\s*(.+)$/is.exec(prompt);
+              if (negBlockMatch) {
+                negFromBlock = negBlockMatch[1].trim();
+                posForTranslate = prompt.replace(negBlockMatch[0], '').trim();
+                if (!negativePrompt) setNegativePrompt(negFromBlock);
+              }
+
               // 1) Translate Turkish prompts → English (positive & negative) with Gemini 2.5 Flash
-              let englishPositive = prompt;
-              let englishNegative = negativePrompt;
+              let englishPositive = posForTranslate;
+              let englishNegative = negativePrompt || negFromBlock;
               try {
                 const translateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const translatePayload = {
                   contents: [{
                     parts: [{
-                      text: `Translate the following Turkish prompts into clear, concise English for an image-generation task. Return ONLY compact JSON with keys \"positive\" and \"negative\" (negative can be empty). No extra text.\n\nINPUT JSON:\n${JSON.stringify({ positive: prompt, negative: negativePrompt })}`
+                      text: `Translate the following Turkish prompts into clear, concise English for an image-generation task. Return ONLY compact JSON with keys \"positive\" and \"negative\" (negative can be empty). No extra text.\n\nINPUT JSON:\n${JSON.stringify({ positive: posForTranslate, negative: (negativePrompt || negFromBlock) })}`
                     }]
                   }]
                 };
@@ -1007,9 +1035,20 @@
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                       <div className="flex-1 flex flex-col gap-3">
                         <textarea
+                          value={userBrief}
+                          onChange={(e) => setUserBrief(e.target.value)}
+                          placeholder="Kullanıcı yazısı (serbest Türkçe): Sahneyi, duyguyu, hikâyeyi tarif et. Örn: 'Ağaç tünelinde ilerleyen siyah supersport, saçları rüzgârda savrulan sürücü...'. Bu metin ve bağlam fotoğraflarından AI pozitif/negatif prompt önerecek."
+                          className="allow-select pointer-events-auto w-full h-20 md:h-auto bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+                          onKeyDownCapture={(e)=>e.stopPropagation()}
+                          onKeyPressCapture={(e)=>e.stopPropagation()}
+                          onKeyUpCapture={(e)=>e.stopPropagation()}
+                          onFocusCapture={(e)=>e.stopPropagation()}
+                          onClickCapture={(e)=>e.stopPropagation()}
+                        />
+                        <textarea
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
-                          placeholder="Ne görmek istiyorsun? (Pozitif prompt) — Örn: 'ağaç tünelinde siyah motosiklet üzerinde portre, golden-hour ışık'"
+                          placeholder={`Ne görmek istiyorsun? (Türkçe çok satırlı; sonda 'Negatif:' yazabilirsin) Örn:\nBağlam 1’deki yüzü sürücü olarak kullan.\nBağlam 2’deki motosikleti esas al.\nBağlam 3’teki ağaç tünelli yolu arka plan olarak kullan.\nGeç saat diffuse ışık, hafif golden-hour dokunuşu; dramatik ama gerçekçi.\nTeker altına gerçekçi contact shadow; lastikler hafif motion blur.\nSaçlarda rüzgâr etkisi; renk/ışık tutarlı olsun.\nNegatif: çift teker, bozuk perspektif, yapay saç kenarı, aşırı blur, painting look`}
                           className="allow-select pointer-events-auto w-full h-24 md:h-auto bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
                           onKeyDownCapture={(e)=>e.stopPropagation()}
                           onKeyPressCapture={(e)=>e.stopPropagation()}
