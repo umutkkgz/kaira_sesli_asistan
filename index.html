@@ -821,7 +821,12 @@
     onChange={(e) => setPrompt(e.target.value)}
     placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
     className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-    />
+    onKeyDownCapture={(e)=>e.stopPropagation()}
+    onKeyPressCapture={(e)=>e.stopPropagation()}
+    onKeyUpCapture={(e)=>e.stopPropagation()}
+    onFocusCapture={(e)=>e.stopPropagation()}
+    onClickCapture={(e)=>e.stopPropagation()}
+/>
 
                     <button
                         onClick={handleGenerate}
@@ -1179,6 +1184,13 @@
                 if (!demoInitialized) initDemo();
                 animateDemo();
             } else if (viewName === 'editor') {
+                // enable safe typing in editor: remove global blockers, open debug overrides
+                if (!document.documentElement.classList.contains('debug-open')){
+                  document.documentElement.classList.add('debug-open');
+                  document.body.classList.add('debug-open');
+                }
+                document.oncontextmenu = null; window.oncontextmenu = null;
+                document.onkeydown = null; window.onkeydown = null;
                 if (!editorInitialized) {
                     window.initializeReactApp();
                     editorInitialized = true;
