@@ -630,7 +630,7 @@
             </h1>
         );
 
-        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage }) => {
+        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage, onReset, uploadInputId = 'file-upload' }) => {
             const handleDragOver = useCallback((e) => { e.preventDefault(); }, []);
             const handleDrop = useCallback((e) => {
             e.preventDefault();
@@ -642,12 +642,26 @@
             return (
             <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 flex flex-col gap-4 h-full">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold text-center text-gray-300">{title}</h3>
-                    {modifiedImage && onDownload && (
-                        <button onClick={onDownload} className="flex items-center gap-2 bg-green-600/80 hover:bg-green-700/80 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                            <DownloadIcon /> İndir
+                  <h3 className="text-xl font-semibold text-center text-gray-300">{title}</h3>
+                  <div className="flex items-center gap-2">
+                    {onReset && image && (
+                      <>
+                        {/* Yüklü iken yeni fotoğraf seçebilmek için gizli input */}
+                        <input id={uploadInputId} name={uploadInputId} type="file" className="sr-only" onChange={onImageUpload} accept="image/png, image/jpeg" />
+                        <button onClick={() => document.getElementById(uploadInputId)?.click()} className="bg-blue-600/80 hover:bg-blue-700/80 text-white font-semibold py-2 px-3 rounded-lg transition-colors">
+                          Yeni Fotoğraf
                         </button>
+                        <button onClick={onReset} className="bg-gray-700/80 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors">
+                          Sıfırla
+                        </button>
+                      </>
                     )}
+                    {modifiedImage && onDownload && (
+                      <button onClick={onDownload} className="flex items-center gap-2 bg-green-600/80 hover:bg-green-700/80 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                        <DownloadIcon /> İndir
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div 
                 className="relative aspect-square w-full bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-600 transition-all duration-300"
@@ -656,14 +670,14 @@
                 >
                 {image && <img src={image} alt={title} className="object-contain w-full h-full" />}
                 {!image && onImageUpload && (
-                    <label htmlFor="file-upload" className="cursor-pointer text-center p-4">
+                  <label htmlFor={uploadInputId} className="cursor-pointer text-center p-4">
                     <div className="flex flex-col items-center justify-center text-gray-400">
-                        <div className="mb-2 text-gray-500"><UploadCloudIcon /></div>
-                        <span className="font-semibold">Fotoğraf Yükle</span>
-                        <p className="text-sm text-gray-500">Sürükleyip bırakın veya tıklayın</p>
+                      <div className="mb-2 text-gray-500"><UploadCloudIcon /></div>
+                      <span className="font-semibold">Fotoğraf Yükle</span>
+                      <p className="text-sm text-gray-500">Sürükleyip bırakın veya tıklayın</p>
                     </div>
-                    <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={onImageUpload} accept="image/png, image/jpeg" />
-                    </label>
+                    <input id={uploadInputId} name={uploadInputId} type="file" className="sr-only" onChange={onImageUpload} accept="image/png, image/jpeg" />
+                  </label>
                 )}
                 {!image && !onImageUpload && (
                     <div className="flex flex-col items-center justify-center text-gray-400">
@@ -690,6 +704,14 @@
             const [error, setError] = useState(null);
             const [apiKey, setApiKey] = useState(null);
             const [apiKeyError, setApiKeyError] = useState(null);
+
+            const handleReset = useCallback(() => {
+              setOriginalImage(null);
+              setModifiedImage(null);
+              setPrompt('');
+              setError(null);
+              setIsLoading(false);
+            }, []);
 
             useEffect(() => {
                 const fetchApiKey = async () => {
@@ -827,7 +849,7 @@
                     </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <ImagePanel title="Orijinal Fotoğraf" image={originalImage} onImageUpload={handleImageUpload} />
+                    <ImagePanel title="Orijinal Fotoğraf" image={originalImage} onImageUpload={handleImageUpload} onReset={handleReset} uploadInputId="original-upload" />
                     <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
                     </div>
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
