@@ -1211,6 +1211,60 @@
             const handleDownload = async () => {
               if (!modifiedImage) return;
               try {
+                // helper uses loadImage defined above
+                const baseImg = await loadImage(modifiedImage);
+                const logoImg = await loadImage('./KAIRA_logo_final_4k.png'); // put this PNG next to index.html
+
+                const W = baseImg.width;
+                const H = baseImg.height;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = W; canvas.height = H;
+                const ctx = canvas.getContext('2d');
+
+                // draw base
+                ctx.drawImage(baseImg, 0, 0);
+
+                // ~1 cm height (≈38 px) but scale with image height (4%)
+                const targetH = Math.max(38, Math.round(H * 0.04));
+                const scale = targetH / logoImg.height;
+                const logoW = Math.round(logoImg.width * scale);
+                const logoH = Math.round(logoImg.height * scale);
+
+                // margins
+                const margin = Math.max(12, Math.round(Math.max(W, H) * 0.015));
+                const x = W - logoW - margin;
+                const y = H - logoH - margin;
+
+                // subtle pad for readability
+                const pad = Math.ceil(Math.max(2, Math.round(targetH * 0.15)));
+                ctx.save();
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                ctx.fillRect(x - pad, y - pad, logoW + pad * 2, logoH + pad * 2);
+                ctx.restore();
+
+                // draw logo
+                ctx.drawImage(logoImg, x, y, logoW, logoH);
+
+                // export & download
+                const out = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = out;
+                a.download = `kaira-edited-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } catch (e) {
+                console.warn('[Download with watermark] failed, falling back to raw image:', e);
+                const a = document.createElement('a');
+                a.href = modifiedImage;
+                a.download = `kaira-edited-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              }
+            };
+              try {
                 // Load base and logo
                 const baseImg = await loadImage(modifiedImage);
                 const logoImg = await loadImage('./KAIRA_logo_final_4k.png'); // place this PNG next to index.html
