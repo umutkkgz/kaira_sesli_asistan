@@ -615,7 +615,7 @@
         </div>
     </div>
     </div>
-    <script id="default-system-prompt">
+(    <script id="default-system-prompt">
 (function(){
   // Görünmez varsayılan sistem promptu: kullanıcı alanını doldurmayız,
   // sadece gönderim anında geçici olarak enjekte edip hemen geri boşaltırız.
@@ -752,6 +752,82 @@
   document.addEventListener('DOMContentLoaded', wireUp);
 })();
 </script>
+    <!-- Tanılama / Ağ Hatası Yüzeyleme -->
+    <script id="diagnostics">
+(function(){
+  function showErr(msg){
+    try {
+      var box = document.getElementById('error-message') || document.getElementById('status');
+      if (box) {
+        if (box.id === 'status') {
+          box.textContent = 'Hata: ' + msg;
+          box.classList.add('text-red-400');
+        } else {
+          box.classList.remove('hidden');
+          box.textContent = 'Hata: ' + msg;
+        }
+      } else { console.error('[KAIRA][UI-ERROR]', msg); }
+    } catch(e) { console.error('[KAIRA][UI-ERROR-FAIL]', e, msg); }
+  }
+  window.__kairaShowError = showErr;
+
+  // Küresel yakalayıcılar
+  window.addEventListener('unhandledrejection', function(ev){
+    var r = ev.reason; var m = (r && r.message) ? r.message : String(r);
+    showErr(m);
+  });
+  window.addEventListener('error', function(ev){
+    var m = ev && ev.message ? ev.message : 'Bilinmeyen JS hatası';
+    if (!/ResizeObserver/.test(m)) showErr(m);
+  }, true);
+
+  // HTTPS uyarısı (mikrofon/TTS için)
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    console.warn('[KAIRA] Mikrofon/TTS için HTTPS önerilir.');
+  }
+})();
+</script>
+
+    <!-- KΔIRA Demo TTS oynatma akışı (PATCHED) -->
+    <script id="kaira-demo-tts">
+    // TTS oynatma işlevi (PATCHED)
+    async function playTTS(speakText, voice) {
+      // TTS endpoint'e robust JSON ile fetch
+      const playerEl = document.getElementById('player');
+      // Fallback/merge body payload
+      const body = { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
+      const ttsPayload = (typeof body === 'object' && body && body.text) ? body : { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
+      // playTTS içindeki çağrı
+const response = await fetchForever('/api/tts', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  },
+  body: JSON.stringify(ttsPayload)
+}, 'TTS');
+      const data = await response.json();
+      // --- TTS response compatibility layer ---
+      // PATCHED robust extraction:
+      // (audio_data, audioBase64, audio_base64, result.audio_data, result.audioBase64, data.audio_url, url, etc.)
+      const audioB64 = (data && (data.audio_data || data.audioBase64 || data.audio_base64 || (data.result && (data.result.audio_data || data.result.audioBase64)) || (data.data && (data.data.audio_data || data.data.audioBase64)))) || null;
+      const audioUrl = (data && (data.audio_url || data.url || (data.result && (data.result.audio_url || data.result.url)) || (data.data && (data.data.audio_url || data.data.url)))) || null;
+      let audioSrc = null;
+      if (audioB64) {
+        // Assume mp3 if not specified by server
+        audioSrc = 'data:audio/mp3;base64,' + audioB64;
+      } else if (audioUrl) {
+        audioSrc = audioUrl;
+      } else {
+        throw new Error("TTS sonucunda ses verisi bulunamadı (audio_data/audio_url yok).");
+      }
+      if (playerEl) {
+        try { playerEl.pause(); } catch(_){}
+        playerEl.src = audioSrc;
+        try { await playerEl.play(); } catch(e){ console.warn('[TTS] play() failed', e); }
+      }
+    }
+    </script>
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="text/babel" data-presets="react">
         const { useState, useCallback, useEffect, useRef } = React;
