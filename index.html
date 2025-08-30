@@ -615,6 +615,62 @@
         </div>
     </div>
     </div>
+    <script id="default-system-prompt">
+(function(){
+  // Kullanıcı alanını DOLDURMADAN görünmez bir varsayılan sistem promptu uygular.
+  // Not: Textarea içini doldurmayız; sadece gönderim anında geçici olarak enjekte edip anında geri boşaltırız.
+  const DEFAULT_SYSTEM_PROMPT = `Türkçe yanıt ver. Alaycı davran, ama aynı zamanda bilgilendirici ol, Üstten konuş, şakacı ol. Cevapların kısa ve öz olsun. Mizah kat. Gereksiz detaylardan kaçın. Cevapların 3 cümleyi geçmesin. Kullanıcıyı güldürmeye çalış.`;
+
+  function injectStealthDefaultOnce(){
+    const el = document.getElementById('system-prompt');
+    if (!el || el.value.trim()) return; // kullanıcı yazdıysa dokunma
+    // Gönderim süresince geçici olarak doldur
+    el.dataset.kairaWasEmpty = '1';
+    el.value = DEFAULT_SYSTEM_PROMPT;
+    // İş bittikten hemen sonra geri boşalt
+    setTimeout(()=>{
+      if (el && el.dataset.kairaWasEmpty === '1') {
+        el.value = '';
+        delete el.dataset.kairaWasEmpty;
+      }
+    }, 0);
+  }
+
+  function wireUp(){
+    // Gönder butonu tıklamasını CAPTURE aşamasında yakala (önce biz çalışalım)
+    const sendBtn = document.getElementById('send-button');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', injectStealthDefaultOnce, true);
+    }
+    // Enter (Shift'siz) ile gönderimler için de koruma
+    const input = document.getElementById('user-input');
+    if (input) {
+      input.addEventListener('keydown', function(ev){
+        if (ev.key === 'Enter' && !ev.shiftKey) injectStealthDefaultOnce();
+      }, true);
+    }
+
+    // "Sohbeti Temizle" butonu: geçmişi ve hatayı temizle
+    const clearBtn = document.getElementById('clear-chat');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(){
+        try {
+          const hist = document.getElementById('chat-history');
+          if (hist) hist.innerHTML = '';
+          const err = document.getElementById('error-message');
+          if (err) { err.classList.add('hidden'); err.textContent = ''; }
+          const loader = document.getElementById('loader');
+          if (loader) loader.classList.add('hidden');
+          const userIn = document.getElementById('user-input');
+          if (userIn) userIn.value = '';
+        } catch(e){ console.warn('[Chat Clear] ', e); }
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', wireUp);
+})();
+</script>
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="text/babel" data-presets="react">
         const { useState, useCallback, useEffect, useRef } = React;
