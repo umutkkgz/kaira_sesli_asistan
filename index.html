@@ -1323,6 +1323,54 @@ function patchFetchForDemo(){
 
     const isLong = (init && (init.kairaLong === true || init.kairaIsStream === true)) || looksAudio;
 
+    // Route long requests via server-side job to avoid mobile timeouts
+    if (isLong && window.API_PROXY_BASE) {
+      try {
+        const hdrObj = Object.fromEntries(new Headers(init?.headers || {}));
+        const urlStr = (typeof input === 'string') ? input : (input && input.url ? String(input.url) : '');
+        const bodyRaw = init?.body;
+        let bodyStr = typeof bodyRaw === 'string' ? bodyRaw : (bodyRaw ? JSON.stringify(bodyRaw) : null);
+
+        const startRes = await window.__origFetch(`${window.API_PROXY_BASE}/api/long/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+          body: JSON.stringify({
+            url: urlStr,
+            method: (init?.method || 'GET'),
+            headers: hdrObj,
+            body: bodyStr,
+            timeout: Math.ceil((init?.kairaTimeoutMs || (isLong ? 180000 : 15000)) / 1000)
+          })
+        });
+        const startJson = await startRes.json();
+        if (!startRes.ok || !startJson.jobId) throw new Error('Job start failed');
+        const jobId = startJson.jobId;
+
+        // Poll until completed
+        while (true) {
+          await new Promise(r => setTimeout(r, 1000));
+          const stRes = await window.__origFetch(`${window.API_PROXY_BASE}/api/long/status/${jobId}`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          });
+          const st = await stRes.json();
+          if (st.status === 'done') break;
+          if (st.status === 'error') {
+            return new Response(JSON.stringify({ error: 'Long task failed' }), {
+              status: 502, headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        }
+
+        // Return final result (audio/json/raw) via server
+        return await window.__origFetch(`${window.API_PROXY_BASE}/api/long/result/${jobId}`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
+      } catch (e) {
+        console.warn('[KAIRA] long-job route failed, falling back to direct fetch', e);
+        // fall through to normal retry loop below
+      }
+    }
+
     const tries = (init && typeof init.kairaRetries === 'number')
       ? init.kairaRetries
       : (isLong ? 1 : 3);
