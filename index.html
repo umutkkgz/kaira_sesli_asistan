@@ -814,11 +814,17 @@
               try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const parts = [
-                  { text: (
-                    'You are a prompt engineer. Analyze the uploaded reference images and propose a POSITIVE prompt and a NEGATIVE prompt for a photorealistic image-editing/generation task. ' +
-                    'Assume we will use these images as visual context (not strict copy). Use natural, concise English. Return ONLY compact JSON: {"positive":"...","negative":"..."}. Do not add code fences or extra text.'
-                  ) }
-                ];
+  { text: (
+    'Aşağıdaki referans görselleri incele ve tamamen **Türkçe** bir imaj üretim talimatı yaz. ' +
+    'Biçimi şuna **aynen** benzesin (her satır ayrı olacak):\n' +
+    'Bağlam 1’deki ...\n' +
+    'Bağlam 2’deki ...\n' +
+    'Bağlam 3’teki ...\n' +
+    'Işık/renk tutarlılığı ve teknik ayarlarla ilgili 2-3 kısa satır ekle.\n' +
+    'Son satır **Negatif:** ile başlasın ve istenmeyen ögeleri virgülle kısa kısa yaz.\n\n' +
+    'Sadece metni döndür; kod bloğu veya açıklama ekleme.'
+  ) }
+];
                 for (const img of picked.slice(0,5)) {
                   const base64Data = img.split(',')[1];
                   const mimeMatch = img.match(/:(.*?);/);
