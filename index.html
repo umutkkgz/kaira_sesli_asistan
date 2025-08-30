@@ -697,7 +697,7 @@
         };
 
         function App() {
-            const [originalImage, setOriginalImage] = useState(null);
+            const [originalImages, setOriginalImages] = useState([null, null, null, null, null]);
             const [modifiedImage, setModifiedImage] = useState(null);
             const [prompt, setPrompt] = useState('');
             const [isLoading, setIsLoading] = useState(false);
@@ -706,7 +706,7 @@
             const [apiKeyError, setApiKeyError] = useState(null);
 
             const handleReset = useCallback(() => {
-              setOriginalImage(null);
+              setOriginalImages([null, null, null, null, null]);
               setModifiedImage(null);
               setPrompt('');
               setError(null);
@@ -758,68 +758,71 @@
                 fetchApiKey();
             }, []);
 
-            const handleImageUpload = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => { setOriginalImage(reader.result); };
-                reader.readAsDataURL(file);
-            }
+            const makeUploadHandler = (idx) => (e) => {
+              const file = e.target.files && e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setOriginalImages(prev => {
+                  const next = [...prev];
+                  next[idx] = reader.result;
+                  return next;
+                });
+              };
+              reader.readAsDataURL(file);
             };
 
             const handleGenerate = async () => {
-            if (!apiKey) {
-                setError(apiKeyError || "API anahtarı alınamadı. Lütfen sunucu bağlantısını kontrol edin.");
-                return;
-            }
-            if (!originalImage) { setError("Lütfen düzenlemek için bir fotoğraf yükleyin."); return; }
-            if (!prompt) { setError("Lütfen fotoğrafta ne değişiklik yapmak istediğinizi yazın."); return; }
+              if (!apiKey) {
+                  setError(apiKeyError || "API anahtarı alınamadı. Lütfen sunucu bağlantısını kontrol edin.");
+                  return;
+              }
+              const picked = originalImages.filter(Boolean);
+              if (picked.length === 0) { setError("Lütfen en az 1 fotoğraf yükleyin (en fazla 5)."); return; }
+              if (!prompt) { setError("Lütfen fotoğrafta ne değişiklik yapmak istediğinizi yazın."); return; }
 
-            setIsLoading(true);
-            setError(null);
-            setModifiedImage(null);
+              setIsLoading(true);
+              setError(null);
+              setModifiedImage(null);
 
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-                const base64Data = originalImage.split(',')[1];
-                const mimeType = originalImage.match(/:(.*?);/)[1];
+              try {
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+                  const parts = [ { text: prompt } ];
+                  for (const img of picked.slice(0,5)) {
+                    const base64Data = img.split(',')[1];
+                    const mimeMatch = img.match(/:(.*?);/);
+                    const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+                    parts.push({ inlineData: { mimeType, data: base64Data } });
+                  }
+                  const payload = { contents: [{ parts }] };
 
-                const payload = {
-                contents: [{
-                    parts: [
-                    { text: prompt },
-                    { inlineData: { mimeType: mimeType, data: base64Data } }
-                    ]
-                }],
-                };
+                  const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
 
-                const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-                });
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || "API'den geçersiz bir yanıt alındı.");
+                  }
 
-                if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || "API'den geçersiz bir yanıt alındı.");
-                }
+                  const result = await response.json();
+                  const generatedPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
 
-                const result = await response.json();
-                const generatedPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-
-                if (generatedPart && generatedPart.inlineData.data) {
-                const imageData = generatedPart.inlineData.data;
-                setModifiedImage(`data:image/png;base64,${imageData}`);
-                } else {
-                const textResponse = result.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
-                throw new Error(textResponse ? `API resim yerine metin yanıtı döndürdü: "${textResponse}"` : "API yanıtında resim verisi bulunamadı.");
-                }
-            } catch (err) {
-                setError(`Bir hata oluştu: ${err.message}`);
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
+                  if (generatedPart && generatedPart.inlineData.data) {
+                    const imageData = generatedPart.inlineData.data;
+                    setModifiedImage(`data:image/png;base64,${imageData}`);
+                  } else {
+                    const textResponse = result.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
+                    throw new Error(textResponse ? `API resim yerine metin yanıtı döndürdü: "${textResponse}"` : "API yanıtında resim verisi bulunamadı.");
+                  }
+              } catch (err) {
+                  setError(`Bir hata oluştu: ${err.message}`);
+                  console.error(err);
+              } finally {
+                  setIsLoading(false);
+              }
             };
 
             const handleDownload = () => {
@@ -849,14 +852,32 @@
                     </div>
                     )}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <ImagePanel title="Orijinal Fotoğraf" image={originalImage} onImageUpload={handleImageUpload} onReset={handleReset} uploadInputId="original-upload" />
-                    <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
+                      <div className="space-y-4">
+                        <h3 className="text-lg text-gray-300">Bağlam Fotoğrafları (en fazla 5)</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {originalImages.map((img, i) => (
+                            <ImagePanel
+                              key={i}
+                              title={`Bağlam ${i+1}`}
+                              image={img}
+                              onImageUpload={makeUploadHandler(i)}
+                              onReset={() => setOriginalImages(prev => { const n=[...prev]; n[i]=null; return n; })}
+                              uploadInputId={`original-upload-${i}`}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex gap-3">
+                          <button onClick={handleReset} className="bg-gray-700/80 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors">Tümünü Sıfırla</button>
+                          <span className="text-xs text-gray-400 self-center">İpucu: Farklı açılardan/kaynaklardan 1–5 görsel ekleyebilirsin.</span>
+                        </div>
+                      </div>
+                      <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
                     </div>
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
+                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örn: 'arka planı galaksi yap'. 1–5 bağlam fotoğrafı ekleyebilirsin."
                         className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
                         onKeyDownCapture={(e)=>e.stopPropagation()}
                         onKeyPressCapture={(e)=>e.stopPropagation()}
@@ -868,7 +889,7 @@
 
                     <button
                         onClick={handleGenerate}
-                        disabled={isLoading || !apiKey}
+                        disabled={isLoading || !apiKey || originalImages.every(img => !img)}
                         className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100"
                     >
                         <Wand2Icon size={20} />
