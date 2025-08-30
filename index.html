@@ -1148,6 +1148,25 @@
   // Default: microphone is NOT allowed until the user taps the mic button
   window.__micExplicitConsent = false;
 
+  // Centralized audio controls: track active MediaStream and SpeechRecognition
+  window.KAIRA_AUDIO = (function(){
+    let _stream = null;     // MediaStream from getUserMedia
+    let _recognizer = null; // Web Speech API instance
+    return {
+      setStream(s){ _stream = s || null; },
+      setRecognizer(r){ _recognizer = r || null; },
+      stopStream(){
+        try { if (_stream) { _stream.getTracks().forEach(t => t.stop()); } } catch(_){}
+        _stream = null;
+      },
+      stopRecognizer(){
+        try { if (_recognizer && typeof _recognizer.stop === 'function') { _recognizer.stop(); } } catch(_){}
+        _recognizer = null;
+      },
+      stopAll(){ this.stopRecognizer(); this.stopStream(); }
+    };
+  })();
+
   // Patch getUserMedia so any auto-attempts to grab audio fail without an explicit tap
   try {
     const md = navigator.mediaDevices;
@@ -1160,7 +1179,11 @@
             return Promise.reject(new DOMException('Microphone blocked: explicit user gesture required', 'NotAllowedError'));
           }
         } catch(_){ /* noop */ }
-        return origGUM(constraints);
+        // --- Patch: capture stream for KAIRA_AUDIO ---
+        return Promise.resolve(origGUM(constraints)).then(stream => {
+          try { if (window.KAIRA_AUDIO) window.KAIRA_AUDIO.setStream(stream); } catch(_){}
+          return stream;
+        });
       };
     }
   } catch(_){ /* noop */ }
@@ -1175,6 +1198,7 @@
           console.warn('[KAIRA] SpeechRecognition.start blocked until mic button is pressed');
           return; // silently ignore
         }
+        try { if (window.KAIRA_AUDIO) window.KAIRA_AUDIO.setRecognizer(this); } catch(_){}
         return origStart.apply(this, arguments);
       };
     }
@@ -1197,6 +1221,23 @@
     revoke(){ window.__micExplicitConsent = false; },
     allow(){ window.__micExplicitConsent = true; }
   };
+
+  // When screen/tab goes hidden (screen off, app background), HARD-STOP audio capture & revoke consent
+  function kairaHardStopMic(){
+    try { if (window.KAIRA_AUDIO) window.KAIRA_AUDIO.stopAll(); } catch(_){}
+    try { if (window.KAIRA_MIC_GUARD && typeof window.KAIRA_MIC_GUARD.revoke === 'function') window.KAIRA_MIC_GUARD.revoke(); } catch(_){}
+    console.log('[KAIRA] Mic hard-stopped due to hidden/teardown');
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') {
+      kairaHardStopMic();
+    }
+  });
+  window.addEventListener('pagehide', function(){ kairaHardStopMic(); }, { capture: true });
+  window.addEventListener('blur', function(){
+    // Optional: some mobile browsers fire blur when locking screen; be conservative and stop
+    if (document.visibilityState !== 'visible') kairaHardStopMic();
+  }, true);
 })();
 </script>
     <!-- DÜZELTME: Ana Kontrol Script'i en sona taşındı -->
