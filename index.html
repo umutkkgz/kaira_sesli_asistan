@@ -637,19 +637,32 @@
 
   function clearChatUI(){
     try {
+      // UI kutularını temizle
       const hist = document.getElementById('chat-history');
       if (hist) hist.innerHTML = '';
+      const hist2 = document.getElementById('chat-container'); // bazı sürümlerde bu kullanılıyor
+      if (hist2) hist2.innerHTML = '';
       const err = document.getElementById('error-message');
       if (err) { err.classList.add('hidden'); err.textContent = ''; }
       const loader = document.getElementById('loader');
       if (loader) loader.classList.add('hidden');
       const userIn = document.getElementById('user-input');
       if (userIn) userIn.value = '';
-      // İsteğe bağlı: sistem promptu boş kalsın (göstermiyoruz)
+
+      // Olası localStorage geçmiş anahtarlarını temizle (varsa)
+      try {
+        const keys = ['universal_chat_history','kaira:chat-history','chat_history'];
+        keys.forEach(k=>{ if (localStorage.getItem(k) !== null) localStorage.removeItem(k); });
+      } catch(_){}
+
+      // Sistem promptu kullanıcı görmesin
       const sys = document.getElementById('system-prompt');
       if (sys && sys.value === DEFAULT_SYSTEM_PROMPT) sys.value = '';
+
       // Diğer modüller dinlesin diye event yayınla
-      document.dispatchEvent(new CustomEvent('kaira:chat-cleared'));
+      document.dispatchEvent(new CustomEvent('kaira:chat-cleared', { detail: { source: 'clear-button' } }));
+
+      console.log('[Chat] cleared');
     } catch(e){ console.warn('[Chat Clear] ', e); }
   }
 
@@ -660,24 +673,31 @@
   }
 
   function wireUp(){
-    // Delegated click: DOM tekrar oluşturulsa bile çalışsın
+    // 1) Delegated click: DOM tekrar oluşturulsa bile çalışsın (capture)
     document.addEventListener('click', function(ev){
       const target = ev.target;
       if (!target || typeof target.closest !== 'function') return;
-      // Gönder butonu (capture edilmeden önce tetikle)
-      if (target.closest && target.closest('#send-button')) {
+      // Gönder butonu
+      if (target.closest('#send-button')) {
         injectStealthDefaultOnce();
       }
       // Sohbeti temizle
-      if (target.closest && target.closest('#clear-chat')) {
+      if (target.closest('#clear-chat')) {
         ev.preventDefault();
         clearChatUI();
       }
       // Seçim ekranından Evrensel Sohbet'e girişte promptu boşalt
-      if (target.closest && target.closest('#select-chat')) {
+      if (target.closest('#select-chat')) {
         wipeSystemPromptOnEnterChat();
       }
     }, true);
+
+    // 2) Hedef butona doğrudan dinleyici ekle (stopImmediatePropagation olsa bile capture ile yakalarız)
+    const clearBtn = document.getElementById('clear-chat');
+    if (clearBtn) {
+      clearBtn.setAttribute('type','button');
+      clearBtn.addEventListener('click', function(e){ e.preventDefault(); clearChatUI(); }, true); // capture=true
+    }
 
     // Enter (Shift'siz) ile gönderimler için de koruma
     const input = document.getElementById('user-input');
