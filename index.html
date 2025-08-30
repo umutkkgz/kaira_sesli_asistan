@@ -492,7 +492,7 @@
             <div class="flex-grow bg-gray-800 rounded-2xl p-4 border border-gray-700 flex flex-col">
                 <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
                      <h2 class="text-xl font-semibold text-white">Sohbet</h2>
-                     <button id="clear-chat" type="button" class="text-sm text-gray-400 hover:text-white">Sohbeti Temizle</button>
+                     <button id="clear-chat" type="button" onclick="window.__kairaClearChat && window.__kairaClearChat(); return false;" class="text-sm text-gray-400 hover:text-white">Sohbeti Temizle</button>
                 </div>
                 <div id="chat-history" class="flex-grow overflow-y-auto space-y-4 p-2 flex flex-col"></div>
                 <div id="loader" class="hidden self-center my-4">
@@ -637,11 +637,15 @@
 
   function clearChatUI(){
     try {
-      // UI kutularını temizle
+      // 1) Görünen konteynerleri boşalt
       const hist = document.getElementById('chat-history');
       if (hist) hist.innerHTML = '';
-      const hist2 = document.getElementById('chat-container'); // bazı sürümlerde bu kullanılıyor
+      const hist2 = document.getElementById('chat-container');
       if (hist2) hist2.innerHTML = '';
+      // Her ihtimale karşı sohbet balonlarını doğrudan temizle
+      document.querySelectorAll('#chat-view .chat-user-bubble, #chat-view .chat-assistant-bubble, #chat-view [data-chat-item]').forEach(function(el){ el.remove(); });
+
+      // 2) Hata/loader ve giriş alanını sıfırla
       const err = document.getElementById('error-message');
       if (err) { err.classList.add('hidden'); err.textContent = ''; }
       const loader = document.getElementById('loader');
@@ -649,22 +653,30 @@
       const userIn = document.getElementById('user-input');
       if (userIn) userIn.value = '';
 
-      // Olası localStorage geçmiş anahtarlarını temizle (varsa)
+      // 3) Muhtemel localStorage geçmişlerini temizle
       try {
         const keys = ['universal_chat_history','kaira:chat-history','chat_history'];
-        keys.forEach(k=>{ if (localStorage.getItem(k) !== null) localStorage.removeItem(k); });
-      } catch(_){}
+        keys.forEach(function(k){ if (localStorage.getItem(k) !== null) localStorage.removeItem(k); });
+        // Genel tarama (chat/kaira) — varsa sil
+        Object.keys(localStorage).forEach(function(k){ if (/chat|kaira/i.test(k)) try{ localStorage.removeItem(k); }catch(_){} });
+      } catch(_){ }
 
-      // Sistem promptu kullanıcı görmesin
+      // 4) Sistem promptu kullanıcıya görünmesin
       const sys = document.getElementById('system-prompt');
-      if (sys && sys.value === DEFAULT_SYSTEM_PROMPT) sys.value = '';
+      if (sys && sys.value && sys.value.trim() === DEFAULT_SYSTEM_PROMPT.trim()) sys.value = '';
 
-      // Diğer modüller dinlesin diye event yayınla
+      // 5) Üst modüller haberdar olsun
       document.dispatchEvent(new CustomEvent('kaira:chat-cleared', { detail: { source: 'clear-button' } }));
+
+      // 6) Scroll en alta değil başa
+      const wrap = document.getElementById('chat-view');
+      if (wrap && typeof wrap.scrollTo === 'function') wrap.scrollTo({ top: 0, behavior: 'smooth' });
 
       console.log('[Chat] cleared');
     } catch(e){ console.warn('[Chat Clear] ', e); }
   }
+
+  window.__kairaClearChat = clearChatUI;
 
   function wipeSystemPromptOnEnterChat(){
     // Evrensel Sohbet görünümü seçildiğinde textarea'yı boşalt
