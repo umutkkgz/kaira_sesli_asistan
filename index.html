@@ -269,6 +269,14 @@
         /* --- NASA tabs: force clickability & stacking --- */
         #nasa-view nav, #nasa-view .nasa-tab { pointer-events: auto !important; }
         #nasa-view nav { position: relative; z-index: 50; }
+        /* === Editor view typing & z-order safety === */
+        #editor-view, #editor-view * {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          pointer-events: auto !important;
+        }
+        #editor-view { position: relative; z-index: 2000; }
+        #site-content { position: relative; z-index: 0; }
     </style>
 </head>
 <body class="antialiased">
@@ -817,16 +825,17 @@
                     </div>
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
                     <textarea
-    value={prompt}
-    onChange={(e) => setPrompt(e.target.value)}
-    placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
-    className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-    onKeyDownCapture={(e)=>e.stopPropagation()}
-    onKeyPressCapture={(e)=>e.stopPropagation()}
-    onKeyUpCapture={(e)=>e.stopPropagation()}
-    onFocusCapture={(e)=>e.stopPropagation()}
-    onClickCapture={(e)=>e.stopPropagation()}
-/>
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örneğin: 'arka planı galaksi yap', 'çizgi film karakterine dönüştür'..."
+                        className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+                        onKeyDownCapture={(e)=>e.stopPropagation()}
+                        onKeyPressCapture={(e)=>e.stopPropagation()}
+                        onKeyUpCapture={(e)=>e.stopPropagation()}
+                        onFocusCapture={(e)=>e.stopPropagation()}
+                        onClickCapture={(e)=>e.stopPropagation()}
+                        autoFocus
+                    />
 
                     <button
                         onClick={handleGenerate}
@@ -1191,6 +1200,9 @@
                 }
                 document.oncontextmenu = null; window.oncontextmenu = null;
                 document.onkeydown = null; window.onkeydown = null;
+                const anti = document.getElementById('anti-leak-overlay');
+                if (anti) anti.style.display = 'none';
+                document.getElementById('editor-view')?.style.setProperty('pointer-events','auto','important');
                 if (!editorInitialized) {
                     window.initializeReactApp();
                     editorInitialized = true;
