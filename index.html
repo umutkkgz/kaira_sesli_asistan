@@ -693,32 +693,39 @@
                 )}
                 </div>
                 {typeof role !== 'undefined' && (
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">Rol</label>
-                      <select
-                        value={role}
-                        onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
-                      >
-                        <option value="İçerik">İçerik</option>
-                        <option value="Stil">Stil</option>
-                        <option value="Renk">Renk</option>
-                        <option value="Işık">Işık</option>
-                      </select>
+                  <>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Rol</label>
+                        <select
+                          value={role}
+                          onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                        >
+                          <option value="İçerik">İçerik</option>
+                          <option value="Stil">Stil</option>
+                          <option value="Renk">Renk</option>
+                          <option value="Işık">Işık</option>
+                          <option value="Yüz">Yüz</option>
+                          <option value="Ortam">Ortam</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Ağırlık: {weight}%</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={weight}
+                          onChange={(e) => onWeightChange && onWeightChange(parseInt(e.target.value, 10))}
+                          className="w-full"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">Ağırlık: {weight}%</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={weight}
-                        onChange={(e) => onWeightChange && onWeightChange(parseInt(e.target.value, 10))}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
+                    {role === 'Yüz' && (
+                      <p className="text-xs text-amber-300 mt-1">İpucu: Kimlik kilidi için ağırlığı ≥ %80 ayarlaman önerilir.</p>
+                    )}
+                  </>
                 )}
             </div>
             );
@@ -816,24 +823,42 @@
               setIsLoading(true); setError(null);
               try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                // Yeni, daha detaylı prompt template:
                 const parts = [
   { text: (
-    'Aşağıdaki referans görselleri ve verilen kullanıcı metnini birlikte değerlendir. ' +
-    'Tamamen **Türkçe** bir imaj üretim talimatı yaz. Biçim şablonu **aynen** şöyle olsun (her satır ayrı):\n' +
-    'Bağlam 1’deki ...\n' +
-    'Bağlam 2’deki ...\n' +
-    'Bağlam 3’teki ...\n' +
-    'Işık/renk tutarlılığı ve teknik ayarlarla ilgili 2-3 kısa satır ekle.\n' +
+    'Aşağıdaki referans görselleri **ve** kullanıcı metnini birlikte değerlendir. ' +
+    'Sadece **Türkçe** ve **çok satırlı** bir **pozitif prompt** yaz. Mevcut bağlamlar için ayrı satırlar üret; yüklenmeyen bağlam için satır yazma. ' +
+    'Her satır kısa, net ve emir kipinde olsun. Şu şablonu **aynen** doldur:\n' +
+    'Bağlam 1’deki ... (kimlik/ana içerik veya ana kompozisyon)\n' +
+    'Bağlam 2’deki ... (destekleyici içerik veya stil öğesi)\n' +
+    'Bağlam 3’teki ... (arka plan veya çevresel öğe)\n' +
+    'Işıklandırma: sahnenin ışık yönü ve kalitesi (örn. geç saat diffüz, golden-hour dokunuşu)\n' +
+    'Renk/Grade: genel renk paleti ve filmik tonlama (örn. sıcak vurgular, soğuk gölgeler)\n' +
+    'Kompozisyon & Perspektif: kaçış noktası, açı, kadraj, ölçek uyumu\n' +
+    'Fiziksel entegrasyon: contact shadow, yansıma/ambient occlusion, zeminle tutunma\n' +
+    'Hareket ipuçları: tekerlerde hafif radial blur, saçta rüzgâr etkisi (gerekiyorsa)\n' +
+    'Lens/Netlik: alan derinliği (DOF), keskinlik; yapay oversharpen yok\n' +
+    'Gerçekçilik kuralları: anatomi ve oranlar korunur; aşırı yumuşatma/beautify yok\n' +
     'Son satır **Negatif:** ile başlasın ve istenmeyen ögeleri virgülle kısa kısa yaz.\n\n' +
     'Sadece metni döndür; kod bloğu veya açıklama ekleme.'
   ) }
 ];
+                // Mevcut bağlam indeksleri (yalnızca yüklü olanlar)
+                const present = originalImages.map((img, idx) => img ? (idx+1) : null).filter(Boolean);
+                if (present.length) {
+                  parts.push({ text: 'Mevcut bağlamlar: ' + present.join(', ') });
+                }
+                // Rol/ağırlıklara göre kimlik korunumu ipucu (Yüz && ≥0.90)
+                const identityIdx = originalImages.findIndex((img, idx) => img && roles[idx] === 'Yüz' && ((weights[idx] ?? 0) >= 90));
+                if (identityIdx >= 0) {
+                  parts.push({ text: `Kimlik korunumu: Bağlam ${identityIdx+1} — yüz geometrisi ve oranları değişmesin; yaş, ten tonu, göz rengi ve saç çizgisi sabit kalsın; yalnızca ışık/renk uyumu sağla.` });
+                }
                 // Kullanıcı yazısı ekle
                 if (userBrief && userBrief.trim()) {
                   parts.push({ text: 'Kullanıcı metni:\n' + userBrief.trim() });
                 }
                 // Bağlam rolleri/ağırlıkları (Türkçe)
-                const roleMapTr = { 'İçerik':'içerik', 'Stil':'stil', 'Renk':'renk paleti', 'Işık':'ışık' };
+                const roleMapTr = { 'İçerik':'içerik', 'Stil':'stil', 'Renk':'renk paleti', 'Işık':'ışık', 'Yüz':'yüz', 'Ortam':'ortam' };
                 const metaLinesTr = [];
                 originalImages.forEach((img, idx) => {
                   if (img) {
@@ -929,7 +954,7 @@
               try {
                   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
                   // Guidance injection for roles/weights:
-                  const roleMap = { 'İçerik':'content', 'Stil':'style', 'Renk':'color palette', 'Işık':'lighting' };
+                  const roleMap = { 'İçerik':'content', 'Stil':'style', 'Renk':'color palette', 'Işık':'lighting', 'Yüz':'face identity', 'Ortam':'environment' };
                   const metaLines = [];
                   originalImages.forEach((img, idx) => {
                     if (img) {
@@ -940,9 +965,28 @@
                   });
                   const controlText = metaLines.length
                     ? ("\n\nUse the following context roles and weights (0.0–1.0 influence):\n" + metaLines.join("\n") +
-                       "\nRespect roles: content guides subjects/composition; style guides texture and look; color palette guides hues/grade; lighting guides direction and quality.")
+                       "\nRespect roles: content guides subjects/composition; style guides texture and look; color palette guides hues/grade; lighting guides direction and quality; face identity preserves the exact person; environment guides background/setting.")
                     : '';
-                  const parts = [ { text: (englishPositive + (englishNegative && englishNegative.trim() ? ('\nNegative prompt: ' + englishNegative.trim()) : '') + controlText) } ];
+                  // Face identity lock if any context is marked as 'Yüz' with high weight
+                  const identityCtx = [];
+                  originalImages.forEach((img, idx) => {
+                    if (img && roles[idx] === 'Yüz' && ((weights[idx] ?? 0) >= 80)) identityCtx.push(idx+1);
+                  });
+                  // BEGIN PATCH: Replace identityText/parts block with automatic negative prompt hardening
+                  const identityText = identityCtx.length
+                    ? ("\n\nFace identity lock:\nUse the face in Context " + identityCtx.join(', ') + 
+                       " as a strict identity reference. Preserve facial geometry and proportions; do not change age, skin tone, eye color, hairline, or facial symmetry. Do not beautify. Only match lighting and color; keep the person recognizably the same.")
+                    : '';
+
+                  // If face identity is active, harden the negative prompt automatically
+                  let finalNegative = englishNegative || '';
+                  if (identityCtx.length) {
+                    const guard = 'face swap, identity change, change age, change skin tone, change eye color, change hairline, change facial geometry, beautify filter';
+                    finalNegative = finalNegative && finalNegative.trim() ? (finalNegative.trim() + ', ' + guard) : guard;
+                  }
+
+                  const parts = [ { text: (englishPositive + (finalNegative && finalNegative.trim() ? ('\nNegative prompt: ' + finalNegative.trim()) : '') + controlText + identityText) } ];
+                  // END PATCH
                   for (const img of picked.slice(0,5)) {
                     const base64Data = img.split(',')[1];
                     const mimeMatch = img.match(/:(.*?);/);
