@@ -617,7 +617,7 @@
     </div>
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="text/babel" data-presets="react">
-        const { useState, useCallback, useEffect } = React;
+        const { useState, useCallback, useEffect, useRef } = React;
 
         const UploadCloudIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         const Wand2Icon = ({size = 48}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>;
@@ -630,7 +630,7 @@
             </h1>
         );
 
-        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage, onReset, uploadInputId = 'file-upload', role, weight, onRoleChange, onWeightChange }) => {
+        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage, onReset, uploadInputId = 'file-upload', role, weight, onRoleChange, onWeightChange, onRefine }) => {
             const handleDragOver = useCallback((e) => { e.preventDefault(); }, []);
             const handleDrop = useCallback((e) => {
             e.preventDefault();
@@ -638,6 +638,88 @@
                 onImageUpload({ target: { files: e.dataTransfer.files } });
             }
             }, [onImageUpload]);
+
+            // === Mask editor (only for result panel: when onImageUpload is falsy) ===
+            const [maskMode, setMaskMode] = useState(false);
+            const [brushSize, setBrushSize] = useState(32);
+            const [isErasing, setIsErasing] = useState(false);
+            const [isDrawing, setIsDrawing] = useState(false);
+            const [hasMask, setHasMask] = useState(false);
+            const containerRef = useRef(null);
+            const overlayRef = useRef(null); // visible red overlay
+            const offscreenRef = useRef(null); // white-on-transparent mask data
+
+            const ensureMaskCanvas = useCallback(() => {
+              if (!containerRef.current) return;
+              if (!overlayRef.current) return;
+              const w = containerRef.current.clientWidth;
+              const h = containerRef.current.clientHeight;
+              const overlay = overlayRef.current;
+              if (overlay.width !== w || overlay.height !== h) {
+                overlay.width = w; overlay.height = h;
+              }
+              if (!offscreenRef.current) {
+                const c = document.createElement('canvas');
+                c.width = w; c.height = h; offscreenRef.current = c;
+              } else {
+                const off = offscreenRef.current;
+                if (off.width !== w || off.height !== h) {
+                  const prev = document.createElement('canvas');
+                  prev.width = off.width; prev.height = off.height; prev.getContext('2d').drawImage(off,0,0);
+                  off.width = w; off.height = h; off.getContext('2d').drawImage(prev,0,0,w,h);
+                }
+              }
+            }, []);
+
+            useEffect(() => { if (maskMode) ensureMaskCanvas(); }, [maskMode, image, ensureMaskCanvas]);
+
+            const getPos = (ev) => {
+              const overlay = overlayRef.current; if (!overlay) return {x:0,y:0};
+              const rect = overlay.getBoundingClientRect();
+              const p = ev.touches ? ev.touches[0] : ev;
+              return { x: (p.clientX - rect.left), y: (p.clientY - rect.top) };
+            };
+
+            const drawAt = (ev) => {
+              const overlay = overlayRef.current; const off = offscreenRef.current;
+              if (!overlay || !off) return;
+              const {x,y} = getPos(ev);
+              const r = brushSize / 2;
+              const octx = overlay.getContext('2d');
+              const mctx = off.getContext('2d');
+              // visible red overlay
+              octx.save();
+              octx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+              octx.fillStyle = 'rgba(255,0,0,0.35)';
+              octx.beginPath(); octx.arc(x, y, r, 0, Math.PI*2); octx.fill();
+              octx.restore();
+              // white mask data
+              mctx.save();
+              mctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+              mctx.fillStyle = '#fff';
+              mctx.beginPath(); mctx.arc(x, y, r, 0, Math.PI*2); mctx.fill();
+              mctx.restore();
+              if (!hasMask) setHasMask(true);
+            };
+
+            const startDraw = (ev) => { if (!maskMode) return; setIsDrawing(true); drawAt(ev); };
+            const moveDraw  = (ev) => { if (!maskMode || !isDrawing) return; drawAt(ev); };
+            const endDraw   = () => setIsDrawing(false);
+
+            const clearMask = () => {
+              if (overlayRef.current) overlayRef.current.getContext('2d').clearRect(0,0,overlayRef.current.width,overlayRef.current.height);
+              if (offscreenRef.current) offscreenRef.current.getContext('2d').clearRect(0,0,offscreenRef.current.width,offscreenRef.current.height);
+              setHasMask(false);
+            };
+
+            const exportMask = () => {
+              const off = offscreenRef.current; if (!off) return null;
+              const out = document.createElement('canvas'); out.width = off.width; out.height = off.height;
+              const ctx = out.getContext('2d');
+              ctx.fillStyle = '#000'; ctx.fillRect(0,0,out.width,out.height); // black background
+              ctx.drawImage(off,0,0); // white where painted
+              return out.toDataURL('image/png');
+            };
 
             return (
             <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 flex flex-col gap-4 h-full">
@@ -667,6 +749,7 @@
                 className="relative aspect-square w-full bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-600 transition-all duration-300"
                 onDragOver={onImageUpload ? handleDragOver : null}
                 onDrop={onImageUpload ? handleDrop : null}
+                ref={containerRef}
                 >
                 {image && <img src={image} alt={title} className="object-contain w-full h-full" />}
                 {!image && onImageUpload && (
@@ -691,7 +774,44 @@
                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-400"></div>
                     </div>
                 )}
+                {/* Mask overlay only for result panel (no onImageUpload) */}
+                {!onImageUpload && maskMode && (
+                  <canvas
+                    ref={overlayRef}
+                    className="absolute inset-0 z-10 cursor-crosshair"
+                    onMouseDown={startDraw}
+                    onMouseMove={moveDraw}
+                    onMouseUp={endDraw}
+                    onMouseLeave={endDraw}
+                    onTouchStart={startDraw}
+                    onTouchMove={moveDraw}
+                    onTouchEnd={endDraw}
+                  />
+                )}
                 </div>
+                {!onImageUpload && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { const v = !maskMode; setMaskMode(v); if (v) setTimeout(ensureMaskCanvas, 0); }}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold ${maskMode ? 'bg-red-600/80 hover:bg-red-700/80' : 'bg-gray-700/80 hover:bg-gray-700'}`}
+                    >{maskMode ? 'Maske: Açık' : 'Maske: Kapalı'}</button>
+                    {maskMode && (
+                      <>
+                        <label className="text-xs text-gray-400 ml-1">Fırça: {brushSize}px</label>
+                        <input type="range" min="8" max="80" value={brushSize} onChange={(e)=>setBrushSize(parseInt(e.target.value,10))} />
+                        <button type="button" onClick={()=>setIsErasing(v=>!v)} className="px-3 py-2 rounded-lg bg-gray-700/80 hover:bg-gray-700 text-sm">{isErasing ? 'Silgi' : 'Fırça'}</button>
+                        <button type="button" onClick={clearMask} className="px-3 py-2 rounded-lg bg-gray-700/80 hover:bg-gray-700 text-sm">Temizle</button>
+                        <button
+                          type="button"
+                          disabled={!hasMask || isLoading || !onRefine}
+                          onClick={() => { const m = exportMask(); if (m && onRefine) onRefine(m); }}
+                          className={`px-3 py-2 rounded-lg text-sm font-semibold ${(!hasMask || isLoading || !onRefine) ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
+                        >Bölgeyi İyileştir</button>
+                      </>
+                    )}
+                  </div>
+                )}
                 {typeof role !== 'undefined' && (
                   <>
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -732,6 +852,70 @@
         };
 
         function App() {
+            // === Helpers for masked refinement ===
+            const loadImage = (src) => new Promise((resolve, reject) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => resolve(im); im.onerror = reject; im.src = src; });
+            const drawContain = (ctx, img, W, H) => { const s = Math.min(W / img.width, H / img.height); const w = img.width * s; const h = img.height * s; const x = (W - w) / 2; const y = (H - h) / 2; ctx.drawImage(img, x, y, w, h); };
+            const compositeWithMask = async (baseDataUrl, newDataUrl, maskDataUrl) => {
+              const [baseImg, newImg, maskImg] = await Promise.all([loadImage(baseDataUrl), loadImage(newDataUrl), loadImage(maskDataUrl)]);
+              const W = maskImg.width || Math.max(baseImg.width, newImg.width);
+              const H = maskImg.height || Math.max(baseImg.height, newImg.height);
+              const out = document.createElement('canvas'); out.width = W; out.height = H; const ctx = out.getContext('2d');
+              // base first
+              drawContain(ctx, baseImg, W, H);
+              // new image masked
+              const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tctx = tmp.getContext('2d');
+              drawContain(tctx, newImg, W, H);
+              tctx.globalCompositeOperation = 'destination-in';
+              tctx.drawImage(maskImg, 0, 0, W, H);
+              ctx.drawImage(tmp, 0, 0);
+              return out.toDataURL('image/png');
+            };
+
+            const handleRefine = async (maskDataUrl) => {
+              if (!apiKey) { setError(apiKeyError || 'API anahtarı alınamadı.'); return; }
+              if (!modifiedImage) { setError('Önce bir sonuç görseli oluştur.'); return; }
+              setIsLoading(true); setError(null);
+
+              // Parse inline Negative if present
+              let posForTranslate = prompt; let negFromBlock = '';
+              const negBlockMatchR = /(?:^|\n)\s*Negatif\s*:\s*(.+)$/is.exec(prompt || '');
+              if (negBlockMatchR) { negFromBlock = negBlockMatchR[1].trim(); posForTranslate = (prompt || '').replace(negBlockMatchR[0], '').trim(); if (!negativePrompt) setNegativePrompt(negFromBlock); }
+
+              // Translate to English
+              let englishPositive = posForTranslate || '';
+              let englishNegative = negativePrompt || negFromBlock || '';
+              try {
+                const translateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const translatePayload = { contents: [{ parts: [{ text: `Translate the following Turkish prompts into clear, concise English for an image-generation task. Return ONLY compact JSON with keys \"positive\" and \"negative\" (negative can be empty). No extra text.\n\nINPUT JSON:\n${JSON.stringify({ positive: posForTranslate, negative: (negativePrompt || negFromBlock) })}` }] }] };
+                const tRes = await fetch(translateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(translatePayload) });
+                if (tRes.ok) { const tJson = await tRes.json(); const tText = tJson?.candidates?.[0]?.content?.parts?.[0]?.text; if (tText && typeof tText === 'string') { try { const obj = JSON.parse(tText); if (obj.positive) englishPositive = obj.positive.trim(); if (typeof obj.negative === 'string') englishNegative = obj.negative.trim(); } catch(_) { englishPositive = tText.trim(); } } }
+              } catch(_) {}
+
+              try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+                const instruction = (englishPositive + (englishNegative && englishNegative.trim() ? ('\nNegative prompt: ' + englishNegative.trim()) : '') +
+                  '\n\nRefinement mode: Modify ONLY the region marked white in the attached binary mask (black=keep). Keep composition, camera pose, subject identity and global look unchanged outside the mask. Maintain the same framing.');
+                const parts = [{ text: instruction }];
+                // current image context
+                parts.push({ inlineData: { mimeType: 'image/png', data: (modifiedImage.split(',')[1] || '') } });
+                // mask image
+                parts.push({ inlineData: { mimeType: 'image/png', data: (maskDataUrl.split(',')[1] || '') } });
+
+                const payload = { contents: [{ parts }] };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) { const errJ = await response.json().catch(()=>({})); throw new Error(errJ.error?.message || 'Refine API hatası'); }
+                const result = await response.json();
+                const genPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (!genPart?.inlineData?.data) { const t = result.candidates?.[0]?.content?.parts?.find(p => p.text)?.text; throw new Error(t ? `Refine metin döndürdü: ${t}` : 'Refine resim verisi yok'); }
+                const newImgUrl = `data:image/png;base64,${genPart.inlineData.data}`;
+                const merged = await compositeWithMask(modifiedImage, newImgUrl, maskDataUrl);
+                setModifiedImage(merged);
+              } catch (e) {
+                console.error('[Refine]', e); setError(e.message || String(e));
+              } finally {
+                setIsLoading(false);
+              }
+            };
             const [originalImages, setOriginalImages] = useState([null, null, null, null, null]);
             const [modifiedImage, setModifiedImage] = useState(null);
             const [prompt, setPrompt] = useState('');
@@ -1074,7 +1258,7 @@
                           <span className="text-xs text-gray-400 self-center">İpucu: Farklı açılardan/kaynaklardan 1–5 görsel ekleyebilirsin.</span>
                         </div>
                       </div>
-                      <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
+                      <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} onRefine={handleRefine} />
                     </div>
                     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                       <div className="flex-1 flex flex-col gap-3">
