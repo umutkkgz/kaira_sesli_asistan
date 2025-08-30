@@ -630,7 +630,7 @@
             </h1>
         );
 
-        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage, onReset, uploadInputId = 'file-upload' }) => {
+        const ImagePanel = ({ title, image, onImageUpload, isLoading, onDownload, modifiedImage, onReset, uploadInputId = 'file-upload', role, weight, onRoleChange, onWeightChange }) => {
             const handleDragOver = useCallback((e) => { e.preventDefault(); }, []);
             const handleDrop = useCallback((e) => {
             e.preventDefault();
@@ -692,6 +692,34 @@
                     </div>
                 )}
                 </div>
+                {typeof role !== 'undefined' && (
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Rol</label>
+                      <select
+                        value={role}
+                        onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                      >
+                        <option value="İçerik">İçerik</option>
+                        <option value="Stil">Stil</option>
+                        <option value="Renk">Renk</option>
+                        <option value="Işık">Işık</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Ağırlık: {weight}%</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={weight}
+                        onChange={(e) => onWeightChange && onWeightChange(parseInt(e.target.value, 10))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
             </div>
             );
         };
@@ -700,6 +728,9 @@
             const [originalImages, setOriginalImages] = useState([null, null, null, null, null]);
             const [modifiedImage, setModifiedImage] = useState(null);
             const [prompt, setPrompt] = useState('');
+            const [negativePrompt, setNegativePrompt] = useState('');
+            const [roles, setRoles] = useState(['İçerik','Stil','Renk','Işık','İçerik']);
+            const [weights, setWeights] = useState([100,60,50,50,50]);
             const [isLoading, setIsLoading] = useState(false);
             const [error, setError] = useState(null);
             const [apiKey, setApiKey] = useState(null);
@@ -707,6 +738,8 @@
 
             const handleReset = useCallback(() => {
               setOriginalImages([null, null, null, null, null]);
+              setRoles(['İçerik','Stil','Renk','Işık','İçerik']);
+              setWeights([100,60,50,50,50]);
               setModifiedImage(null);
               setPrompt('');
               setError(null);
@@ -772,6 +805,48 @@
               reader.readAsDataURL(file);
             };
 
+            // --- AI prompt/negative suggestion from images ---
+            const handleSuggest = async () => {
+              if (!apiKey) { setError(apiKeyError || 'API anahtarı alınamadı.'); return; }
+              const picked = originalImages.filter(Boolean);
+              if (picked.length === 0) { setError('Lütfen önce en az bir bağlam fotoğrafı yükleyin.'); return; }
+              setIsLoading(true); setError(null);
+              try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const parts = [
+                  { text: (
+                    'You are a prompt engineer. Analyze the uploaded reference images and propose a POSITIVE prompt and a NEGATIVE prompt for a photorealistic image-editing/generation task. ' +
+                    'Assume we will use these images as visual context (not strict copy). Use natural, concise English. Return ONLY compact JSON: {"positive":"...","negative":"..."}. Do not add code fences or extra text.'
+                  ) }
+                ];
+                for (const img of picked.slice(0,5)) {
+                  const base64Data = img.split(',')[1];
+                  const mimeMatch = img.match(/:(.*?);/);
+                  const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+                  parts.push({ inlineData: { mimeType, data: base64Data } });
+                }
+                const payload = { contents: [{ parts }] };
+
+                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || 'Öneri alınamadı');
+                const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                let parsed = null;
+                try { parsed = JSON.parse(raw); } catch(_) {}
+                if (parsed && (parsed.positive || parsed.negative)) {
+                  if (parsed.positive) setPrompt(parsed.positive.trim());
+                  if (parsed.negative) setNegativePrompt(parsed.negative.trim());
+                } else {
+                  // Fallback: düz metni pozitif olarak koy
+                  setPrompt(raw.trim());
+                }
+              } catch (e) {
+                console.error('[Suggest]', e); setError(e.message || String(e));
+              } finally {
+                setIsLoading(false);
+              }
+            };
+
             const handleGenerate = async () => {
               if (!apiKey) {
                   setError(apiKeyError || "API anahtarı alınamadı. Lütfen sunucu bağlantısını kontrol edin.");
@@ -785,28 +860,33 @@
               setError(null);
               setModifiedImage(null);
 
-              // 1) Translate Turkish prompt → English with Gemini 2.5 Flash (text-only)
-              let englishPrompt = prompt;
+              // 1) Translate Turkish prompts → English (positive & negative) with Gemini 2.5 Flash
+              let englishPositive = prompt;
+              let englishNegative = negativePrompt;
               try {
                 const translateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const translatePayload = {
                   contents: [{
                     parts: [{
-                      text: `Translate the following Turkish image-editing instruction into clear, concise, natural English suitable for an image generation prompt. Return only the translation text, with no explanations or quotes.\n\nTurkish:\n${prompt}`
+                      text: `Translate the following Turkish prompts into clear, concise English for an image-generation task. Return ONLY compact JSON with keys \"positive\" and \"negative\" (negative can be empty). No extra text.\n\nINPUT JSON:\n${JSON.stringify({ positive: prompt, negative: negativePrompt })}`
                     }]
                   }]
                 };
-                const tRes = await fetch(translateUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(translatePayload)
-                });
+                const tRes = await fetch(translateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(translatePayload) });
                 if (tRes.ok) {
                   const tJson = await tRes.json();
                   const tText = tJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (tText && typeof tText === 'string') englishPrompt = tText.trim();
+                  if (tText && typeof tText === 'string') {
+                    try {
+                      const obj = JSON.parse(tText);
+                      if (obj.positive) englishPositive = obj.positive.trim();
+                      if (typeof obj.negative === 'string') englishNegative = obj.negative.trim();
+                    } catch(_) {
+                      englishPositive = tText.trim();
+                    }
+                  }
                 } else {
-                  console.warn('[Editor] Translation call failed, falling back to Turkish prompt');
+                  console.warn('[Editor] Translation call failed, falling back to Turkish prompts');
                 }
               } catch (e) {
                 console.warn('[Editor] Translation error:', e);
@@ -814,7 +894,21 @@
 
               try {
                   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-                  const parts = [ { text: englishPrompt } ];
+                  // Guidance injection for roles/weights:
+                  const roleMap = { 'İçerik':'content', 'Stil':'style', 'Renk':'color palette', 'Işık':'lighting' };
+                  const metaLines = [];
+                  originalImages.forEach((img, idx) => {
+                    if (img) {
+                      const r = roles[idx] || 'İçerik';
+                      const w = (weights[idx] ?? 50) / 100;
+                      metaLines.push(`Context ${idx+1}: role=${roleMap[r]||r}, weight=${w.toFixed(2)}`);
+                    }
+                  });
+                  const controlText = metaLines.length
+                    ? ("\n\nUse the following context roles and weights (0.0–1.0 influence):\n" + metaLines.join("\n") +
+                       "\nRespect roles: content guides subjects/composition; style guides texture and look; color palette guides hues/grade; lighting guides direction and quality.")
+                    : '';
+                  const parts = [ { text: (englishPositive + (englishNegative && englishNegative.trim() ? ('\nNegative prompt: ' + englishNegative.trim()) : '') + controlText) } ];
                   for (const img of picked.slice(0,5)) {
                     const base64Data = img.split(',')[1];
                     const mimeMatch = img.match(/:(.*?);/);
@@ -881,18 +975,22 @@
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       <div className="space-y-4">
                         <h3 className="text-lg text-gray-300">Bağlam Fotoğrafları (en fazla 5)</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {originalImages.map((img, i) => (
-                            <ImagePanel
-                              key={i}
-                              title={`Bağlam ${i+1}`}
-                              image={img}
-                              onImageUpload={makeUploadHandler(i)}
-                              onReset={() => setOriginalImages(prev => { const n=[...prev]; n[i]=null; return n; })}
-                              uploadInputId={`original-upload-${i}`}
-                            />
-                          ))}
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {originalImages.map((img, i) => (
+                        <ImagePanel
+                          key={i}
+                          title={`Bağlam ${i+1}`}
+                          image={img}
+                          onImageUpload={makeUploadHandler(i)}
+                          onReset={() => setOriginalImages(prev => { const n=[...prev]; n[i]=null; return n; })}
+                          uploadInputId={`original-upload-${i}`}
+                          role={roles[i]}
+                          weight={weights[i]}
+                          onRoleChange={(val) => setRoles(prev => { const n=[...prev]; n[i]=val; return n; })}
+                          onWeightChange={(val) => setWeights(prev => { const n=[...prev]; n[i]=val; return n; })}
+                        />
+                      ))}
+                    </div>
                         <div className="flex gap-3">
                           <button onClick={handleReset} className="bg-gray-700/80 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors">Tümünü Sıfırla</button>
                           <span className="text-xs text-gray-400 self-center">İpucu: Farklı açılardan/kaynaklardan 1–5 görsel ekleyebilirsin.</span>
@@ -900,28 +998,42 @@
                       </div>
                       <ImagePanel title="Değiştirilmiş Fotoğraf" image={modifiedImage} isLoading={isLoading} onDownload={handleDownload} modifiedImage={modifiedImage} />
                     </div>
-                    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
-                    <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Fotoğrafta nasıl bir değişiklik yapmak istersiniz? Örn: 'arka planı galaksi yap'. 1–5 bağlam fotoğrafı ekleyebilirsin."
-                        className="allow-select pointer-events-auto w-full h-24 md:h-auto md:flex-1 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
-                        onKeyDownCapture={(e)=>e.stopPropagation()}
-                        onKeyPressCapture={(e)=>e.stopPropagation()}
-                        onKeyUpCapture={(e)=>e.stopPropagation()}
-                        onFocusCapture={(e)=>e.stopPropagation()}
-                        onClickCapture={(e)=>e.stopPropagation()}
-                        autoFocus
-                    />
-
-                    <button
+                    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                      <div className="flex-1 flex flex-col gap-3">
+                        <textarea
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          placeholder="Ne görmek istiyorsun? (Pozitif prompt) — Örn: 'ağaç tünelinde siyah motosiklet üzerinde portre, golden-hour ışık'"
+                          className="allow-select pointer-events-auto w-full h-24 md:h-auto bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+                          onKeyDownCapture={(e)=>e.stopPropagation()}
+                          onKeyPressCapture={(e)=>e.stopPropagation()}
+                          onKeyUpCapture={(e)=>e.stopPropagation()}
+                          onFocusCapture={(e)=>e.stopPropagation()}
+                          onClickCapture={(e)=>e.stopPropagation()}
+                        />
+                        <textarea
+                          value={negativePrompt}
+                          onChange={(e) => setNegativePrompt(e.target.value)}
+                          placeholder="İstemediğin şeyler (Negatif prompt) — Örn: bulanık saç kenarı, aşırı blur, painting look, bozuk perspektif"
+                          className="allow-select pointer-events-auto w-full h-20 md:h-auto bg-gray-700 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none"
+                          onKeyDownCapture={(e)=>e.stopPropagation()}
+                          onKeyPressCapture={(e)=>e.stopPropagation()}
+                          onKeyUpCapture={(e)=>e.stopPropagation()}
+                          onFocusCapture={(e)=>e.stopPropagation()}
+                          onClickCapture={(e)=>e.stopPropagation()}
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={handleSuggest} disabled={isLoading || !apiKey || originalImages.every(img => !img)} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">Öneri Al (AI)</button>
+                        </div>
+                      </div>
+                      <button
                         onClick={handleGenerate}
                         disabled={isLoading || !apiKey || originalImages.every(img => !img)}
-                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100"
-                    >
+                        className="w-full md:w-auto self-stretch md:self-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:scale-100"
+                      >
                         <Wand2Icon size={20} />
                         <span>{isLoading ? 'Değiştiriliyor...' : 'Değiştir'}</span>
-                    </button>
+                      </button>
                     </div>
                 </main>
                 </div>
