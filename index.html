@@ -785,9 +785,36 @@
               setError(null);
               setModifiedImage(null);
 
+              // 1) Translate Turkish prompt → English with Gemini 2.5 Flash (text-only)
+              let englishPrompt = prompt;
+              try {
+                const translateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const translatePayload = {
+                  contents: [{
+                    parts: [{
+                      text: `Translate the following Turkish image-editing instruction into clear, concise, natural English suitable for an image generation prompt. Return only the translation text, with no explanations or quotes.\n\nTurkish:\n${prompt}`
+                    }]
+                  }]
+                };
+                const tRes = await fetch(translateUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(translatePayload)
+                });
+                if (tRes.ok) {
+                  const tJson = await tRes.json();
+                  const tText = tJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (tText && typeof tText === 'string') englishPrompt = tText.trim();
+                } else {
+                  console.warn('[Editor] Translation call failed, falling back to Turkish prompt');
+                }
+              } catch (e) {
+                console.warn('[Editor] Translation error:', e);
+              }
+
               try {
                   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-                  const parts = [ { text: prompt } ];
+                  const parts = [ { text: englishPrompt } ];
                   for (const img of picked.slice(0,5)) {
                     const base64Data = img.split(',')[1];
                     const mimeMatch = img.match(/:(.*?);/);
