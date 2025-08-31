@@ -875,45 +875,73 @@
 })();
 </script>
 
-    <!-- KΔIRA Demo TTS oynatma akışı (PATCHED) -->
-    <script id="kaira-demo-tts">
-    // TTS oynatma işlevi (PATCHED)
-    async function playTTS(speakText, voice) {
-      // TTS endpoint'e robust JSON ile fetch
-      const playerEl = document.getElementById('player');
-      // Fallback/merge body payload
-      const body = { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
-      const ttsPayload = (typeof body === 'object' && body && body.text) ? body : { text: speakText, voice: (voice || 'tr-TR-Standard-A'), format: 'mp3', speed: 1.0 };
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify(ttsPayload)
-      });
-      const data = await response.json();
-      // --- TTS response compatibility layer ---
-      // PATCHED robust extraction:
-      // (audio_data, audioBase64, audio_base64, result.audio_data, result.audioBase64, data.audio_url, url, etc.)
-      const audioB64 = (data && (data.audio_data || data.audioBase64 || data.audio_base64 || (data.result && (data.result.audio_data || data.result.audioBase64)) || (data.data && (data.data.audio_data || data.data.audioBase64)))) || null;
-      const audioUrl = (data && (data.audio_url || data.url || (data.result && (data.result.audio_url || data.result.url)) || (data.data && (data.data.audio_url || data.data.url)))) || null;
-      let audioSrc = null;
-      if (audioB64) {
-        // Assume mp3 if not specified by server
-        audioSrc = 'data:audio/mp3;base64,' + audioB64;
-      } else if (audioUrl) {
-        audioSrc = audioUrl;
-      } else {
-        throw new Error("TTS sonucunda ses verisi bulunamadı (audio_data/audio_url yok).");
-      }
-      if (playerEl) {
-        try { playerEl.pause(); } catch(_){}
-        playerEl.src = audioSrc;
-        try { await playerEl.play(); } catch(e){ console.warn('[TTS] play() failed', e); }
-      }
+async function getAIResponse(text, { angry = false } = {}) {
+  // Eski çalışan akış: FormData ile /api/tts (sunucu WAV->base64 döndürür)
+  statusEl.textContent = "KΔIRA düşünüyor…";
+  micBtn.disabled = true;
+  showTypingIndicator();
+  setCoreState('thinking');
+
+  // 2 sn sonra bekleme içeriğini göster
+  waitingTimeout = setTimeout(showWaitingContent, 2000);
+
+  const fd = new FormData();
+  fd.append("text", (text || "").trim());
+  fd.append("angry", angry ? "true" : "false");
+  fd.append("history", JSON.stringify(chatHistory.slice(-10)));
+  fd.append("user_id", USER_ID);
+
+  // Mobilde uzun TTS için geniş timeout (5 dk)
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 300000);
+
+  try {
+    const res = await fetch(`/api/tts`, {
+      method: "POST",
+      body: fd,
+      signal: ctrl.signal
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`);
     }
-    </script>
+
+    const data = await res.json();
+
+    if (!data.audio_data) {
+      throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
+    }
+
+    // Base64 WAV -> Blob URL
+    const audioUrl = base64ToBlobUrl(data.audio_data);
+    if (player.previousUrl) {
+      URL.revokeObjectURL(player.previousUrl);
+    }
+    player.previousUrl = audioUrl;
+    player.src = audioUrl;
+
+    await player.play().catch((e) => console.error("Ses oynatılamadı:", e));
+    statusEl.textContent = 'Cevap oynatılıyor...';
+
+    const out = data.text_response ?? data.clean_text ?? "";
+    addMessageToChat(out, 'assistant');
+
+    return data;
+  } catch (err) {
+    console.error(err);
+    const errorMessage = "Hata: " + (err?.message || err);
+    statusEl.textContent = errorMessage;
+    addMessageToChat(errorMessage, 'assistant');
+    micBtn.disabled = false;
+    setCoreState('idle');
+    throw err;
+  } finally {
+    hideWaitingContent();
+    removeTypingIndicator();
+    clearTimeout(to);
+  }
+}
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="text/babel" data-presets="react">
         const { useState, useCallback, useEffect, useRef } = React;
