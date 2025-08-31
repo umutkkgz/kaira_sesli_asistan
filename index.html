@@ -480,6 +480,12 @@
       </div>
       <div id="asistan-chat-container" class="flex-grow overflow-y-auto pr-2 flex flex-col gap-4"></div>
       <canvas id="asistan-visualizer"></canvas>
+      <div id="asistan-text-controls" class="mt-2 mb-2">
+        <div class="w-full flex gap-2 items-center">
+          <input id="asistan-text-input" type="text" placeholder="Mikrofon çalışmıyorsa buradan yaz ve Enter'a bas..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 allow-select" />
+          <button id="asistan-send-btn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg">Gönder</button>
+        </div>
+      </div>
       <div class="pt-4 mt-4 border-t border-gray-700/50 flex flex-col items-center">
         <div class="mic-wrapper">
           <button id="asistan-mic-btn" class="bg-blue-600 hover:bg-blue-700 transition-all duration-300 rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
@@ -922,8 +928,18 @@
     const player = document.getElementById('asistan-player');
     const chatContainer = document.getElementById('asistan-chat-container');
     const clearChatBtn = document.getElementById('asistan-clear-chat-btn');
+    const textInput = document.getElementById('asistan-text-input');
+    const sendBtn   = document.getElementById('asistan-send-btn');
 
     let chatHistory = [];
+    function sendTyped(){
+      const txt = (textInput && textInput.value ? textInput.value : '').trim();
+      if (!txt) return;
+      addMessageToChat(txt, 'user');
+      if (textInput) textInput.value = '';
+      unlockAudio();
+      getAIResponse(txt).catch(()=>{});
+    }
     let isRecording = false;
 
     // Visualizer
@@ -956,6 +972,14 @@
       if (isRecording){ recognition && recognition.stop(); }
       else { recognition && recognition.start && recognition.start(); }
     });
+    if (sendBtn) {
+      sendBtn.addEventListener('click', (e)=>{ e.preventDefault(); sendTyped(); });
+    }
+    if (textInput) {
+      textInput.addEventListener('keydown', (ev)=>{
+        if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendTyped(); }
+      });
+    }
     player.onplay = ()=>{ visualizerCanvas.style.opacity='1'; drawVisualizer(); setCoreState('speaking'); };
     player.onended = ()=>{ statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled=false; visualizerCanvas.style.opacity='0'; setCoreState('idle'); };
     clearChatBtn.addEventListener('click', ()=>{ chatHistory=[]; localStorage.removeItem('kaira_asistan_chat_history'); chatContainer.innerHTML=''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
