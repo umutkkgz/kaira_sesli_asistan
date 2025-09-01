@@ -21,6 +21,7 @@
       <div class="text-white font-semibold mb-2">Yönetici Girişi</div>
       <div class="text-gray-400 text-sm mb-3">Lütfen admin token/şifrenizi giriniz.</div>
       <input id="adm-token" type="password" placeholder="Admin Token" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-300"><input id="adm-remember" type="checkbox" class="rounded" />Beni hatırla</label>
       <button id="adm-login" class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Giriş</button>
       <div id="adm-msg" class="text-sm h-5 mt-2 text-rose-400"></div>
     </div>
@@ -35,7 +36,13 @@
         <ul id="chat-list" class="space-y-2 text-sm"></ul>
       </div>
       <div class="md:col-span-2 bg-gray-900/70 border border-gray-700 rounded-2xl p-4 flex flex-col">
-        <div id="chat-header" class="text-sm text-gray-300 mb-2">Sohbet yok</div>
+        <div id="chat-header" class="text-sm text-gray-300 mb-2 flex items-center justify-between">
+          <div>Sohbet yok</div>
+          <div class="flex items-center gap-2">
+            <button id="close-chat" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded">Sohbeti Kapat</button>
+            <button id="export-chat" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Dışa Aktar</button>
+          </div>
+        </div>
         <div id="history" class="flex-1 overflow-y-auto space-y-2 bg-black/30 rounded p-3"></div>
         <div class="mt-3 flex gap-2">
           <input id="reply" placeholder="Yanıt yazın..." class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
@@ -54,6 +61,7 @@
   <script type="module">
     const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
     const tokenKey = 'support_admin_token';
+    const rememberEl = document.getElementById('adm-remember');
     const getTok = ()=> sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey) || '';
 
     const loginCard = document.getElementById('login-card');
@@ -94,7 +102,9 @@
     }
     async function openChat(chatId, meta){
       currentChat = chatId;
-      headerEl.textContent = `Sohbet: ${chatId} ${meta && meta.name ? ' • '+meta.name : ''}`;
+      headerEl.querySelector('div').textContent = `Sohbet: ${chatId} ${(meta && meta.name ? ' • '+meta.name : '')} ${(meta && meta.email ? ' • '+meta.email : '')} ${(meta && meta.ip ? ' • '+meta.ip : '')}`;
+      document.getElementById('close-chat').classList.remove('hidden');
+      document.getElementById('export-chat').classList.remove('hidden');
       historyEl.innerHTML = '';
       await refreshHistory();
     }
@@ -109,7 +119,8 @@
         const d = document.createElement('div');
         const align = m.sender === 'admin' ? 'self-end bg-emerald-700/40 text-emerald-100' : 'self-start bg-slate-700 text-white';
         d.className = `max-w-[75%] px-3 py-2 rounded-lg text-sm ${align}`;
-        d.textContent = m.text;
+        const dt = new Date((m.ts||0)*1000).toLocaleString();
+        d.textContent = `[${dt}] ${m.text}`;
         historyEl.appendChild(d);
       });
       historyEl.scrollTop = historyEl.scrollHeight;
@@ -134,7 +145,8 @@
       // Tokenı geçerli mi? aktif listeden deneyelim
       const res = await tryFetch(`/api/support/active?token=${encodeURIComponent(tok)}`);
       if (!res.ok){ admMsg.textContent='Token hatalı'; return; }
-      try{ sessionStorage.setItem(tokenKey, tok); }catch(_){ }
+      const remember = !!rememberEl.checked;
+      try{ (remember ? localStorage : sessionStorage).setItem(tokenKey, tok); }catch(_){ }
       setLoggedIn(true);
       await loadActive();
     });
@@ -146,7 +158,22 @@
     (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); await loadActive(); } })();
     // Periodically refresh history for open chat
     setInterval(refreshHistory, 2000);
+
+    // Close and export actions
+    document.getElementById('close-chat').addEventListener('click', async ()=>{
+      if (!currentChat) return;
+      const tok = getTok();
+      const fd = new FormData(); fd.append('chat_id', currentChat); fd.append('token', tok);
+      const res = await fetch(`${API()}/api/support/close`, { method:'POST', body: fd });
+      if (res.ok){ await loadActive(); historyEl.innerHTML=''; headerEl.querySelector('div').textContent='Sohbet yok'; currentChat=null; }
+    });
+    document.getElementById('export-chat').addEventListener('click', async ()=>{
+      if (!currentChat) return;
+      const tok = getTok(); const res = await tryFetch(`/api/support/history/${encodeURIComponent(currentChat)}?token=${encodeURIComponent(tok)}`);
+      if (!res.ok) return; const j = await res.json();
+      const blob = new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `support_${currentChat}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
   </script>
 </body>
 </html>
-
