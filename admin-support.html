@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KΔIRA | Canlı Destek Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-slate-900 to-black min-h-screen text-white">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold">Canlı Destek Admin</h1>
+      <div class="flex gap-3">
+        <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Anasayfa</a>
+        <a href="profile.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Profil</a>
+      </div>
+    </div>
+
+    <!-- Login Card -->
+    <div id="login-card" class="max-w-md mx-auto bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+      <div class="text-white font-semibold mb-2">Yönetici Girişi</div>
+      <div class="text-gray-400 text-sm mb-3">Lütfen admin token/şifrenizi giriniz.</div>
+      <input id="adm-token" type="password" placeholder="Admin Token" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <button id="adm-login" class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Giriş</button>
+      <div id="adm-msg" class="text-sm h-5 mt-2 text-rose-400"></div>
+    </div>
+
+    <!-- Console -->
+    <div id="console" class="hidden grid md:grid-cols-3 gap-4 mt-6">
+      <div class="md:col-span-1 bg-gray-900/70 border border-gray-700 rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="font-semibold">Aktif Sohbetler</div>
+          <button id="refresh" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Yenile</button>
+        </div>
+        <ul id="chat-list" class="space-y-2 text-sm"></ul>
+      </div>
+      <div class="md:col-span-2 bg-gray-900/70 border border-gray-700 rounded-2xl p-4 flex flex-col">
+        <div id="chat-header" class="text-sm text-gray-300 mb-2">Sohbet yok</div>
+        <div id="history" class="flex-1 overflow-y-auto space-y-2 bg-black/30 rounded p-3"></div>
+        <div class="mt-3 flex gap-2">
+          <input id="reply" placeholder="Yanıt yazın..." class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+          <button id="send" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
+        </div>
+        <div id="send-msg" class="text-sm h-5 mt-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (!window.API_PROXY_BASE) {
+      try { window.API_PROXY_BASE = localStorage.getItem('kaira_api_base') || ''; } catch(_){ }
+    }
+  </script>
+  <script type="module">
+    const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
+    const tokenKey = 'support_admin_token';
+    const getTok = ()=> sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey) || '';
+
+    const loginCard = document.getElementById('login-card');
+    const consoleEl = document.getElementById('console');
+    const loginBtn = document.getElementById('adm-login');
+    const tokenEl = document.getElementById('adm-token');
+    const admMsg = document.getElementById('adm-msg');
+    const listEl = document.getElementById('chat-list');
+    const historyEl = document.getElementById('history');
+    const headerEl = document.getElementById('chat-header');
+    const sendInput = document.getElementById('reply');
+    const sendBtn = document.getElementById('send');
+    const sendMsg = document.getElementById('send-msg');
+    const refreshBtn = document.getElementById('refresh');
+
+    let currentChat = null;
+
+    function setLoggedIn(state){ loginCard.classList.toggle('hidden', state); consoleEl.classList.toggle('hidden', !state); }
+
+    async function tryFetch(url){
+      const full = `${API()}${url}`;
+      const res = await fetch(full, { headers: { 'ngrok-skip-browser-warning':'true' } });
+      return res;
+    }
+    async function loadActive(){
+      listEl.innerHTML='';
+      const tok = getTok();
+      const res = await tryFetch(`/api/support/active?token=${encodeURIComponent(tok)}`);
+      if (!res.ok){ admMsg.textContent = 'Token geçersiz'; setLoggedIn(false); return; }
+      const j = await res.json();
+      (j.active||[]).forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'p-2 rounded bg-slate-800/60 hover:bg-slate-800 cursor-pointer';
+        li.textContent = `${item.chat_id} • ${item.name || ''} ${item.email ? ' • '+item.email : ''}`;
+        li.addEventListener('click', ()=> openChat(item.chat_id, item));
+        listEl.appendChild(li);
+      });
+    }
+    async function openChat(chatId, meta){
+      currentChat = chatId;
+      headerEl.textContent = `Sohbet: ${chatId} ${meta && meta.name ? ' • '+meta.name : ''}`;
+      historyEl.innerHTML = '';
+      await refreshHistory();
+    }
+    async function refreshHistory(){
+      if (!currentChat) return;
+      const tok = getTok();
+      const res = await tryFetch(`/api/support/history/${encodeURIComponent(currentChat)}?token=${encodeURIComponent(tok)}`);
+      if (!res.ok) return;
+      const j = await res.json();
+      historyEl.innerHTML = '';
+      (j.history||[]).forEach(m => {
+        const d = document.createElement('div');
+        const align = m.sender === 'admin' ? 'self-end bg-emerald-700/40 text-emerald-100' : 'self-start bg-slate-700 text-white';
+        d.className = `max-w-[75%] px-3 py-2 rounded-lg text-sm ${align}`;
+        d.textContent = m.text;
+        historyEl.appendChild(d);
+      });
+      historyEl.scrollTop = historyEl.scrollHeight;
+    }
+    async function send(){
+      sendMsg.textContent='';
+      if (!currentChat) { sendMsg.textContent='Sohbet seçin'; return; }
+      const t = (sendInput.value||'').trim(); if (!t) return;
+      try{
+        const tok = getTok();
+        const fd = new FormData(); fd.append('chat_id', currentChat); fd.append('text', t); fd.append('token', tok);
+        const res = await fetch(`${API()}/api/support/send`, { method:'POST', body: fd });
+        if (!res.ok){ sendMsg.textContent='Gönderilemedi'; return; }
+        sendInput.value='';
+        await refreshHistory();
+      }catch(e){ sendMsg.textContent = 'Hata: ' + (e && e.message || e); }
+    }
+
+    loginBtn.addEventListener('click', async ()=>{
+      admMsg.textContent='';
+      const tok = tokenEl.value.trim(); if (!tok){ admMsg.textContent='Token gerekli'; return; }
+      // Tokenı geçerli mi? aktif listeden deneyelim
+      const res = await tryFetch(`/api/support/active?token=${encodeURIComponent(tok)}`);
+      if (!res.ok){ admMsg.textContent='Token hatalı'; return; }
+      try{ sessionStorage.setItem(tokenKey, tok); }catch(_){ }
+      setLoggedIn(true);
+      await loadActive();
+    });
+    refreshBtn.addEventListener('click', loadActive);
+    sendBtn.addEventListener('click', send);
+    sendInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+    // Auto login if token stored
+    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); await loadActive(); } })();
+    // Periodically refresh history for open chat
+    setInterval(refreshHistory, 2000);
+  </script>
+</body>
+</html>
+
