@@ -492,8 +492,8 @@
 
 <script id="chat-logger">
 (function(){
-  // Sunucu kökü (senin ngrok adresin)
-  const SERVER = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
+  // Sunucu kökü: her çağrıda güncel değeri al
+  function serverBase(){ return (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || ''; }
 
   function getProvider(){
     const r = document.querySelector('input[name="provider"]:checked');
@@ -509,7 +509,8 @@
   }
   async function sendLog(obj){
     try{
-      await fetch(`${SERVER}/api/log`, {
+      const BASE = serverBase(); if (!BASE) return; // henüz hazır değilse atla
+      await fetch(`${BASE}/api/log`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -530,6 +531,7 @@
     const userInput = document.getElementById('user-input');
     const text = userInput ? userInput.value : '';
     pending = {
+      event: 'universal_chat',
       ts: new Date().toISOString(),
       provider: getProvider(),
       model: getModel(),
@@ -545,18 +547,19 @@
         for(const node of m.addedNodes){
           if(!(node instanceof Element)) continue;
           // Asistan balonu
-          if(node.classList.contains('chat-assistant-bubble') || node.matches('.chat-assistant-bubble, [data-chat-item].assistant')){
+          if(node.classList.contains('assistant-bubble') || node.classList.contains('chat-assistant-bubble') || node.matches('.chat-assistant-bubble, .assistant-bubble, [data-chat-item].assistant')){
             const assistantText = node.textContent.trim();
-            const payload = Object.assign({}, pending || {}, {
+            const payload = Object.assign({}, pending || { event: 'universal_chat', provider: getProvider(), model: getModel(), system_prompt: getSys(), ts: new Date().toISOString() }, {
               assistant_text: assistantText
             });
             pending = null;
-            sendLog(payload);
+            sendLog(Object.assign({ event: 'universal_chat' }, payload));
           }
           // Kullanıcı balonu bazı UI'larda ayrı düşebilir
-          else if(node.classList.contains('chat-user-bubble')){
+          else if(node.classList.contains('user-bubble') || node.classList.contains('chat-user-bubble')){
             const t = node.textContent.trim();
             pending = {
+              event: 'universal_chat',
               ts: new Date().toISOString(),
               provider: getProvider(),
               model: getModel(),
@@ -794,6 +797,7 @@
             
             addMessageToUI('user', userMessage);
             chatHistory.push({ role: 'user', content: userMessage });
+            try { if (window.KAIRA_LOG) window.KAIRA_LOG('universal_chat_send', { provider: selectedProvider, model: selectedModel, system_prompt: systemPrompt, user_text: userMessage }); } catch(_){ }
 
             const conversationContext = chatHistory.slice(-11, -1); 
             
@@ -845,6 +849,7 @@
                 if (assistantMessage) {
                     addMessageToUI('assistant', assistantMessage.trim());
                     chatHistory.push({ role: 'assistant', content: assistantMessage.trim() });
+                    try { if (window.KAIRA_LOG) window.KAIRA_LOG('universal_chat_reply', { provider: selectedProvider, model: selectedModel, assistant_text: assistantMessage.trim() }); } catch(_){ }
                     saveChatHistory();
                 } else {
                     showError("API'den geçerli bir yanıt alınamadı.");

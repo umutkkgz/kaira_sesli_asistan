@@ -2,11 +2,11 @@
 // Sends structured events to the server's /api/log endpoint (BigData-ready)
 
 (function(){
-  const API_BASE = (window.API_PROXY_BASE || '').replace(/\/$/, '');
   const UID = (()=>{ try{ let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id; }catch(_){ return 'anon'; } })();
 
   async function post(event, data){
-    if (!API_BASE) return;
+    const API_BASE = (window.API_PROXY_BASE || '').replace(/\/$/, '');
+    if (!API_BASE) return; // base henüz set edilmemiş olabilir, sessiz geç
     const payload = Object.assign({
       event,
       user_id: UID,
@@ -77,4 +77,3 @@
   window.addEventListener('error', (ev)=>{ try{ const m = ev && ev.message ? ev.message : 'Unknown error'; post('js_error', { message: m }); }catch(_){ } }, true);
   window.addEventListener('unhandledrejection', (ev)=>{ try{ const r = ev && ev.reason; const m = (r && r.message) ? r.message : String(r); post('js_unhandledrejection', { message: m }); }catch(_){ } });
 })();
-
