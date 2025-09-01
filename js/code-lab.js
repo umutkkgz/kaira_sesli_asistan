@@ -121,10 +121,13 @@ async function callAssistant(prompt, files){
   const context = `Mevcut dosyalar (ad, boyut):\n${files.map(f=>`- ${f.name} (${f.content.length}b)`).join('\n')}\n\nDosya içerikleri:${filesContext(files)}`;
   const sys = [
     'Sen yardımcı bir yazılım ajanısın.',
-    'Yanıtlarında sadece gerekli kodu üret; açıklamayı kısa tut.',
-    'Değişiklik/güncelleme için kodu üç tırnak bloklarında ver ve info satırına filename ekle: ```<lang> filename=dosya.js```',
-    'Yeni dosya gerekiyorsa aynı formatta öner.',
-    'Kısa, bağımsız, derlenebilir kod parçaları üret.'
+    'AÇIK METİN YERİNE KOD BLOKLARI ÜRET. Açıklamayı çok kısa tut.',
+    'Var olan dosyalarda TAMAMIYLA ÜZERİNE YAZMA. Bölgesel yama (patch) yaklaşımı kullan.',
+    'Her blok üç tırnak içinde ve info satırında filename içersin: ```<lang> filename=dosya.js```',
+    'Bölgesel değişiklik için gövdeye KAIRA işaretçileri ekle: JS/TS: // KAIRA:BEGIN <id> ... // KAIRA:END <id> | CSS: /* KAIRA:BEGIN <id> */ ... /* KAIRA:END <id> */ | HTML: <!-- KAIRA:BEGIN <id> --> ... <!-- KAIRA:END <id> -->',
+    'Aynı id tekrar gönderildiğinde Code Lab o bölgeyi dosyada bularak sadece o kısmı günceller; yoksa sona ekler.',
+    'Tam dosya yenilemek ZORUNLUYSA info satırına mode=replace ekle (örn: ```javascript filename=main.js mode=replace```).',
+    'Yeni dosya gerekiyorsa aynı formatta ayrı blok olarak ver.'
   ].join(' ');
   const payload = { model, system: sys, prompt: `${context}\n\nİstek: ${prompt}` };
   const res = await fetch(`${base}/api/chat`, {
@@ -145,9 +148,12 @@ function parseCodeBlocks(text){
     const info = (m[1]||'').trim();
     let body = m[2] || '';
     let filename = null;
+    let mode = null; // 'replace' | 'merge'
     // 1) info line: filename= veya file=
     const fi = /(?:^|\s)(?:filename|file)\s*=\s*([^\s]+)/i.exec(info);
     if (fi) filename = fi[1].replace(/^"|"$/g,'');
+    const mi = /(?:^|\s)mode\s*=\s*(replace|merge)/i.exec(info);
+    if (mi) mode = mi[1].toLowerCase();
     // 2) gövde ilk satır: file: NAME
     if (!filename){
       const firstLine = body.split(/\r?\n/)[0] || '';
@@ -160,7 +166,7 @@ function parseCodeBlocks(text){
       const f3 = /(?:\/\/|#|<!--|\/\*)\s*([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))/i.exec(firstLine);
       if (f3) filename = f3[1].trim();
     }
-    blocks.push({ info, filename, content: body });
+    blocks.push({ info, filename, content: body, mode });
   }
   return blocks;
 }
@@ -229,12 +235,82 @@ export function initializeCodeLab(){
     if (l.includes('ts')) return 'main.ts';
     return 'snippet.txt';
   }
+  // --- Sürüm geçmişi + Güvenli birleştirme ---
+  function loadHistory(){
+    try { const raw = localStorage.getItem('kaira_codelab_history'); return raw ? JSON.parse(raw) : []; } catch(_){ return []; }
+  }
+  function saveHistorySnapshot(files){
+    try{
+      const hist = loadHistory();
+      const snapshot = JSON.parse(JSON.stringify(files));
+      hist.push({ at: Date.now(), files: snapshot });
+      while (hist.length > 10) hist.shift();
+      localStorage.setItem('kaira_codelab_history', JSON.stringify(hist));
+    }catch(_){ }
+  }
+  function undoLast(){
+    const hist = loadHistory();
+    if (!hist.length) return false;
+    const last = hist.pop();
+    localStorage.setItem('kaira_codelab_history', JSON.stringify(hist));
+    if (last && Array.isArray(last.files)){
+      files = last.files;
+      saveFiles(files);
+      loadActive();
+      return true;
+    }
+    return false;
+  }
+
   function applyBlocksFromOutput(){
     const out = document.getElementById('cl-ai-output');
     const txt = out ? out.textContent : '';
     if (!txt || !txt.includes('```')) { if (out) out.textContent += '\n\n(Blok bulunamadı — üç tırnaklı kod blokları bekleniyor.)'; return; }
     const blocks = parseCodeBlocks(txt);
     if (!(blocks && blocks.length)) { if (out) out.textContent += '\n\n(Blok ayrıştırılamadı.)'; return; }
+
+    // Değişikliklerden önce mevcut durumu yedekle
+    saveHistorySnapshot(files);
+
+    function getExt(name){ return String(name||'').split('.').pop()?.toLowerCase() || ''; }
+    function markerWrap(name, id, inner){
+      const ext = getExt(name);
+      if (/^x?html?$/.test(ext)) return `<!-- KAIRA:BEGIN ${id} -->\n${inner}\n<!-- KAIRA:END ${id} -->`;
+      if (ext === 'css') return `/* KAIRA:BEGIN ${id} */\n${inner}\n/* KAIRA:END ${id} */`;
+      // js/ts/jsx/tsx ve diğerleri
+      return `// KAIRA:BEGIN ${id}\n${inner}\n// KAIRA:END ${id}`;
+    }
+    function detectRegion(body){
+      const reBegin = /KAIRA:\s*BEGIN\s+([\w.-]+)/;
+      const reEnd = (id)=> new RegExp(`KAIRA:\\s*END\\s+${id.replace(/[.*+?^${}()|[\\]\\]/g, r=>"\\"+r)}`);
+      const mb = reBegin.exec(body);
+      if (!mb) return null;
+      const id = mb[1];
+      const start = mb.index;
+      const tail = body.slice(start);
+      const me = reEnd(id).exec(tail);
+      if (!me) return { id, full: body.slice(start) };
+      const endIdx = start + me.index + me[0].length;
+      return { id, full: body.slice(start, endIdx) };
+    }
+    function replaceOrAppendRegion(filename, current, regionId, regionText){
+      const lines = current.split(/\r?\n/);
+      let beginLine = -1, endLine = -1;
+      const beginStr = `KAIRA:BEGIN ${regionId}`;
+      const endStr = `KAIRA:END ${regionId}`;
+      for (let i=0;i<lines.length;i++){
+        if (beginLine === -1 && lines[i].includes(beginStr)) beginLine = i;
+        if (beginLine !== -1 && lines[i].includes(endStr)) { endLine = i; break; }
+      }
+      if (beginLine !== -1 && endLine !== -1 && endLine >= beginLine){
+        const before = lines.slice(0, beginLine).join('\n');
+        const after = lines.slice(endLine+1).join('\n');
+        return (before ? before + '\n' : '') + regionText + (after ? '\n' + after : '');
+      }
+      // yoksa sona ekle
+      return (current ? current.replace(/\n*$/, '\n') : '') + regionText + '\n';
+    }
+
     blocks.forEach(b => {
       let fname = b.filename;
       if (!fname){
@@ -243,12 +319,36 @@ export function initializeCodeLab(){
       }
       if (!fname) return;
       const idx = files.findIndex(f => f.name === fname);
-      if (idx >= 0) files[idx].content = b.content; else files.push({ name: fname, content: b.content });
+      const exists = idx >= 0;
+      const current = exists ? String(files[idx].content||'') : '';
+      const mode = (b.mode === 'replace') ? 'replace' : 'merge';
+
+      if (mode === 'replace'){
+        if (exists) files[idx].content = b.content; else files.push({ name: fname, content: b.content });
+        return;
+      }
+
+      // merge modu: Bölge tespit et, varsa değiştir; yoksa yeni bölge olarak ekle
+      const det = detectRegion(b.content||'');
+      if (det && det.id && det.full){
+        const merged = replaceOrAppendRegion(fname, current, det.id, det.full);
+        if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
+      } else {
+        // Marker yoksa: dosya varsa güvenli olarak yeni bir bölge oluşturup ekleyelim
+        const autoId = 'auto-' + Math.floor(Date.now()/1000);
+        const wrapped = markerWrap(fname, autoId, b.content||'');
+        const merged = replaceOrAppendRegion(fname, current, autoId, wrapped);
+        if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
+      }
     });
     saveFiles(files); loadActive();
     if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı.)`;
   }
   document.getElementById('cl-apply')?.addEventListener('click', applyBlocksFromOutput);
+  document.getElementById('cl-undo')?.addEventListener('click', ()=>{
+    const ok = undoLast();
+    if (!ok){ try{ alert('Geri alacak bir değişiklik yok.'); }catch(_){ }
+  }});
 }
 
 // otomatik export
