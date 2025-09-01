@@ -14,6 +14,34 @@
   }
 
   function inAsistan(){ return window.activeView === 'asistan'; }
+  function isAsistanAuthorized(){ try { return sessionStorage.getItem('kaira_asistan_auth') === '1'; } catch(_){ return false; } }
+  function showAsistanAuth(msg){
+    const overlay = document.getElementById('asistan-auth-overlay');
+    const input = document.getElementById('asistan-auth-input');
+    const btn = document.getElementById('asistan-auth-submit');
+    const msgEl = document.getElementById('asistan-auth-msg');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    if (msgEl) msgEl.textContent = msg || '';
+    if (input) { input.value = ''; setTimeout(()=>input.focus(), 50); }
+    if (btn && !btn._kairaBound){
+      btn._kairaBound = true;
+      const handler = () => {
+        const val = (input && input.value) ? input.value.trim() : '';
+        if (val === '12345'){
+          try { sessionStorage.setItem('kaira_asistan_auth', '1'); } catch(_){ }
+          overlay.style.display = 'none';
+          // Başarılı → Asistan’ı başlat
+          enterAsistan(true);
+        } else {
+          if (msgEl) msgEl.textContent = 'Hatalı şifre. Lütfen tekrar deneyin.';
+          if (input) input.focus();
+        }
+      };
+      btn.addEventListener('click', handler);
+      if (input){ input.addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); handler(); } }); }
+    }
+  }
 
   async function initAsistan(){
     if (asistanInitialized) return;
@@ -101,6 +129,7 @@
       return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' }));
     }
     function sendTyped(){
+      if (!isAsistanAuthorized()) { if (statusEl) statusEl.textContent = 'Yetkili şifresi gerekli'; showAsistanAuth(); return; }
       const txt = (textInput && textInput.value ? textInput.value : '').trim();
       if (!txt) return;
       addMessageToChat(txt, 'user');
@@ -162,6 +191,7 @@
       }catch(e){ console.error('[Audio][webaudio-fallback]', e); }
     }
     async function getAIResponse(text, angry=false){
+      if (!isAsistanAuthorized()) { if (statusEl) statusEl.textContent = 'Yetkili şifresi gerekli'; showAsistanAuth(); return; }
       micBtn.disabled=true;
       if (!isVisualizerSetup) setupVisualizer();
       let waitingTimeout;
@@ -289,8 +319,9 @@
     asistanAnimationId = requestAnimationFrame(animateAsistan);
   }
 
-  function enterAsistan(){
+  function enterAsistan(force=false){
     showView('asistan-view', 'asistan');
+    if (!force && !isAsistanAuthorized()) { showAsistanAuth(); return; }
     if (!asistanInitialized) { initAsistan().then(()=>{ animateAsistan(); }).catch(e=>console.error(e)); }
     else { animateAsistan(); }
   }
