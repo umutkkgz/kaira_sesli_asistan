@@ -51,16 +51,26 @@ function buildRunnerHTML(files){
 
 async function fetchModels(){
   const info = document.getElementById('cl-model-info');
-  try{
-    const base = (window.API_PROXY_BASE||'').replace(/\/$/, '');
-    const res = await fetch(`${base}/api/models`, { headers: { 'ngrok-skip-browser-warning':'true' } });
-    const data = await res.json();
-    const sel = document.getElementById('cl-model');
+  const sel = document.getElementById('cl-model');
+  const PREFERRED = [
+    'moonshotai/kimi-k2-instruct',
+    'deepseek-r1-distill-llama-70b',
+    'openai/gpt-oss-120b',
+    'llama-3.3-70b-versatile'
+  ];
+  try {
+    // Her durumda tercih edilen modelleri göster
     sel.innerHTML = '';
-    (data.models||[]).forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-    if (data.default){ sel.value = data.default; }
-    info.textContent = 'Modeller yüklendi';
-  }catch(e){ info.textContent = 'Model listesi alınamadı'; }
+    PREFERRED.forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+    // Varsayılanı ayarla
+    sel.value = 'openai/gpt-oss-120b';
+    // Bağlantı kontrolü (opsiyonel): sunucu modellerini al, ama UI’yı değiştirme
+    try{
+      const base = (window.API_PROXY_BASE||'').replace(/\/$/, '');
+      await fetch(`${base}/api/models`, { headers: { 'ngrok-skip-browser-warning':'true' } }).catch(()=>{});
+    }catch(_){ /* sessiz */ }
+    if (info) info.textContent = 'Modeller hazır';
+  } catch(e){ if (info) info.textContent = 'Model listesi yüklenemedi'; }
 }
 
 async function callAssistant(prompt, files){
@@ -171,4 +181,3 @@ export function initializeCodeLab(){
 
 // otomatik export
 window.initializeCodeLab = initializeCodeLab;
-
