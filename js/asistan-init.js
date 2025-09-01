@@ -142,14 +142,24 @@
         const res = await fetch(`${API_BASE}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
         if (!res.ok){ const txt = await res.text().catch(()=>'' ); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
         const data = await res.json();
-        if (!data.audio_data) throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
-        const audioUrl = base64ToBlobUrl(data.audio_data);
+        // Önce varsa doğrudan URL'yi tercih et (base64 bazı tarayıcılarda sessiz kalabiliyor)
+        const direct = (data.session_audio_url || data.audio_url) ? `${API_BASE}${data.session_audio_url || data.audio_url}` : null;
+        let audioUrl = null;
+        if (!direct) {
+          if (!data.audio_data) throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
+          audioUrl = base64ToBlobUrl(data.audio_data);
+        }
         // Mikrofonda açık tanıma varsa kapat (bazı tarayıcılarda çalma engellenebilir)
         try { if (window.KAIRA_AUDIO && typeof window.KAIRA_AUDIO.stopRecognizer === 'function') window.KAIRA_AUDIO.stopRecognizer(); } catch(_){ }
         try { if (recognition && typeof recognition.stop === 'function') recognition.stop(); } catch(_){ }
         // Mevcut URL'yi bırak ve yeni kaynağı yükle
         if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
-        player.previousUrl = audioUrl; player.srcObject = null; player.src = audioUrl; player.load();
+        player.srcObject = null; player.muted = false; player.volume = 1.0;
+        if (direct) {
+          player.src = `${direct}?t=${Date.now()}`; player.load();
+        } else {
+          player.previousUrl = audioUrl; player.src = audioUrl; player.load();
+        }
         try {
           await player.play();
         } catch(e) {
