@@ -69,7 +69,7 @@
       if (!payload.name || !payload.subject || !payload.message){ out.textContent='Lütfen gerekli alanları doldurun.'; out.className='text-sm text-rose-400'; return; }
       try{
         const base = API(); if (!base){ out.textContent='Sunucu tanımlı değil'; out.className='text-sm text-rose-400'; return; }
-        const res = await fetch(`${base}/api/log`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        const res = await fetch(`${base}/api/contact`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
         if (!res.ok){ out.textContent='Gönderim başarısız'; out.className='text-sm text-rose-400'; return; }
         out.textContent='Mesajınız alındı. Teşekkürler!'; out.className='text-sm text-emerald-400';
         subjEl.value=''; msgEl.value='';

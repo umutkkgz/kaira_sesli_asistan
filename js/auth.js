@@ -101,7 +101,16 @@
       const res = await fetch(`${base}/api/auth/register`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok){ msg.textContent = j && j.error ? j.error : 'Kayıt başarısız'; return; }
-      msg.textContent = 'Kayıt başarılı. Giriş yapabilirsiniz.'; msg.classList.remove('text-rose-400'); msg.classList.add('text-emerald-400');
+      msg.textContent = 'Kayıt başarılı. Giriş yapılıyor...'; msg.classList.remove('text-rose-400'); msg.classList.add('text-emerald-400');
+      try{
+        const base2 = API();
+        const loginRes = await fetch(`${base2}/api/auth/login`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ identifier: payload.username, password: payload.password }) });
+        const lj = await loginRes.json();
+        if (loginRes.ok){
+          try{ localStorage.setItem('kaira_auth_token', lj.token); localStorage.setItem('kaira_user', JSON.stringify(lj.user||{})); }catch(_){ }
+          try{ window.location.href = 'profile.html'; }catch(_){ }
+        }
+      }catch(_){ }
     }catch(e){ msg.textContent = 'Hata: ' + (e && e.message || e); }
   });
 
