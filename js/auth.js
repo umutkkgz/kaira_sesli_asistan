@@ -121,9 +121,11 @@
     }catch(e){ msg.textContent = 'Hata: ' + (e && e.message || e); }
   });
 
-  // If already logged, reflect
+  // If already logged, reflect & ensure href behavior
   try{
     const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
-    if (u && u.username) openBtn.textContent = u.username;
-  }catch(_){ }
+    const tok = localStorage.getItem('kaira_auth_token');
+    if (u && u.username && tok){ openBtn.textContent = u.username; try{ openBtn.setAttribute('href','profile.html'); }catch(_){ } }
+    else { try{ openBtn.setAttribute('href','#'); }catch(_){ } }
+  }catch(_){ try{ openBtn.setAttribute('href','#'); }catch(__){} }
 })();
