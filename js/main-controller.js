@@ -372,7 +372,7 @@ async function initDemo() {
     window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
     setBgCanvasSize(); createParticles();
     
-    const API_BASE = "https://1513c704aa10.ngrok-free.app"; 
+    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
     const micBtn = document.getElementById('mic-btn'); 
     const statusEl = document.getElementById('status'); 
     const player = document.getElementById('player'); 

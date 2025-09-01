@@ -36,7 +36,8 @@ function initAladin(){
 async function fetchAndPlotExoplanets(){
   const infoEl = document.getElementById('exo-info');
   try{
-    const endpoint = ((window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) ? window.API_PROXY_BASE.trim() : 'https://1513c704aa10.ngrok-free.app') + '/api/get-exoplanets';
+    const base = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
+    const endpoint = base + '/api/get-exoplanets';
     console.log('[Exo] Fetching:', endpoint);
     if (infoEl) infoEl.textContent = `Ötegezegen verisi alınıyor… (${endpoint})`;
     const ac = new AbortController();

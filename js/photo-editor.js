@@ -553,7 +553,7 @@ function App() {
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        const response = await fetch('https://1513c704aa10.ngrok-free.app/api/get-google-key', {
+        const response = await fetch(`${(window.API_PROXY_BASE||'').replace(/\/$/, '')}/api/get-google-key`, {
           headers: {
             'ngrok-skip-browser-warning': 'true'
           }

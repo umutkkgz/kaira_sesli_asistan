@@ -417,7 +417,7 @@
 <script id="chat-logger">
 (function(){
   // Sunucu kökü (senin ngrok adresin)
-  const SERVER = "https://1513c704aa10.ngrok-free.app";
+  const SERVER = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
 
   function getProvider(){
     const r = document.querySelector('input[name="provider"]:checked');
@@ -433,7 +433,7 @@
   }
   async function sendLog(obj){
     try{
-      await fetch(`${SERVER}/api/logs/chat`, {
+      await fetch(`${SERVER}/api/log`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -504,7 +504,7 @@
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="module" src="js/photo-editor.js"></script>
 
-    <script>window.API_PROXY_BASE = 'https://1513c704aa10.ngrok-free.app';</script>
+    <script>window.API_PROXY_BASE = 'http://127.0.0.1:5005';</script>
     <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
     <script>
     window.initializeChatApp = () => {
