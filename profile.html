@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KΔIRA | Profil</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-b from-black via-slate-900 to-black min-h-screen text-white">
+  <div class="max-w-4xl mx-auto p-4 md:p-8">
+    <div class="flex items-center justify-between mb-6">
+      <div class="text-2xl font-semibold">Profilim</div>
+      <div class="flex gap-3">
+        <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Anasayfa</a>
+        <button id="logout" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg">Çıkış</button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 items-start">
+      <div class="md:col-span-1 bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+        <div id="avatar" class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-600 to-cyan-500 flex items-center justify-center text-2xl font-bold mb-4 ring-2 ring-indigo-400/60 shadow-lg"></div>
+        <div id="username" class="text-xl font-semibold"></div>
+        <div id="email" class="text-gray-400 text-sm"></div>
+        <div id="user_id" class="text-gray-500 text-xs mt-1"></div>
+        <div class="mt-4 flex gap-2">
+          <input id="avatar_file" type="file" accept="image/*" class="hidden" />
+          <button id="avatar_btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded">Avatar Yükle</button>
+          <button id="consent_btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded">Muvafakat</button>
+        </div>
+      </div>
+      <div class="md:col-span-2 space-y-6">
+        <div class="bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+          <div class="text-lg font-semibold mb-4">Bilgiler</div>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Ad</label>
+              <input id="first_name" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Soyad</label>
+              <input id="last_name" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm text-gray-400 mb-1">E-posta</label>
+              <input id="email_in" type="email" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+            </div>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button id="save" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">Kaydet</button>
+            <div id="save_msg" class="text-sm text-emerald-400"></div>
+          </div>
+        </div>
+        <div class="bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+          <div class="text-lg font-semibold mb-4">Şifre Değiştir</div>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Mevcut Şifre</label>
+              <input id="pw_current" type="password" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Yeni Şifre</label>
+              <input id="pw_new" type="password" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+            </div>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button id="pw_change" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">Şifreyi Güncelle</button>
+            <div id="pw_msg" class="text-sm text-emerald-400"></div>
+          </div>
+        </div>
+        <div class="bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+          <div class="text-lg font-semibold mb-4">Tercihler</div>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Tema</label>
+              <select id="pref_theme" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+                <option value="auto">Otomatik</option>
+                <option value="dark">Koyu</option>
+                <option value="light">Açık</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-1">Dil</label>
+              <select id="pref_lang" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+                <option value="tr">Türkçe</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button id="pref_save" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded">Tercihleri Kaydet</button>
+            <button id="local_clear" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-200 border border-rose-600/50 px-4 py-2 rounded">Yerel Veriyi Temizle</button>
+            <div id="pref_msg" class="text-sm text-emerald-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.API_PROXY_BASE = window.API_PROXY_BASE || '';
+  </script>
+  <script type="module">
+    const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
+    const token = localStorage.getItem('kaira_auth_token') || '';
+    if (!token){ location.href = 'index.html'; }
+
+    const headers = { 'X-Auth-Token': token, 'Content-Type': 'application/json' };
+    const avatar = document.getElementById('avatar');
+    const username = document.getElementById('username');
+    const email = document.getElementById('email');
+    const userIdEl = document.getElementById('user_id');
+    const first_in = document.getElementById('first_name');
+    const last_in = document.getElementById('last_name');
+    const email_in = document.getElementById('email_in');
+
+    async function load(){
+      const base = API();
+      const res = await fetch(`${base}/api/auth/me`, { headers });
+      if (!res.ok){ localStorage.removeItem('kaira_auth_token'); localStorage.removeItem('kaira_user'); location.href='index.html'; return; }
+      const j = await res.json();
+      const u = j.user || {};
+      try{ localStorage.setItem('kaira_user', JSON.stringify(u)); }catch(_){ }
+      const uname = u.username || '';
+      username.textContent = uname;
+      email.textContent = u.email || '';
+      userIdEl.textContent = u.id ? `Kullanıcı ID: ${u.id}` : '';
+      first_in.value = u.first_name || '';
+      last_in.value = u.last_name || '';
+      email_in.value = u.email || '';
+      const initial = (uname||'U')[0].toUpperCase();
+      const savedAv = localStorage.getItem('kaira_avatar_url');
+      if (savedAv){ avatar.style.backgroundImage = `url('${savedAv}')`; avatar.style.backgroundSize='cover'; avatar.style.backgroundPosition='center'; avatar.textContent=''; }
+      else { avatar.textContent = initial; }
+    }
+    load();
+
+    document.getElementById('save').addEventListener('click', async ()=>{
+      const base = API(); const save_msg = document.getElementById('save_msg'); save_msg.textContent='';
+      const payload = { first_name: first_in.value.trim(), last_name: last_in.value.trim(), email: email_in.value.trim() };
+      const res = await fetch(`${base}/api/auth/update`, { method:'POST', headers, body: JSON.stringify(payload) });
+      const j = await res.json();
+      if (!res.ok){ save_msg.textContent = j && j.error ? j.error : 'Güncelleme başarısız'; save_msg.className='text-sm text-rose-400'; return; }
+      save_msg.textContent = 'Kaydedildi'; save_msg.className='text-sm text-emerald-400'; load();
+    });
+
+    document.getElementById('pw_change').addEventListener('click', async ()=>{
+      const base = API(); const pw_msg = document.getElementById('pw_msg'); pw_msg.textContent='';
+      const payload = { current_password: document.getElementById('pw_current').value, new_password: document.getElementById('pw_new').value };
+      const res = await fetch(`${base}/api/auth/password`, { method:'POST', headers, body: JSON.stringify(payload) });
+      const j = await res.json().catch(()=>({}));
+      if (!res.ok){ pw_msg.textContent = (j && j.error) ? j.error : 'Hata'; pw_msg.className='text-sm text-rose-400'; return; }
+      pw_msg.textContent = 'Şifre güncellendi'; pw_msg.className='text-sm text-emerald-400';
+      document.getElementById('pw_current').value=''; document.getElementById('pw_new').value='';
+    });
+
+    document.getElementById('logout').addEventListener('click', async ()=>{
+      try{ const base = API(); await fetch(`${base}/api/auth/logout`, { method:'POST', headers }); }catch(_){ }
+      try{ localStorage.removeItem('kaira_auth_token'); localStorage.removeItem('kaira_user'); }catch(_){ }
+      location.href = 'index.html';
+    });
+
+    // Avatar upload
+    const avBtn = document.getElementById('avatar_btn');
+    const avFile = document.getElementById('avatar_file');
+    avBtn.addEventListener('click', ()=> avFile.click());
+    avFile.addEventListener('change', async ()=>{
+      const f = avFile.files && avFile.files[0]; if (!f) return;
+      const url = URL.createObjectURL(f);
+      avatar.style.backgroundImage = `url('${url}')`; avatar.style.backgroundSize='cover'; avatar.style.backgroundPosition='center'; avatar.textContent='';
+      // upload to server for persistence
+      try{
+        const base = API(); if (base){
+          const fd = new FormData(); fd.append('files', f, f.name); fd.append('kind','avatar');
+          const up = await fetch(`${base}/api/upload`, { method:'POST', body: fd });
+          const j = await up.json();
+          const u = j && j.files && j.files[0] && j.files[0].url; if (u){ localStorage.setItem('kaira_avatar_url', `${base}${u}`); }
+        }
+      }catch(_){ }
+    });
+
+    // Consent view
+    document.getElementById('consent_btn').addEventListener('click', async ()=>{
+      try{
+        const base = API(); if (!base) return;
+        const res = await fetch(`${base}/api/consent`);
+        const j = await res.json();
+        const txt = (j && j.content) ? j.content : 'Belge bulunamadı.';
+        const w = window.open('', '_blank'); if (w && w.document){ w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${txt.replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</pre>`); }
+      }catch(_){ }
+    });
+
+    // Preferences
+    const prefTheme = document.getElementById('pref_theme');
+    const prefLang = document.getElementById('pref_lang');
+    const prefMsg = document.getElementById('pref_msg');
+    // load
+    try{
+      const t = localStorage.getItem('kaira_pref_theme'); if (t) prefTheme.value = t;
+      const l = localStorage.getItem('kaira_pref_lang'); if (l) prefLang.value = l;
+    }catch(_){ }
+    document.getElementById('pref_save').addEventListener('click', ()=>{
+      try{ localStorage.setItem('kaira_pref_theme', prefTheme.value); localStorage.setItem('kaira_pref_lang', prefLang.value); }catch(_){ }
+      prefMsg.textContent = 'Tercihler kaydedildi'; setTimeout(()=>{ prefMsg.textContent=''; }, 1500);
+    });
+    document.getElementById('local_clear').addEventListener('click', ()=>{
+      const keys = Object.keys(localStorage);
+      keys.forEach(k=>{ if (/^kaira_/i.test(k)) try{ localStorage.removeItem(k); }catch(_){ } });
+      alert('Yerel KΔIRA verileri silindi. (Oturum kapatılmış olabilir)');
+    });
+  </script>
+</body>
+</html>

@@ -52,7 +52,14 @@
   function show(){ modal.classList.remove('hidden'); }
   function hide(){ modal.classList.add('hidden'); }
 
-  openBtn.addEventListener('click', show);
+  openBtn.addEventListener('click', (e)=>{
+    try{
+      const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+      const tok = localStorage.getItem('kaira_auth_token');
+      if (tok && u && u.username) { window.location.href = 'profile.html'; return; }
+    }catch(_){ }
+    show();
+  });
   modal.querySelector('#auth-close').addEventListener('click', hide);
   modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
 
