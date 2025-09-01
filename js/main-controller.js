@@ -5,6 +5,7 @@ const selectDemoBtn = document.getElementById('select-demo');
 const selectEditorBtn = document.getElementById('select-editor');
 const selectChatBtn = document.getElementById('select-chat'); // Yeni
 const selectNasaBtn = document.getElementById('select-nasa');
+const selectCodeBtn = document.getElementById('select-codelab');
 const backButtons = document.querySelectorAll('.back-to-selection');
 
 let activeView = 'selection';
@@ -262,15 +263,26 @@ let nasaInitialized = false;
     }
     else if (viewName === 'nasa') {
         if (!nasaInitialized) { initNasa(); nasaInitialized = true; }
+    } else if (viewName === 'code') {
+        // enable safe typing/clicking in code-lab
+        if (!document.documentElement.classList.contains('debug-open')){
+          document.documentElement.classList.add('debug-open');
+          document.body.classList.add('debug-open');
+        }
+        const anti = document.getElementById('anti-leak-overlay');
+        if (anti) anti.style.display = 'none';
+        document.getElementById('code-view')?.style.setProperty('pointer-events','auto','important');
+        try { if (window.initializeCodeLab) window.initializeCodeLab(); } catch(_){ }
     }
 }
- selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
+selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
 if (selectDemoBtn) {
   selectDemoBtn.addEventListener('click', () => switchView('demo'));
 }
 selectEditorBtn.addEventListener('click', () => switchView('editor'));
 selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
 selectNasaBtn.addEventListener('click', () => switchView('nasa'));
+if (selectCodeBtn) selectCodeBtn.addEventListener('click', () => switchView('code'));
 backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
 // --- AFTERLIFE & DEMO KODLARI ---
 let afterlifeScene, afterlifeCamera, afterlifeRenderer, stars, meteors = [];

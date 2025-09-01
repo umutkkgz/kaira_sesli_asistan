@@ -204,3 +204,10 @@
           pointer-events: auto !important;
         }
         #chat-view { position: relative; z-index: 2000; }
+        /* === Code Lab view typing & click safety === */
+        #code-view, #code-view * {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          pointer-events: auto !important;
+        }
+        #code-view { position: relative; z-index: 2000; }

@@ -85,6 +85,10 @@
                     <h2 class="text-3xl font-serif font-semibold text-rose-400 mb-3">KΔIRA Sesli Asistan</h2>
                     <p class="text-slate-400">KΔIRA'nın sesli asistanıyla sohbet etmek istermisiniz ?</p>
                 </div>
+                <div id="select-codelab" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
+                    <h2 class="text-3xl font-serif font-semibold text-yellow-400 mb-3">KΔIRA Code Lab</h2>
+                    <p class="text-slate-400">Canvas üzerinde kod yaz, çalıştır ve AI ile geliştirmeyi dene.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -265,6 +269,64 @@
                     <button id="send-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-full transition-colors disabled:bg-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KΔIRA CODE LAB GÖRÜNÜMÜ -->
+    <div id="code-view" class="view bg-gray-900">
+        <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </button>
+        <div class="w-full max-w-6xl mx-auto p-4 grid md:grid-cols-2 gap-4">
+            <div class="space-y-3">
+                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-gray-300 font-medium">Dosyalar</div>
+                        <div class="space-x-2">
+                            <button id="cl-new-file" class="px-2 py-1 text-xs rounded bg-indigo-600 text-white">Yeni</button>
+                            <button id="cl-delete-file" class="px-2 py-1 text-xs rounded bg-rose-600 text-white">Sil</button>
+                        </div>
+                    </div>
+                    <ul id="cl-file-list" class="text-sm text-gray-300 max-h-40 overflow-auto space-y-1"></ul>
+                </div>
+                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-gray-300 font-medium"><span id="cl-active-file">(dosya yok)</span></div>
+                        <button id="cl-save" class="px-2 py-1 text-xs rounded bg-blue-600 text-white">Kaydet</button>
+                    </div>
+                    <textarea id="cl-editor" class="w-full h-[50vh] bg-gray-900 text-gray-100 rounded p-3 font-mono text-sm" spellcheck="false" placeholder="Kodunuzu yazın…"></textarea>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-gray-300 font-medium">Çalıştır</div>
+                        <div class="space-x-2">
+                            <button id="cl-run" class="px-3 py-1 text-xs rounded bg-emerald-600 text-white">Çalıştır</button>
+                            <button id="cl-reset" class="px-3 py-1 text-xs rounded bg-gray-600 text-white">Sıfırla</button>
+                        </div>
+                    </div>
+                    <div id="cl-runner" class="rounded-lg overflow-hidden border border-gray-700 bg-black" style="height: 360px;">
+                        <iframe id="cl-iframe" class="w-full h-full" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
+                    </div>
+                </div>
+                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="text-gray-300 font-medium">AI Yardım</div>
+                            <div class="text-xs text-gray-400" id="cl-model-info">Model listesi yükleniyor…</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="cl-model" class="bg-gray-900 border border-gray-700 rounded p-2 text-gray-100 text-sm"></select>
+                            <button id="cl-generate" class="px-3 py-2 text-sm rounded bg-indigo-600 text-white">Öneri Üret</button>
+                        </div>
+                        <textarea id="cl-prompt" rows="4" class="w-full bg-gray-900 text-gray-100 rounded p-2 text-sm" placeholder="Ne yapmak istiyorsun? Örn: 'Merkezde dönen bir yıldız alanı çiz'">
+Önce mevcut dosyaları analiz et, gerekirse yeni dosya öner. Yalnızca gerekli kodu üret.
+                        </textarea>
+                        <div id="cl-ai-output" class="text-xs text-gray-300 whitespace-pre-wrap bg-gray-900 border border-gray-700 rounded p-2 min-h-[80px]"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1213,6 +1275,7 @@
     <script type="module" src="js/exoplanet-map.js"></script>
     <script type="module" src="js/nasa-apod.js"></script>
     <script type="module" src="js/intro-animation.js"></script>
+    <script type="module" src="js/code-lab.js"></script>
 <script src="js/kaira-debug-toggle.js"></script>
 <script src="js/form-input-safety.js"></script>
 <script type="module" src="js/default-system-prompt.js"></script>
