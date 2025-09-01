@@ -64,6 +64,9 @@
             <h1 class="text-5xl md:text-7xl font-serif font-light text-slate-200 mb-4">KΔIRA'ya Hoş Geldin</h1>
             <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl">Lütfen deneyimlemek istediğin projeyi seç.</p>
             <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl">
+                <div class="absolute top-6 right-6">
+                  <button id="auth-open" class="bg-slate-800/70 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Üyelik</button>
+                </div>
                 <div id="select-afterlife" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
                     <h2 class="text-3xl font-serif font-semibold text-cyan-400 mb-3">Digital Afterlife</h2>
                     <p class="text-slate-400">Zihnin biyolojiye hapis olmadığı, anıların sonsuza dek yaşadığı felsefi bir yolculuğu keşfet.</p>
@@ -512,7 +515,8 @@
 })();
 </script>
 <script type="module" src="js/asistan-init.js"></script>
-<script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/telemetry.js"></script>
+    <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/live-support.js"></script>
 
 <script id="chat-logger">
