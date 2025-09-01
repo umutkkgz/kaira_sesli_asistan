@@ -73,14 +73,44 @@ async function fetchModels(){
   } catch(e){ if (info) info.textContent = 'Model listesi yüklenemedi'; }
 }
 
+function extToLang(name){
+  const n = String(name||'').toLowerCase();
+  if (n.endsWith('.js')) return 'javascript';
+  if (n.endsWith('.jsx')) return 'jsx';
+  if (n.endsWith('.ts')) return 'ts';
+  if (n.endsWith('.tsx')) return 'tsx';
+  if (n.endsWith('.css')) return 'css';
+  if (n.endsWith('.html')) return 'html';
+  if (n.endsWith('.json')) return 'json';
+  if (n.endsWith('.md')) return 'markdown';
+  return 'text';
+}
+
+function filesContext(files, perFileLimit=6000){
+  try{
+    let parts = [];
+    files.forEach(f => {
+      const lang = extToLang(f.name);
+      const body = String(f.content||'');
+      const slice = body.length > perFileLimit ? body.slice(0, perFileLimit) + "\n/* …trimmed… */" : body;
+      parts.push(`\n\n\`\`\`${lang} filename=${f.name}\n${slice}\n\`\`\``);
+    });
+    return parts.join('');
+  } catch(_){ return ''; }
+}
+
 async function callAssistant(prompt, files){
   const base = (window.API_PROXY_BASE||'').replace(/\/$/, '');
   const model = (document.getElementById('cl-model')||{}).value || 'openai/gpt-oss-120b';
-  const payload = {
-    model,
-    system: 'Sen yardımcı bir kod üreticisin. Yalnızca gerekli dosyaları öner ve kısa açıkla. Kod bloklarını üç tırnak içinde ve mümkünse filename bilgisini ver.',
-    prompt: `Mevcut dosyalar:\n${files.map(f=>`- ${f.name} (${f.content.length}b)`).join('\n')}\n\nİstek: ${prompt}`
-  };
+  const context = `Mevcut dosyalar (ad, boyut):\n${files.map(f=>`- ${f.name} (${f.content.length}b)`).join('\n')}\n\nDosya içerikleri:${filesContext(files)}`;
+  const sys = [
+    'Sen yardımcı bir yazılım ajanısın.',
+    'Yanıtlarında sadece gerekli kodu üret; açıklamayı kısa tut.',
+    'Değişiklik/güncelleme için kodu üç tırnak bloklarında ver ve info satırına filename ekle: ```<lang> filename=dosya.js```',
+    'Yeni dosya gerekiyorsa aynı formatta öner.',
+    'Kısa, bağımsız, derlenebilir kod parçaları üret.'
+  ].join(' ');
+  const payload = { model, system: sys, prompt: `${context}\n\nİstek: ${prompt}` };
   const res = await fetch(`${base}/api/chat`, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'ngrok-skip-browser-warning':'true' },
