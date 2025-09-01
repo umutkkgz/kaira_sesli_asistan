@@ -1,0 +1,106 @@
+/* KAIRA Aladin Lite minimal skin (scoped) ---------------------------------
+   Purpose: A lightweight, non-invasive stylesheet to host Aladin Lite v3
+            without pulling the official aladin.min.css. All rules are scoped
+            so they won't leak into the rest of the site.
+   How to use in HTML:
+     <link rel="stylesheet" href="./aladin.css">
+     <div class="hubble-skin">
+       <div id="aladin-map" class="al-host"></div>
+     </div>
+   Notes:
+     • We intentionally hide Aladin built-in toolbar controls (optional) and
+       encourage using your own external toolbar/buttons.
+     • Works for both #aladin and #aladin-map containers.
+------------------------------------------------------------------------- */
+
+:root { --al-bg:#0b0f1d; --al-panel:#0e1533; --al-border:#253160; --al-text:#e5e7eb; --al-muted:#93a1c6; --al-accent:#22d3ee; --al-ring:#3b82f6; --al-ok:#22c55e; --al-mid:#60a5fa; --al-far:#f472b6; }
+
+/* Container -------------------------------------------------------------- */
+.hubble-skin #aladin, 
+.hubble-skin #aladin-map, 
+.hubble-skin .al-host {
+  position: relative;
+  height: 460px; /* override if needed */
+  background: #000; /* while tiles load */
+  border: 1px solid var(--al-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Canvases fill host; don't touch other internal controls */
+.hubble-skin #aladin canvas,
+.hubble-skin #aladin-map canvas,
+.hubble-skin .al-host canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+
+/* Pointer/drag cursors  -------------------------------------------------- */
+.hubble-skin #aladin canvas,
+.hubble-skin #aladin-map canvas,
+.hubble-skin .al-host canvas { cursor: grab; image-rendering: -webkit-optimize-contrast; image-rendering: pixelated; }
+.hubble-skin #aladin canvas:active,
+.hubble-skin #aladin-map canvas:active,
+.hubble-skin .al-host canvas:active { cursor: grabbing; }
+
+/* Credits (bottom-right, subtle) ----------------------------------------- */
+.hubble-skin .al-credits, .hubble-skin .aladin-credits, .hubble-skin .aladin__credits {
+  position: absolute; right: 10px; bottom: 8px; z-index: 500;
+  background: rgba(14,21,51,.55); backdrop-filter: blur(4px);
+  color: var(--al-muted); font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+  padding: 4px 8px; border: 1px solid var(--al-border); border-radius: 999px;
+}
+
+/* External toolbar (you can place your own buttons) ---------------------- */
+.hubble-skin .al-toolbar { display:flex; gap:8px; align-items:center; padding:8px; 
+  background: rgba(14,21,51,.65); border:1px solid var(--al-border); border-radius: 10px; }
+.hubble-skin .al-btn { appearance:none; border:1px solid var(--al-border); background:linear-gradient(180deg,#111933,#0b1026); color:var(--al-text);
+  padding:6px 10px; border-radius:8px; font:12px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; cursor:pointer; }
+.hubble-skin .al-btn:hover { border-color: var(--al-ring); }
+
+/* Legend chips ------------------------------------------------------------ */
+.hubble-skin .al-legend { position:absolute; left:12px; bottom:10px; z-index: 1000; display:flex; gap:8px; align-items:center; }
+.hubble-skin .al-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid var(--al-border);
+  background: rgba(19,32,70,.8); color:#c7d2fe; font:12px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; }
+.hubble-skin .al-pill .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.hubble-skin .al-pill .near { background: var(--al-ok); }
+.hubble-skin .al-pill .mid  { background: var(--al-mid); }
+.hubble-skin .al-pill .far  { background: var(--al-far); }
+
+/* Popup content (we style the HTML we inject in popupDesc) --------------- */
+.hubble-skin .al-popup { color:var(--al-text); font:12px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; }
+.hubble-skin .al-popup b { color:#fff; font-weight:600; }
+.hubble-skin .al-popup .dim { color:var(--al-muted); }
+
+/* Hide built-in Aladin controls (we use our own external toolbar) */
+.hubble-skin .aladin-toolbar,
+.hubble-skin .aladin-layers,
+.hubble-skin .aladin-layersControl,
+.hubble-skin .aladin-layersbox,
+.hubble-skin .aladin-layersBox,
+.hubble-skin .aladin-cooGridCtrl,
+.hubble-skin .aladin-simbadPointerCtrl,
+.hubble-skin .aladin-fullscreenCtrl,
+.hubble-skin .aladin-zoomCtrl,
+.hubble-skin .aladin-location,
+.hubble-skin .aladin-center { display: none !important; }
+
+/* Loading shimmer for host (if you want to show) ------------------------- */
+.hubble-skin .al-host.loading::after,
+.hubble-skin #aladin.loading::after,
+.hubble-skin #aladin-map.loading::after {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(34,211,238,.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%; animation: al-shimmer 1.25s linear infinite;
+}
+@keyframes al-shimmer { from{ background-position: 200% 0 } to{ background-position: -200% 0 } }
+
+/* Responsive -------------------------------------------------------------- */
+@media (max-width: 900px){
+  .hubble-skin #aladin, .hubble-skin #aladin-map, .hubble-skin .al-host { height: 380px; }
+}
+
+/* Utility helpers --------------------------------------------------------- */
+.hubble-skin .hidden { display:none !important; }
+.hubble-skin .glass { background: rgba(14,21,51,.6); backdrop-filter: blur(6px); border:1px solid var(--al-border); border-radius:12px; }
+
+/* End of KAIRA Aladin Lite minimal skin ---------------------------------- */

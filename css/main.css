@@ -1,0 +1,206 @@
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Digital Afterlife Stilleri */
+        #afterlife-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.6; }
+        .afterlife-section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5rem 1.5rem; position: relative; z-index: 1; }
+        .font-serif { font-family: 'Source Serif 4', serif; }
+        .fade-in-up { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .is-visible .fade-in-up { opacity: 1; transform: translateY(0); }
+        .delay-1 { transition-delay: 0.2s; }
+        .delay-2 { transition-delay: 0.4s; }
+        .delay-3 { transition-delay: 0.6s; }
+        .feature-card { border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(10, 10, 10, 0.3); backdrop-filter: blur(10px); }
+        #countdown-container .time-block { min-width: 90px; }
+
+        /* KΔIRA Demo Stilleri */
+        #demo-bg-canvas, #ai-avatar-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #demo-bg-canvas { z-index: -1; }
+        #ai-avatar-canvas { z-index: 10; pointer-events: none; }
+        .glass-container { z-index: 1; position: relative; background: rgba(17, 24, 39, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 80px rgba(0, 191, 255, 0.2); }
+        #chat-container::-webkit-scrollbar, #chat-history::-webkit-scrollbar { width: 6px; }
+        #chat-container::-webkit-scrollbar-thumb, #chat-history::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 3px; }
+        #chat-container::-webkit-scrollbar-track, #chat-history::-webkit-scrollbar-track { background-color: #1a202c; }
+        .user-bubble { background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; align-self: flex-end; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25); }
+        .assistant-bubble { background: rgba(55, 65, 81, 0.9); color: #E5E7EB; align-self: flex-start; }
+        .mic-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
+        .mic-wrapper::before { content: ''; position: absolute; width: 110px; height: 110px; background: radial-gradient(circle, rgba(0, 191, 255, 0.35) 0%, rgba(0, 191, 255, 0) 65%); border-radius: 50%; z-index: 0; animation: aurora 5s infinite linear; }
+        #mic-btn { z-index: 1; animation: breathe 3s infinite ease-in-out; }
+        @keyframes aurora { 0% { transform: scale(1) rotate(0deg); opacity: 0.7; } 50% { transform: scale(1.5) rotate(180deg); opacity: 1; } 100% { transform: scale(1) rotate(360deg); opacity: 0.7; } }
+        @keyframes breathe { 0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.3); } 50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 191, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 191, 255, 0.3); } }
+        .is-listening { animation: pulse 1.5s infinite !important; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); } 70% { box-shadow: 0 0 0 30px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user-bubble, .assistant-bubble, .chat-user-bubble, .chat-assistant-bubble { animation: fadeIn 0.4s ease-out; }
+        #visualizer { width: 100%; height: 60px; margin-bottom: 1rem; opacity: 0; transition: opacity 0.5s ease-in-out; }
+        #fun-fact-bubble { position: fixed; background: rgba(55, 65, 81, 0.95); color: #E5E7EB; padding: 12px 16px; border-radius: 12px; max-width: 250px; font-size: 14px; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, top 1s linear, left 1s linear; transform: scale(0.9) translate(-50%, -100%); }
+        #fun-fact-bubble.visible { opacity: 1; transform: scale(1) translate(-50%, -100%); }
+        #fun-fact-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(55, 65, 81, 0.95); }
+
+#asistan-bg-canvas, #asistan-avatar-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+#asistan-bg-canvas { z-index: -1; pointer-events: none !important; }
+#asistan-avatar-canvas { z-index: 10; pointer-events: none; }
+#asistan-fun-fact { position: fixed; background: rgba(55, 65, 81, 0.95); color: #E5E7EB; padding: 12px 16px; border-radius: 12px; max-width: 250px; font-size: 14px; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, top 1s linear, left 1s linear; transform: scale(0.9) translate(-50%, -100%); }
+#asistan-fun-fact.visible { opacity: 1; transform: scale(1) translate(-50%, -100%); }
+#asistan-fun-fact::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid rgba(55, 65, 81, 0.95); }
+#asistan-visualizer { width: 100%; height: 60px; margin-bottom: 1rem; opacity: 0; transition: opacity 0.5s ease-in-out; }
+#asistan-mic-btn { z-index: 1; animation: breathe 3s infinite ease-in-out; }
+/* Ensure Asistan UI is always clickable above decorative layers */
+#asistan-view .glass-container,
+#asistan-view .mic-wrapper,
+#asistan-view button,
+#asistan-view [id^="asistan-"] {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 50;
+}
+/* Make asistan fixed canvases obey the reveal clip during transition */
+.reveal-mode #asistan-bg-canvas,
+.reveal-mode #asistan-avatar-canvas { position: absolute !important; }
+
+        /* Seçim Ekranı Stilleri */
+        .choice-card {
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+        }
+        .choice-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 100px rgba(0, 191, 255, 0.3);
+        }
+
+        /* Evrensel Sohbet Arayüzü Stilleri */
+        .chat-loader {
+            border-top-color: #6366f1;
+            animation: spin 1s linear infinite;
+        }
+        .chat-user-bubble { background-color: #4f46e5; align-self: flex-end; }
+        .chat-assistant-bubble { background-color: #374151; align-self: flex-start; }
+
+        /* === Anti-copy baseline (casual users) === */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, textarea, select, [contenteditable], .allow-select {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    pointer-events: auto !important;   /* tıklanıp odaklanabilsin */
+    caret-color: #fff;                 /* koyu zeminde imleç görünür olsun */
+}
+        /* Disable printing */
+        @media print { html, body { display: none !important; } }
+
+        /* Watermark / anti-leak overlay (captured by screenshots) */
+        #anti-leak-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.12;
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 180px, rgba(255,255,255,.15) 180px, rgba(255,255,255,.15) 200px),
+                repeating-linear-gradient(-45deg, transparent, transparent 180px, rgba(255,255,255,.15) 180px, rgba(255,255,255,.15) 200px);
+        }
+        #anti-leak-overlay::before {
+            content: 'KΔIRA • UMUT KÖKGÖZ • ' attr(data-stamp) ' • NO REPRODUCTION';
+            position: absolute; top: -10%; left: -10%; width: 140%; height: 140%;
+            display: grid; place-items: center; white-space: nowrap;
+            transform: rotate(-30deg); font-size: 28px; letter-spacing: 2px; text-transform: uppercase;
+            color: #ffffff; opacity: 0.25;
+        }
+        /* NASA Platform Stilleri (Adım 2/5) */
+        .nasa-tab { 
+            padding: 0.5rem 1rem; 
+            border-radius: 0.5rem; 
+            cursor: pointer; 
+            transition: background-color 0.3s, color 0.3s; 
+            border: 1px solid transparent; 
+            background-color: rgba(31,41,55,0.6); /* gray-800-ish */
+            color: #9ca3af; /* gray-400 */
+        }
+        .nasa-tab.active { 
+            background-color: rgba(59,130,246,0.2); /* blue-500 tint */ 
+            color: #60a5fa; /* blue-400 */ 
+            border-color: rgba(59,130,246,0.5);
+        }
+        .nasa-content { display: none; }
+        .nasa-content.active { display: block; }
+        /* Aladin zoom controls */
+        #aladin-map { position: relative; }
+        .al-zoom {
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          display: flex;
+          flex-direction: column; /* üst üste */
+          gap: 8px;
+          z-index: 2147483647; /* en üstte kal */
+          pointer-events: auto; /* tıklanabilir */
+        }
+        .al-zoom .al-btn {
+          width: 38px;
+          height: 38px;
+          padding: 0;
+          line-height: 1;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.25);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+          cursor: pointer;
+          pointer-events: auto;
+        }
+#zoom-controls {
+  position: absolute;
+  z-index: 2147483647; /* ekstra güvence */
+  pointer-events: auto;
+}
+        .al-legend { pointer-events: none; }
+
+#aladin-map canvas {
+  position: relative;
+  z-index: 0; /* overlay butonlardan düşük */
+}
+/* === Post-intro black-hole EXIT reveal === */
+#site-content { position: relative; will-change: clip-path; }
+#site-content.reveal-prep { clip-path: circle(0% at 50% 50%); }
+#site-content.reveal-open { animation: siteReveal 1.2s cubic-bezier(.2,.7,0,1) forwards; }
+        @keyframes siteReveal {
+          from { clip-path: circle(0% at 50% 50%); }
+          to   { clip-path: circle(150% at 50% 50%); }
+        }
+
+        /* Make fixed canvases obey the reveal clip during transition */
+        .reveal-mode #afterlife-bg-canvas,
+        .reveal-mode #demo-bg-canvas,
+        .reveal-mode #ai-avatar-canvas,
+        .reveal-mode #anti-leak-overlay {
+          position: absolute !important; /* temporarily not fixed */
+        }
+        /* --- NASA tabs: force clickability & stacking --- */
+        #nasa-view nav, #nasa-view .nasa-tab { pointer-events: auto !important; }
+        #nasa-view nav { position: relative; z-index: 50; }
+        /* === Editor view typing & z-order safety === */
+        #editor-view, #editor-view * {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          pointer-events: auto !important;
+        }
+        #editor-view { position: relative; z-index: 2000; }
+        #site-content { position: relative; z-index: 0; }
+        /* === Chat view typing & click safety === */
+        #chat-view, #chat-view * {
+          -webkit-user-select: text !important;
+          user-select: text !important;
+          pointer-events: auto !important;
+        }
+        #chat-view { position: relative; z-index: 2000; }

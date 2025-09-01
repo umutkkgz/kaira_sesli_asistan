@@ -1,0 +1,5 @@
+  /* === DEBUG TOGGLE OVERRIDES === */
+  html.debug-open, body.debug-open { overflow: auto !important; }
+  .debug-open * { -webkit-user-select: text !important; user-select: text !important; }
+  .debug-open #anti-leak-overlay { display: none !important; }
+  @media print { html.debug-open, body.debug-open { display: block !important; } }
