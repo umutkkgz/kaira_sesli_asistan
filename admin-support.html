@@ -41,6 +41,9 @@
           <div class="flex items-center gap-2">
             <button id="close-chat" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded">Sohbeti Kapat</button>
             <button id="export-chat" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Dışa Aktar</button>
+            <label class="text-xs text-gray-400 inline-flex items-center gap-1">
+              <input id="watch-all" type="checkbox" class="rounded" /> Tüm sohbetler için bildirim
+            </label>
           </div>
         </div>
         <div id="history" class="flex-1 overflow-y-auto space-y-2 bg-black/30 rounded p-3"></div>
@@ -76,10 +79,53 @@
     const sendBtn = document.getElementById('send');
     const sendMsg = document.getElementById('send-msg');
     const refreshBtn = document.getElementById('refresh');
+    const watchAll = document.getElementById('watch-all');
 
     let currentChat = null;
+    let lastSeenTs = {}; // chat_id -> last seen ts
+    let audioCtx = null;
 
+    function ensureAudio(){ if (!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(_){ } }
+    function beep(){ try{ ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type='sine'; o.frequency.value=880; g.gain.value=0.05; o.start(); setTimeout(()=>{ try{o.stop();}catch(_){ } }, 180); }catch(_){ }
+    }
+    async function ensureNotifyPermission(){ try{ if (!('Notification' in window)) return false; if (Notification.permission==='granted') return true; if (Notification.permission!=='denied'){ const p = await Notification.requestPermission(); return p==='granted'; } return false; }catch(_){ return false; } }
+    function notify(title, body, data){ try{ if (!('Notification' in window)) return; if (Notification.permission==='granted'){ const n = new Notification(title, { body, data }); n.onclick = ()=>{ try{ window.focus(); }catch(_){ } if (n.data && n.data.chat_id) { openChatForId(n.data.chat_id); } }; beep(); } }catch(_){ }
+    }
+    async function openChatForId(chatId){
+      await loadActive();
+      const items = Array.from(document.querySelectorAll('#chat-list li'));
+      const li = items.find(x => (x.textContent||'').startsWith(chatId));
+      if (li) li.click();
+    }
+
+    let wsAdmin = null;
     function setLoggedIn(state){ loginCard.classList.toggle('hidden', state); consoleEl.classList.toggle('hidden', !state); }
+    function connectAdminWS(){
+      try{ if (wsAdmin) { wsAdmin.close(); wsAdmin=null; } }catch(_){ }
+      const tok = getTok(); if (!tok) return;
+      let base = API(); let origin = base || location.origin; try{ const u = new URL(origin); u.protocol = (u.protocol==='https:')? 'wss:':'ws:'; u.pathname = (u.pathname.endsWith('/')? u.pathname.slice(0,-1):u.pathname) + '/ws/support-admin'; u.search = `token=${encodeURIComponent(tok)}`; origin = u.toString(); }catch(_){ const proto = location.protocol==='https:'?'wss:':'ws:'; origin = `${proto}//${location.host}/ws/support-admin?token=${encodeURIComponent(tok)}`; }
+      wsAdmin = new WebSocket(origin);
+      wsAdmin.onmessage = async (ev)=>{
+        try{
+          const evt = JSON.parse(ev.data);
+          if (evt && evt.channel==='support'){
+            if (evt.event==='message'){
+              if (currentChat && evt.chat_id===currentChat){
+                await refreshHistory();
+              } else {
+                notify(`Yeni mesaj (${evt.chat_id})`, String(evt.text||''), { chat_id: evt.chat_id });
+              }
+            } else if (evt.event==='join' || evt.event==='left' || evt.event==='closed'){
+              await loadActive();
+            }
+          }
+        }catch(_){ }
+      };
+      wsAdmin.onopen = ()=>{};
+      wsAdmin.onclose = ()=>{ wsAdmin=null; };
+      wsAdmin.onerror = ()=>{};
+    }
+
 
     async function tryFetch(url){
       const full = `${API()}${url}`;
@@ -115,6 +161,7 @@
       if (!res.ok) return;
       const j = await res.json();
       historyEl.innerHTML = '';
+      let newest = lastSeenTs[currentChat] || 0;
       (j.history||[]).forEach(m => {
         const d = document.createElement('div');
         const align = m.sender === 'admin' ? 'self-end bg-emerald-700/40 text-emerald-100' : 'self-start bg-slate-700 text-white';
@@ -122,8 +169,16 @@
         const dt = new Date((m.ts||0)*1000).toLocaleString();
         d.textContent = `[${dt}] ${m.text}`;
         historyEl.appendChild(d);
+        if ((m.ts||0) > newest) newest = m.ts || newest;
       });
       historyEl.scrollTop = historyEl.scrollHeight;
+      // Bildirim: yeni client mesajı varsa, odak dışındayken haber ver
+      const prev = lastSeenTs[currentChat] || 0;
+      if (prev && newest>prev){
+        const lastMsg = (j.history||[]).slice().reverse().find(x=>x.sender!=='admin');
+        if (lastMsg && document.hidden){ notify('Yeni canlı destek mesajı', String(lastMsg.text||'')); }
+      }
+      lastSeenTs[currentChat] = newest;
     }
     async function send(){
       sendMsg.textContent='';
@@ -149,15 +204,42 @@
       try{ (remember ? localStorage : sessionStorage).setItem(tokenKey, tok); }catch(_){ }
       setLoggedIn(true);
       await loadActive();
+      await ensureNotifyPermission();
+      connectAdminWS();
     });
     refreshBtn.addEventListener('click', loadActive);
     sendBtn.addEventListener('click', send);
     sendInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 
     // Auto login if token stored
-    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); await loadActive(); } })();
+    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); await loadActive(); await ensureNotifyPermission(); } })();
     // Periodically refresh history for open chat
     setInterval(refreshHistory, 2000);
+    // Optionally watch all chats for new messages (light polling)
+    setInterval(async ()=>{
+      try{
+        if (!watchAll.checked) return;
+        await loadActive();
+        const tok = getTok();
+        const items = Array.from(document.querySelectorAll('#chat-list li'));
+        for (const li of items){
+          const text = li.textContent || '';
+          const chatId = text.split(' • ')[0].trim();
+          if (!chatId) continue;
+          const res = await fetch(`${API()}/api/support/history/${encodeURIComponent(chatId)}?token=${encodeURIComponent(tok)}`);
+          if (!res.ok) continue; const j = await res.json();
+          const hist = j.history||[]; if (!hist.length) continue;
+          const latest = hist[hist.length-1];
+          const prev = lastSeenTs[chatId] || 0;
+          const newestTs = latest.ts || prev;
+          if (newestTs > prev){
+            // yeni mesaj; admin değilse duyur
+            if (latest.sender !== 'admin'){ notify(`Yeni mesaj (${chatId})`, String(latest.text||'')); }
+            lastSeenTs[chatId] = newestTs;
+          }
+        }
+      }catch(_){ }
+    }, 6000);
 
     // Close and export actions
     document.getElementById('close-chat').addEventListener('click', async ()=>{

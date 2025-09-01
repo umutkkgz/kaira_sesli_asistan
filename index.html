@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="kaira-api-base" content="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Aladin Lite (CDN-only) moved into the main head -->
@@ -31,6 +32,51 @@
     <link rel="stylesheet" href="css/main.css">
     
     <!-- React için Gerekli Scriptler -->
+    <script>
+      // Fill meta with API base for learning-bot embed
+      try {
+        var meta = document.querySelector('meta[name="kaira-api-base"]');
+        if (meta) {
+          var base = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || (localStorage.getItem('kaira_api_base')||'');
+          meta.setAttribute('content', base);
+        }
+      } catch(_){ }
+      // Provider setter for Asistan integration
+      window.setKairaAsistanProvider = function(p){ window.KairaAsistanProvider = p; };
+    </script>
+    <!-- Öğrenen Chatbot Sağlayıcısı -->
+    <script>
+      (function(){
+        var meta = document.querySelector('meta[name="kaira-api-base"]');
+        var API_BASE = (meta && meta.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||'');
+        if (!API_BASE) return;
+        window.setKairaAsistanProvider && window.setKairaAsistanProvider({
+          name: 'kaira-embed-only',
+          respond: async function({ text }){
+            try{
+              const r = await fetch((API_BASE.replace(/\/$/,'')+"/api/answer"), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text }) });
+              const data = await r.json().catch(()=>({}));
+              var outText = data && data.answer || '';
+              if (!outText){
+                var teach = confirm('Bu konu hakkında bilgim yok. Bana öğretmek ister misin?');
+                if (teach){
+                  var userResp = prompt('Lütfen doğru cevabı yaz:');
+                  if (userResp && userResp.trim()){
+                    await fetch((API_BASE.replace(/\/$/,'')+"/api/teach"), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text, response: userResp.trim() }) });
+                    outText = 'Teşekkürler, bilgiyi kaydettim.';
+                  } else {
+                    outText = 'Anladım. Şimdilik bu konuda bilgim yok.';
+                  }
+                } else {
+                  outText = 'Tamam. Şimdilik bu konuda bilgim yok.';
+                }
+              }
+              return { audioUrl: '', text: outText };
+            }catch(e){ return { audioUrl:'', text: 'Hata: '+(e && e.message || e) }; }
+          }
+        });
+      })();
+    </script>
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
 
