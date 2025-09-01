@@ -152,6 +152,11 @@ function parseCodeBlocks(text){
     // 1) info line: filename= veya file=
     const fi = /(?:^|\s)(?:filename|file)\s*=\s*([^\s]+)/i.exec(info);
     if (fi) filename = fi[1].replace(/^"|"$/g,'');
+    // 1b) info satırında doğrudan dosya adı (örn: ```script.js)
+    if (!filename){
+      const fInfo = /(?:^|\s)([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))(?:$|\s)/i.exec(info);
+      if (fInfo) filename = fInfo[1];
+    }
     const mi = /(?:^|\s)mode\s*=\s*(replace|merge)/i.exec(info);
     if (mi) mode = mi[1].toLowerCase();
     // 2) gövde ilk satır: file: NAME

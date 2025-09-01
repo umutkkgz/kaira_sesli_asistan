@@ -71,6 +71,7 @@
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     const player = document.getElementById('asistan-player');
+    if (player) { try { player.setAttribute('playsinline', ''); } catch(_){} }
     const chatContainer = document.getElementById('asistan-chat-container');
     const clearChatBtn = document.getElementById('asistan-clear-chat-btn');
     const textInput = document.getElementById('asistan-text-input');
@@ -143,9 +144,25 @@
         const data = await res.json();
         if (!data.audio_data) throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
         const audioUrl = base64ToBlobUrl(data.audio_data);
+        // Mikrofonda açık tanıma varsa kapat (bazı tarayıcılarda çalma engellenebilir)
+        try { if (window.KAIRA_AUDIO && typeof window.KAIRA_AUDIO.stopRecognizer === 'function') window.KAIRA_AUDIO.stopRecognizer(); } catch(_){ }
+        try { if (recognition && typeof recognition.stop === 'function') recognition.stop(); } catch(_){ }
+        // Mevcut URL'yi bırak ve yeni kaynağı yükle
         if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
-        player.previousUrl = audioUrl; player.src = audioUrl;
-        await player.play().catch(e=>console.error('[Audio]', e));
+        player.previousUrl = audioUrl; player.srcObject = null; player.src = audioUrl; player.load();
+        try {
+          await player.play();
+        } catch(e) {
+          console.warn('[Audio] Blob çalma başarısız, URL ile denenecek:', e);
+          // Sunucunun verdiği URL ile tekrar dene
+          try {
+            const directUrl = `${API_BASE}${data.session_audio_url || data.audio_url || ''}`;
+            if (directUrl) {
+              player.src = directUrl; player.load();
+              await player.play();
+            }
+          } catch(e2){ console.error('[Audio][fallback]', e2); }
+        }
         statusEl.textContent = 'Cevap oynatılıyor...';
         const out = data.text_response ?? data.clean_text ?? '';
         addMessageToChat(out, 'assistant');
