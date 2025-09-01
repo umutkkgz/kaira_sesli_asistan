@@ -145,14 +145,20 @@ function parseCodeBlocks(text){
     const info = (m[1]||'').trim();
     let body = m[2] || '';
     let filename = null;
-    // info line: look for filename= or file=
+    // 1) info line: filename= veya file=
     const fi = /(?:^|\s)(?:filename|file)\s*=\s*([^\s]+)/i.exec(info);
     if (fi) filename = fi[1].replace(/^"|"$/g,'');
+    // 2) gövde ilk satır: file: NAME
     if (!filename){
-      // try first line comment markers
-      const firstLine = body.split(/\r?\n/)[0];
-      const f2 = /file\s*:\s*([^\s]+)/i.exec(firstLine||'');
+      const firstLine = body.split(/\r?\n/)[0] || '';
+      const f2 = /file\s*:\s*([^\s]+)/i.exec(firstLine);
       if (f2) filename = f2[1].trim();
+    }
+    // 3) gövde ilk satır: yorum içinde NAME.ext (// main.js, /* style.css */, <!-- index.html -->)
+    if (!filename){
+      const firstLine = body.split(/\r?\n/)[0] || '';
+      const f3 = /(?:\/\/|#|<!--|\/\*)\s*([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))/i.exec(firstLine);
+      if (f3) filename = f3[1].trim();
     }
     blocks.push({ info, filename, content: body });
   }
@@ -226,9 +232,9 @@ export function initializeCodeLab(){
   function applyBlocksFromOutput(){
     const out = document.getElementById('cl-ai-output');
     const txt = out ? out.textContent : '';
-    if (!txt || !txt.includes('```')) return;
+    if (!txt || !txt.includes('```')) { if (out) out.textContent += '\n\n(Blok bulunamadı — üç tırnaklı kod blokları bekleniyor.)'; return; }
     const blocks = parseCodeBlocks(txt);
-    if (!(blocks && blocks.length)) return;
+    if (!(blocks && blocks.length)) { if (out) out.textContent += '\n\n(Blok ayrıştırılamadı.)'; return; }
     blocks.forEach(b => {
       let fname = b.filename;
       if (!fname){
@@ -240,6 +246,7 @@ export function initializeCodeLab(){
       if (idx >= 0) files[idx].content = b.content; else files.push({ name: fname, content: b.content });
     });
     saveFiles(files); loadActive();
+    if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı.)`;
   }
   document.getElementById('cl-apply')?.addEventListener('click', applyBlocksFromOutput);
 }
