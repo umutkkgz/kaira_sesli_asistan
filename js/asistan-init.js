@@ -67,7 +67,7 @@
     window.addEventListener('resize', ()=>{ setBgCanvasSize(); createParticles(); });
     setBgCanvasSize(); createParticles();
 
-    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
+    const API_BASE = 'https://1513c704aa10.ngrok-free.app';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     const player = document.getElementById('asistan-player');
@@ -77,9 +77,6 @@
     const sendBtn   = document.getElementById('asistan-send-btn');
 
     let chatHistory = [];
-    // Whisper (MediaRecorder) durumları
-    let mediaRecorder = null;
-    let mediaChunks = [];
     function sendTyped(){
       const txt = (textInput && textInput.value ? textInput.value : '').trim();
       if (!txt) return;
@@ -109,8 +106,8 @@
     }
 
     function unlockAudio(){
+      try { if (player && player.context && player.context.state === 'suspended') player.context.resume(); } catch(_){ }
       try { if (audioContext && audioContext.state === 'suspended') audioContext.resume(); } catch(_){ }
-      try { player.muted = true; const p = player.play(); if (p && typeof p.catch === 'function') p.catch(()=>{}); player.pause(); player.currentTime = 0; player.muted = false; } catch(_){ }
     }
 
     function startRecognition(){
@@ -118,64 +115,6 @@
       try {
         recognition.start();
       } catch(e){ console.warn('[SR START]', e); }
-    }
-
-    // Whisper ile kayıt (MediaRecorder) → /api/stt
-    async function startRecordingWhisper(){
-      try {
-        if (window.KAIRA_MIC_GUARD && typeof window.KAIRA_MIC_GUARD.allow === 'function') window.KAIRA_MIC_GUARD.allow();
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) mediaChunks.push(ev.data); };
-        mediaRecorder.onstop = async () => {
-          try {
-            const blob = new Blob(mediaChunks, { type: (mediaRecorder && mediaRecorder.mimeType) || 'audio/webm' });
-            await transcribeAndRespond(blob);
-          } finally {
-            try { stream.getTracks().forEach(t => t.stop()); } catch(_){ }
-            try { if (window.KAIRA_AUDIO) window.KAIRA_AUDIO.stopStream(); } catch(_){ }
-          }
-        };
-        mediaRecorder.start();
-        isRecording = true;
-        micBtn.classList.remove('breathe');
-        micBtn.classList.add('is-listening');
-        statusEl.textContent='Dinliyorum...';
-        setCoreState('listening');
-      } catch(err){
-        console.error('[Whisper][getUserMedia]', err);
-        statusEl.textContent = 'Mikrofona erişilemedi: ' + (err?.message || err);
-        setCoreState('idle');
-      }
-    }
-
-    function stopRecordingWhisper(){
-      try { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); } catch(_){ }
-      isRecording = false;
-      micBtn.classList.remove('is-listening');
-      micBtn.classList.add('breathe');
-    }
-
-    async function transcribeAndRespond(blob){
-      statusEl.textContent = 'Çözümleniyor...';
-      try {
-        const fd = new FormData();
-        const ext = blob.type && blob.type.includes('ogg') ? 'ogg' : 'webm';
-        fd.append('file', blob, `input.${ext}`);
-        fd.append('language', 'tr');
-        const res = await fetch(`${API_BASE}/api/stt`, { method: 'POST', body: fd });
-        if (!res.ok){ const txt = await res.text().catch(()=> ''); throw new Error(`STT HTTP ${res.status} — ${txt}`); }
-        const data = await res.json();
-        const text = (data && data.text ? String(data.text) : '').trim();
-        if (!text){ statusEl.textContent = 'Ses anlaşılamadı.'; setCoreState('idle'); return; }
-        addMessageToChat(text, 'user');
-        await getAIResponse(text);
-      } catch(err){
-        console.error('[Whisper][STT]', err);
-        statusEl.textContent = 'STT Hatası: ' + (err?.message || err);
-        setCoreState('idle');
-      }
     }
 
     async function getAIResponse(text, angry=false){
@@ -211,26 +150,6 @@
     function addMessageToChat(text, sender){
       const b = document.createElement('div'); b.className = `p-3 rounded-xl max-w-lg ${sender==='user' ? 'user-bubble' : 'assistant-bubble'}`; b.textContent = text; chatContainer.appendChild(b); chatContainer.scrollTop = chatContainer.scrollHeight;
       if (sender){ chatHistory.push({ role: sender, content: text }); localStorage.setItem('kaira_asistan_chat_history', JSON.stringify(chatHistory)); }
-    }
-
-    // Olay bağlayıcıları
-    if (micBtn){
-      micBtn.addEventListener('click', () => {
-        unlockAudio();
-        if (typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
-          if (isRecording) stopRecordingWhisper(); else startRecordingWhisper();
-        } else {
-          if (isRecording && recognition) { try { recognition.stop(); } catch(_){} }
-          else { startRecognition(); }
-        }
-      });
-    }
-    if (sendBtn) sendBtn.addEventListener('click', sendTyped);
-    if (textInput) textInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendTyped(); }});
-    if (clearChatBtn) clearChatBtn.addEventListener('click', ()=>{ chatHistory=[]; localStorage.removeItem('kaira_asistan_chat_history'); chatContainer.innerHTML=''; addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); });
-    if (player){
-      player.addEventListener('play', ()=>{ if (!isVisualizerSetup) setupVisualizer(); drawVisualizer(); setCoreState('speaking'); });
-      player.addEventListener('ended', ()=>{ statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); });
     }
 
     // Geçmişi yükle (asistan için ayrı anahtar)
