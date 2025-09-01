@@ -52,8 +52,6 @@
     <!-- Arka Plan Canvasları -->
 <div id="site-content" class="reveal-prep">
     <canvas id="afterlife-bg-canvas"></canvas>
-    <canvas id="demo-bg-canvas"></canvas>
-    <canvas id="ai-avatar-canvas"></canvas>
     <div id="fun-fact-bubble" class="hidden"></div>
     <canvas id="asistan-bg-canvas"></canvas>
     <canvas id="asistan-avatar-canvas"></canvas>
@@ -70,10 +68,7 @@
                     <h2 class="text-3xl font-serif font-semibold text-cyan-400 mb-3">Digital Afterlife</h2>
                     <p class="text-slate-400">Zihnin biyolojiye hapis olmadığı, anıların sonsuza dek yaşadığı felsefi bir yolculuğu keşfet.</p>
                 </div>
-                <div id="select-demo" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
-                    <h2 class="text-3xl font-serif font-semibold text-blue-400 mb-3">KΔIRA Demo</h2>
-                    <p class="text-slate-400">!KΔIRA'nın sesli asistanı şuan aktif değil!</p>
-                </div>
+                
                 <div id="select-editor" class="choice-card glass-container rounded-2xl p-8 cursor-pointer">
                     <h2 class="text-3xl font-serif font-semibold text-purple-400 mb-3">Yapay Zeka Editör</h2>
                     <p class="text-slate-400">Fotoğraflarınızı yükleyin ve metin komutlarıyla saniyeler içinde dilediğiniz gibi düzenleyin.</p>
@@ -162,32 +157,7 @@
         </main>
     </div>
 
-    <!-- KΔIRA DEMO GÖRÜNÜMÜ -->
-    <div id="demo-view" class="view">
-        <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        </button>
-        <div class="flex items-center justify-center min-h-screen text-white p-4">
-            <div class="w-full max-w-2xl mx-auto glass-container rounded-2xl shadow-2xl flex flex-col p-6" style="height: 90vh;">
-                <div class="relative text-center border-b border-gray-700/50 pb-2 mb-4" style="height: 70px;">
-                    <p id="status" class="text-sm text-cyan-400 h-5 transition-all duration-300 mt-1">Konuşmak için mikrofon simgesine dokunun</p>
-                    <button id="clear-chat-btn" title="Sohbeti Temizle" class="absolute top-1 right-0 text-gray-500 hover:text-white transition-colors p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                </div>
-                <div id="chat-container" class="flex-grow overflow-y-auto pr-2 flex flex-col gap-4"></div>
-                <canvas id="visualizer"></canvas>
-                <div class="pt-4 mt-4 border-t border-gray-700/50 flex flex-col items-center">
-                    <div class="mic-wrapper">
-                        <button id="mic-btn" class="bg-blue-600 hover:bg-blue-700 transition-all duration-300 rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7v1h6v-1h-2v-2.07z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <audio id="player" class="hidden" crossOrigin="anonymous"></audio>
-    </div>
+    
 <!-- KΔIRA SESLİ ASİSTAN GÖRÜNÜMÜ (YENİ) -->
 <div id="asistan-view" class="view">
   <button class="back-to-selection fixed top-5 left-5 z-50 text-slate-400 hover:text-white transition-colors bg-black/20 backdrop-blur-md p-3 rounded-full">

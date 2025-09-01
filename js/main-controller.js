@@ -265,7 +265,9 @@ let nasaInitialized = false;
     }
 }
  selectAfterlifeBtn.addEventListener('click', () => switchView('afterlife'));
-selectDemoBtn.addEventListener('click', () => switchView('demo'));
+if (selectDemoBtn) {
+  selectDemoBtn.addEventListener('click', () => switchView('demo'));
+}
 selectEditorBtn.addEventListener('click', () => switchView('editor'));
 selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
 selectNasaBtn.addEventListener('click', () => switchView('nasa'));
