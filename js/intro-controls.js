@@ -94,38 +94,40 @@ window.addEventListener('resize', () => {
 });
 
 // --- YENİ: Geliştirilmiş GSAP Giriş Animasyonu ---
-const tl = gsap.timeline();
+// GSAP yoksa sessizce atla (intro-animation.js mevcut)
+const G = (typeof window !== 'undefined' && window.gsap) ? window.gsap : (typeof gsap !== 'undefined' ? gsap : null);
+const tl = (G && typeof G.timeline === 'function') ? G.timeline() : null;
 
 // 1. Adım: Kamera parçacıkların içine doğru yaklaşır
-tl.to(camera.position, {
+if (tl) tl.to(camera.position, {
     duration: 4,
     z: 70,
     ease: "power3.inOut"
 }, 0);
 
 // 2. Adım: Parçacıklar yavaşça dönerken toplanır
-tl.to(particles.rotation, {
+if (tl) tl.to(particles.rotation, {
     duration: 4,
     y: Math.PI * 0.5,
     ease: "power2.inOut"
 }, 0);
 
 // 3. Adım: UI konteynerini göster
-tl.to("#ui-container", {
+if (tl) tl.to("#ui-container", {
     duration: 2,
     opacity: 1,
     ease: "power2.out"
 }, 2);
 
 // 4. Adım: Alt başlığı göster
-tl.to("#subtitle", {
+if (tl) tl.to("#subtitle", {
     duration: 2,
     opacity: 1,
     ease: "power2.out"
 }, 2.2);
 
 // 5. Adım: Giriş butonunu göster
-tl.to("#enter-button", {
+if (tl) tl.to("#enter-button", {
     duration: 1.5,
     opacity: 1,
     scale: 1,
@@ -137,29 +139,29 @@ const enterButton = document.getElementById('enter-button');
 const introContainer = document.getElementById('intro-container');
 
 enterButton.addEventListener('click', () => {
-    const tlExit = gsap.timeline({
+    const tlExit = (G && typeof G.timeline === 'function') ? G.timeline({
         onComplete: () => {
             // Animasyon bitince konteyneri DOM'dan kaldır
             introContainer.style.display = 'none';
         }
-    });
+    }) : null;
 
     // UI elemanlarını ve parçacıkları aynı anda kaybet
-    tlExit.to("#ui-container", {
+    if (tlExit) tlExit.to("#ui-container", {
         duration: 0.5,
         opacity: 0,
         ease: "power2.in"
     }, 0);
 
     // Parçacıkları "hiperuzay sıçraması" efektiyle ileri fırlat
-    tlExit.to(particles.position, {
+    if (tlExit) tlExit.to(particles.position, {
         duration: 1.2,
         z: 400,
         ease: "power3.in"
     }, 0);
 
     // Parçacıkların opaklığını azaltarak kaybolmalarını sağla
-    tlExit.to(particles.material.uniforms.globalOpacity, {
+    if (tlExit) tlExit.to(particles.material.uniforms.globalOpacity, {
         duration: 1.2,
         value: 0,
         ease: "power3.in"
