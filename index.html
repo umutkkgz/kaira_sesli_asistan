@@ -105,6 +105,28 @@
         </div>
     </div>
 
+    <!-- Öğrenen Chat: Yüzen Buton ve Panel (HER ZAMAN GÖRÜNÜR) -->
+    <button id="learn-chat-toggle" class="fixed top-5 left-5 z-[10050] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg" style="z-index:10050;">
+      Öğrenen Chat
+    </button>
+    <div id="learn-chat-panel" class="fixed top-20 left-5 z-[10050] hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" style="z-index:10050;">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+        <div class="text-white font-semibold">KΔIRA Öğrenen Chat</div>
+        <div class="flex items-center gap-2">
+          <button id="learn-chat-settings" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Ayar</button>
+          <button id="learn-chat-min" class="text-gray-400 hover:text-white">_</button>
+          <button id="learn-chat-close" class="text-gray-400 hover:text-white">✕</button>
+        </div>
+      </div>
+      <div id="learn-chat-body" class="p-3 space-y-2 h-[260px] overflow-y-auto text-sm"></div>
+      <div class="p-3 border-t border-gray-700 bg-gray-800/40">
+        <div class="flex items-center gap-2">
+          <input id="learn-chat-input" type="text" placeholder="Sorunuzu yazın…" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button id="learn-chat-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Gönder</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Arka Plan Canvasları -->
 <div id="site-content" class="reveal-prep">
     <canvas id="afterlife-bg-canvas"></canvas>
@@ -286,28 +308,6 @@
     </div>
   </div>
 
-  <!-- Öğrenen Chat: Yüzen Buton ve Panel -->
-  <button id="learn-chat-toggle" class="fixed top-5 left-5 z-[10050] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg" style="z-index:10050;">
-    Öğrenen Chat
-  </button>
-  <div id="learn-chat-panel" class="fixed top-20 left-5 z-[10050] hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" style="z-index:10050;">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-      <div class="text-white font-semibold">KΔIRA Öğrenen Chat</div>
-      <div class="flex items-center gap-2">
-        <button id="learn-chat-settings" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Ayar</button>
-        <button id="learn-chat-min" class="text-gray-400 hover:text-white">_</button>
-        <button id="learn-chat-close" class="text-gray-400 hover:text-white">✕</button>
-      </div>
-    </div>
-    <div id="learn-chat-body" class="p-3 space-y-2 h-[260px] overflow-y-auto text-sm"></div>
-    <div class="p-3 border-t border-gray-700 bg-gray-800/40">
-      <div class="flex items-center gap-2">
-        <input id="learn-chat-input" type="text" placeholder="Sorunuzu yazın…" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <button id="learn-chat-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Gönder</button>
-      </div>
-    </div>
-  </div>
-  
 </div>
 </div>
     <!-- FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
