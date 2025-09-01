@@ -265,8 +265,8 @@
 </div>
 
 <!-- Canlı Destek: Yüzen Buton ve Modal -->
-<button id="live-support-btn" class="fixed bottom-5 right-5 z-50 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg">Canlı Destek</button>
-<div id="live-support-modal" class="fixed inset-0 z-50 bg-black/60 hidden">
+  <button id="live-support-btn" class="fixed bottom-5 right-5 z-50 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg">Canlı Destek</button>
+  <div id="live-support-modal" class="fixed inset-0 z-50 bg-black/60 hidden">
   <div class="absolute bottom-20 right-5 w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
       <div class="text-white font-semibold">Canlı Destek</div>
@@ -282,6 +282,28 @@
       <div class="p-3 border-t border-gray-700 flex gap-2">
         <input id="ls-input" type="text" placeholder="Sorunuzu yazın..." class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
         <button id="ls-send" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Öğrenen Chat: Yüzen Buton ve Panel -->
+  <button id="learn-chat-toggle" class="fixed bottom-24 right-5 z-50 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg">
+    Öğrenen Chat
+  </button>
+  <div id="learn-chat-panel" class="fixed bottom-24 right-5 z-50 hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+      <div class="text-white font-semibold">KΔIRA Öğrenen Chat</div>
+      <div class="flex items-center gap-2">
+        <button id="learn-chat-settings" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Ayar</button>
+        <button id="learn-chat-min" class="text-gray-400 hover:text-white">_</button>
+        <button id="learn-chat-close" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+    </div>
+    <div id="learn-chat-body" class="p-3 space-y-2 h-[260px] overflow-y-auto text-sm"></div>
+    <div class="p-3 border-t border-gray-700 bg-gray-800/40">
+      <div class="flex items-center gap-2">
+        <input id="learn-chat-input" type="text" placeholder="Sorunuzu yazın…" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <button id="learn-chat-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Gönder</button>
       </div>
     </div>
   </div>
@@ -1380,9 +1402,85 @@
     <script type="module" src="js/nasa-apod.js"></script>
     <script type="module" src="js/intro-animation.js"></script>
     <script type="module" src="js/code-lab.js"></script>
-<script src="js/kaira-debug-toggle.js"></script>
-<script src="js/form-input-safety.js"></script>
-<script type="module" src="js/default-system-prompt.js"></script>
-<script type="module" src="js/main-controller.js"></script>
+  <script src="js/kaira-debug-toggle.js"></script>
+  <script src="js/form-input-safety.js"></script>
+  <script type="module" src="js/default-system-prompt.js"></script>
+  <script type="module" src="js/main-controller.js"></script>
+
+  <script>
+// Mini Öğrenen Sohbet — doğrudan /api/answer & /api/teach kullanır
+(function(){
+  const btn = document.getElementById('learn-chat-toggle');
+  const panel = document.getElementById('learn-chat-panel');
+  const body = document.getElementById('learn-chat-body');
+  const input = document.getElementById('learn-chat-input');
+  const sendBtn = document.getElementById('learn-chat-send');
+  const closeBtn = document.getElementById('learn-chat-close');
+  const minBtn = document.getElementById('learn-chat-min');
+  const META = document.querySelector('meta[name="kaira-api-base"]');
+  function API(){ return (META && META.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||''); }
+  function addMsg(text, role){
+    const b = document.createElement('div');
+    b.className = 'max-w-[85%] px-3 py-2 rounded-lg text-sm ' + (role==='user' ? 'bg-indigo-700/40 text-indigo-100 self-end ml-auto' : 'bg-slate-700 text-white');
+    b.textContent = String(text||'');
+    body.appendChild(b); body.scrollTop = body.scrollHeight;
+  }
+  function addTeachPrompt(q){
+    const wrap = document.createElement('div'); wrap.className='bg-amber-500/10 border border-amber-500/30 text-amber-100 rounded-lg p-2 text-xs';
+    wrap.textContent='Bu konu hakkında bilgim yok. Öğretmek ister misin? ';
+    const teachBtn = document.createElement('button'); teachBtn.className='ml-2 px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-700 text-white'; teachBtn.textContent='Öğret';
+    teachBtn.addEventListener('click', async ()=>{
+      const a = prompt('Lütfen doğru cevabı yaz:');
+      if (a && a.trim()){
+        try{ await fetch(API().replace(/\/$/,'')+'/api/teach', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: q, response: a.trim() }) }); addMsg('Teşekkürler, bilgiyi kaydettim.', 'bot'); wrap.remove(); }catch(e){ addMsg('Kaydedilemedi: '+(e&&e.message||e), 'bot'); }
+      }
+    });
+    wrap.appendChild(teachBtn); body.appendChild(wrap); body.scrollTop = body.scrollHeight;
+  }
+  function saveHistory(){ try{ localStorage.setItem('kaira_learn_chat', body.innerHTML); }catch(_){ } }
+  function loadHistory(){ try{ const h = localStorage.getItem('kaira_learn_chat'); if (h) body.innerHTML = h; }catch(_){ } }
+  async function send(){
+    const t = (input.value||'').trim(); if (!t) return; input.value=''; addMsg(t,'user'); saveHistory();
+    const base = API();
+    if (!base){ addMsg('Sunucu ayarlı değil.', 'bot'); return; }
+    try{
+      const r = await fetch(base.replace(/\/$/,'')+'/api/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
+      const j = await r.json().catch(()=>({}));
+      const ans = (j && j.answer) ? j.answer : '';
+      if (ans){ addMsg(ans,'bot'); }
+      else { addTeachPrompt(t); }
+      saveHistory();
+    }catch(e){ addMsg('Hata: '+(e&&e.message||e),'bot'); }
+  }
+  if (btn){
+    btn.addEventListener('click', ()=>{ panel.classList.toggle('hidden'); if (!panel.classList.contains('hidden')){ loadHistory(); } });
+  }
+  if (closeBtn){ closeBtn.addEventListener('click', ()=>{ panel.classList.add('hidden'); }); }
+  if (minBtn){ minBtn.addEventListener('click', ()=>{ panel.classList.add('hidden'); }); }
+  if (sendBtn){ sendBtn.addEventListener('click', send); }
+  if (input){ input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } }); }
+})();
+</script>
+
+<!-- Öğrenen Chat Sunucu Ayarı (kaira_api_base) -->
+<script>
+(function(){
+  const btn = document.getElementById('learn-chat-settings');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    try{
+      var cur = localStorage.getItem('kaira_api_base') || (window.API_PROXY_BASE||'');
+      var v = prompt('Sunucu adresi (ör: http://127.0.0.1:5005)', cur||'');
+      if (v == null) return;
+      v = (v||'').trim();
+      try{ localStorage.setItem('kaira_api_base', v); }catch(_){ }
+      try{ var meta = document.querySelector('meta[name="kaira-api-base"]'); if (meta) meta.setAttribute('content', v); }catch(_){ }
+      alert('Sunucu güncellendi. Bağlantı sağlanırsa öğrenen mod aktif olur.');
+      try{ if (window.__initLearningProvider) setTimeout(window.__initLearningProvider, 100); }catch(_){ }
+    }catch(e){ console.warn('[KAIRA] settings error', e); }
+  });
+})();
+</script>
+
 </body>
 </html>
