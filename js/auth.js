@@ -56,10 +56,15 @@
     try{
       const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
       const tok = localStorage.getItem('kaira_auth_token');
-      if (tok && u && u.username) { window.location.href = 'profile.html'; return; }
+      if (tok && u && u.username) {
+        // allow default navigation to profile.html
+        return;
+      }
     }catch(_){ }
+    // Not logged in → stop default link and show modal
+    e.preventDefault();
     show();
-  });
+  }, { capture: true });
   modal.querySelector('#auth-close').addEventListener('click', hide);
   modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
 
@@ -122,4 +127,3 @@
     if (u && u.username) openBtn.textContent = u.username;
   }catch(_){ }
 })();
-

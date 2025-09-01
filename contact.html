@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KΔIRA | İletişim</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-slate-900 to-black min-h-screen text-white">
+  <div class="max-w-3xl mx-auto p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold">İletişim</h1>
+      <div class="flex gap-3">
+        <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Anasayfa</a>
+        <a href="profile.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Profil</a>
+      </div>
+    </div>
+
+    <div class="bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
+      <p class="text-gray-300 mb-4">Sorularınız ve talepleriniz için formu doldurun. Acil destek için ana sayfadaki <span class="text-emerald-400">Canlı Destek</span> butonunu kullanabilirsiniz.</p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Ad Soyad</label>
+          <input id="c_name" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">E-posta (opsiyonel)</label>
+          <input id="c_email" type="email" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-400 mb-1">Konu</label>
+          <input id="c_subject" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-400 mb-1">Mesajınız</label>
+          <textarea id="c_message" rows="6" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"></textarea>
+        </div>
+      </div>
+      <div class="mt-4 flex gap-3 items-center">
+        <button id="c_send" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">Gönder</button>
+        <div id="c_msg" class="text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
+    const nameEl = document.getElementById('c_name');
+    const emailEl = document.getElementById('c_email');
+    const subjEl = document.getElementById('c_subject');
+    const msgEl = document.getElementById('c_message');
+    const out = document.getElementById('c_msg');
+
+    // Prefill
+    try{
+      const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+      if (u){ nameEl.value = `${u.first_name||''} ${u.last_name||''}`.trim(); emailEl.value = u.email||''; }
+    }catch(_){ }
+
+    document.getElementById('c_send').addEventListener('click', async ()=>{
+      out.textContent=''; out.className='text-sm text-gray-300';
+      const payload = {
+        event: 'contact_form',
+        name: nameEl.value.trim(),
+        email: emailEl.value.trim(),
+        subject: subjEl.value.trim(),
+        message: msgEl.value.trim(),
+      };
+      if (!payload.name || !payload.subject || !payload.message){ out.textContent='Lütfen gerekli alanları doldurun.'; out.className='text-sm text-rose-400'; return; }
+      try{
+        const base = API(); if (!base){ out.textContent='Sunucu tanımlı değil'; out.className='text-sm text-rose-400'; return; }
+        const res = await fetch(`${base}/api/log`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok){ out.textContent='Gönderim başarısız'; out.className='text-sm text-rose-400'; return; }
+        out.textContent='Mesajınız alındı. Teşekkürler!'; out.className='text-sm text-emerald-400';
+        subjEl.value=''; msgEl.value='';
+      }catch(e){ out.textContent='Hata: ' + (e && e.message || e); out.className='text-sm text-rose-400'; }
+    });
+  </script>
+</body>
+</html>
