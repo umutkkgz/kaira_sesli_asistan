@@ -72,16 +72,38 @@
 
   // Consent viewer
   modal.querySelector('#reg-view-consent').addEventListener('click', async ()=>{
-    try{
-      const base = API(); if (!base) return;
-      const res = await fetch(`${base}/api/consent`, { headers:{'ngrok-skip-browser-warning':'true'} });
-      const j = await res.json();
-      const txt = (j && j.content) ? j.content : 'Belge bulunamadı.';
+    // Helper to safely open a new window and render plain text (escaped)
+    const renderTextInNewWindow = (text)=>{
+      const safe = (text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]));
       const w = window.open('', '_blank');
       if (w && w.document) {
-        w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${txt.replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</pre>`);
+        w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${safe}</pre>`);
+      } else {
+        alert('Belge görüntülenemedi. Açılır pencere engelleyicisini kontrol edin.');
       }
-    }catch(_){ }
+    };
+
+    // 1) Try backend API if configured
+    const base = API();
+    if (base) {
+      try{
+        const res = await fetch(`${base}/api/consent`, { headers:{'ngrok-skip-browser-warning':'true'} });
+        if (res.ok) {
+          const j = await res.json().catch(()=>({}));
+          if (j && j.content) { renderTextInNewWindow(j.content); return; }
+        }
+      }catch(_){ /* fall back to local file */ }
+    }
+
+    // 2) Fallback: load local file directly
+    try {
+      const res = await fetch('muvafakatname.md', { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
+      if (!res.ok) throw new Error('local not ok');
+      const txt = await res.text();
+      renderTextInNewWindow(txt || 'Belge bulunamadı.');
+    } catch (e) {
+      renderTextInNewWindow('Belge bulunamadı.');
+    }
   });
 
   // Register
