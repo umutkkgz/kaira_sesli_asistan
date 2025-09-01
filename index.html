@@ -201,8 +201,32 @@
         </div>
       </div>
     </div>
+</div>
+<audio id="asistan-player" class="hidden" crossOrigin="anonymous" playsinline></audio>
+</div>
+
+<!-- Canlı Destek: Yüzen Buton ve Modal -->
+<button id="live-support-btn" class="fixed bottom-5 right-5 z-50 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg">Canlı Destek</button>
+<div id="live-support-modal" class="fixed inset-0 z-50 bg-black/60 hidden">
+  <div class="absolute bottom-20 right-5 w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+      <div class="text-white font-semibold">Canlı Destek</div>
+      <button id="live-support-close" class="text-gray-400 hover:text-white">✕</button>
+    </div>
+    <div id="live-support-ident" class="p-4 space-y-2">
+      <input id="ls-name" type="text" placeholder="Ad Soyad" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <input id="ls-email" type="email" placeholder="E-posta (opsiyonel)" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <button id="ls-start" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Sohbete Başla</button>
+    </div>
+    <div id="live-support-chat" class="hidden h-[360px] flex flex-col">
+      <div id="ls-messages" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+      <div class="p-3 border-t border-gray-700 flex gap-2">
+        <input id="ls-input" type="text" placeholder="Sorunuzu yazın..." class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+        <button id="ls-send" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
+      </div>
+    </div>
   </div>
-  <audio id="asistan-player" class="hidden" crossOrigin="anonymous" playsinline></audio>
+  
 </div>
 </div>
     <!-- FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
@@ -489,6 +513,7 @@
 </script>
 <script type="module" src="js/asistan-init.js"></script>
 <script type="module" src="js/telemetry.js"></script>
+<script type="module" src="js/live-support.js"></script>
 
 <script id="chat-logger">
 (function(){
