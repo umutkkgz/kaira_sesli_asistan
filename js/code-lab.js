@@ -39,11 +39,27 @@ function renderFileList(files, activeIndex){
 
 function buildRunnerHTML(files){
   const css = files.filter(f=>/\.css$/i.test(f.name)).map(f=>f.content).join('\n\n');
-  const other = files.filter(f=>/\.js$/i.test(f.name) && f.name !== 'main.js');
-  const main = files.find(f=>f.name==='main.js');
-  const js = `${other.map(f=>`\n/* ==== ${f.name} ==== */\n${f.content}`).join('\n')}\n\n/* ==== main.js ==== */\n${main ? main.content : ''}`;
-  return `<!DOCTYPE html><html><head><meta charset=
-  'utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><style>${css}</style></head><body>
+  const jsFiles = files.filter(f=>/\.js$/i.test(f.name));
+  const main = jsFiles.find(f=>f.name==='main.js');
+  const others = jsFiles.filter(f=>f !== main);
+  const js = `${others.map(f=>`\n/* ==== ${f.name} ==== */\n${f.content}`).join('\n')}\n\n/* ==== main.js ==== */\n${main ? main.content : ''}`;
+  const htmlFile = files.find(f=>/\.html$/i.test(f.name));
+  if (htmlFile){
+    let html = String(htmlFile.content||'');
+    // head/body garantile
+    if (!/<head[\s>]/i.test(html)) html = html.replace(/<html[\s\S]*?>/i, m => m + '\n<head></head>');
+    if (!/<body[\s>]/i.test(html)) html = html.replace(/<head[\s\S]*?<\/head>/i, m => m + '\n<body></body>');
+    if (!/<head[\s\S]*?<\/head>/i.test(html)) html = `<head></head>${html}`;
+    if (!/<body[\s\S]*?<\/body>/i.test(html)) html = `${html}<body></body>`;
+    // CSS'i head'e enjekte et
+    html = html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
+    // JS'i body sonuna modül olarak enjekte et
+    html = html.replace(/<\/body>/i, `<script type="module">\ntry{\n${js}\n} catch(e){ console.error('[Runner]', e); const pre=document.createElement('pre'); pre.style.color='#f87171'; pre.textContent=String(e); document.body.appendChild(pre); }\n</script>\n</body>`);
+    return html;
+  }
+  // html yoksa varsayılan iskelet
+  return `<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+  <style>${css}</style></head><body>
   <canvas id="app" style="width:100%;height:100vh"></canvas>
   <script type="module">\ntry{\n${js}\n} catch(e){ console.error('[Runner]', e); const pre=document.createElement('pre'); pre.style.color='#f87171'; pre.textContent=String(e); document.body.appendChild(pre); }\n</script>
   </body></html>`;
@@ -195,18 +211,37 @@ export function initializeCodeLab(){
     try{
       const reply = await callAssistant(prompt, files);
       out.textContent = reply;
-      const blocks = parseCodeBlocks(reply);
-      if (blocks && blocks.length){
-        // dosyaları uygula
-        blocks.forEach(b => {
-          if (!b.filename) return;
-          const idx = files.findIndex(f => f.name === b.filename);
-          if (idx >= 0) files[idx].content = b.content; else files.push({ name: b.filename, content: b.content });
-        });
-        saveFiles(files); loadActive();
-      }
+      // Otomatik uygulama yerine, kullanıcı 'Kodu Uygula' tuşuna basınca
     } catch(e){ out.textContent = 'Hata: ' + (e?.message||e); }
   });
+
+  function fallbackFilenameFor(lang){
+    const l = String(lang||'').toLowerCase();
+    if (l.includes('html')) return 'index.html';
+    if (l.includes('css')) return 'style.css';
+    if (l.includes('js')) return 'main.js';
+    if (l.includes('ts')) return 'main.ts';
+    return 'snippet.txt';
+  }
+  function applyBlocksFromOutput(){
+    const out = document.getElementById('cl-ai-output');
+    const txt = out ? out.textContent : '';
+    if (!txt || !txt.includes('```')) return;
+    const blocks = parseCodeBlocks(txt);
+    if (!(blocks && blocks.length)) return;
+    blocks.forEach(b => {
+      let fname = b.filename;
+      if (!fname){
+        // info line'da dil varsa uygun varsayılan isim
+        fname = fallbackFilenameFor(b.info||'');
+      }
+      if (!fname) return;
+      const idx = files.findIndex(f => f.name === fname);
+      if (idx >= 0) files[idx].content = b.content; else files.push({ name: fname, content: b.content });
+    });
+    saveFiles(files); loadActive();
+  }
+  document.getElementById('cl-apply')?.addEventListener('click', applyBlocksFromOutput);
 }
 
 // otomatik export
