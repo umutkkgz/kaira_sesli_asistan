@@ -71,7 +71,18 @@
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     const player = document.getElementById('asistan-player');
-    if (player) { try { player.setAttribute('playsinline', ''); } catch(_){} }
+    if (player) {
+      try {
+        player.setAttribute('playsinline', '');
+        player.setAttribute('preload', 'auto');
+        // iOS/Safari: display:none video/audio bazen ses yolunu kapatabiliyor; görünmez ama DOM'da kalsın
+        player.classList.remove('hidden');
+        player.style.position = 'absolute';
+        player.style.left = '-9999px';
+        player.style.width = '1px';
+        player.style.height = '1px';
+      } catch(_){ }
+    }
     const chatContainer = document.getElementById('asistan-chat-container');
     const clearChatBtn = document.getElementById('asistan-clear-chat-btn');
     const textInput = document.getElementById('asistan-text-input');
@@ -129,6 +140,27 @@
       } catch(e){ console.warn('[SR START]', e); }
     }
 
+    let currentBufferSource = null; let bufferGain = null;
+    function stopBufferSource(){ try { if (currentBufferSource) { currentBufferSource.stop(0); } } catch(_){} currentBufferSource = null; }
+    async function playViaWebAudio(url){
+      // WebAudio fallback: WAV'i indir, decode et, gain ile çal
+      if (!audioContext) setupVisualizer();
+      try { if (audioContext && audioContext.state === 'suspended') await audioContext.resume(); } catch(_){ }
+      stopBufferSource();
+      try{
+        const res = await fetch(url, { headers: { 'ngrok-skip-browser-warning':'true' }, cache:'no-store' });
+        const buf = await res.arrayBuffer();
+        const audioBuf = await audioContext.decodeAudioData(buf);
+        bufferGain = bufferGain || audioContext.createGain();
+        bufferGain.gain.value = 1.2; // küçük bir boost
+        const src = audioContext.createBufferSource();
+        src.buffer = audioBuf; currentBufferSource = src;
+        src.connect(bufferGain); bufferGain.connect(analyser); // analyser -> destination zaten bağlı
+        src.start(0);
+        setCoreState('speaking');
+        return new Promise((resolve)=>{ src.onended = ()=>{ setCoreState('idle'); resolve(); }; });
+      }catch(e){ console.error('[Audio][webaudio-fallback]', e); }
+    }
     async function getAIResponse(text, angry=false){
       micBtn.disabled=true;
       if (!isVisualizerSetup) setupVisualizer();
@@ -162,6 +194,17 @@
         }
         try {
           await player.play();
+          // Eğer element oynuyor ama ses yoksa (bazı cihazlarda) → kısa bir gecikmeden sonra süreyi/doğal akışı kontrol et
+          await new Promise(r=>setTimeout(r, 250));
+          if (!player.muted && player.volume > 0 && (isNaN(player.duration) || player.duration > 0)){
+            // timeupdate tetiklenmiyorsa ve ses gelmiyorsa WebAudio fallback dene
+            const started = player.currentTime; await new Promise(r=>setTimeout(r, 400));
+            const progressed = player.currentTime > started + 0.05;
+            if (!progressed && direct) {
+              console.warn('[Audio] Element akışı ilerlemiyor, WebAudio fallback deneniyor');
+              await playViaWebAudio(direct);
+            }
+          }
         } catch(e) {
           console.warn('[Audio] Blob çalma başarısız, URL ile denenecek:', e);
           // Sunucunun verdiği URL ile tekrar dene
@@ -169,7 +212,9 @@
             const directUrl = `${API_BASE}${data.session_audio_url || data.audio_url || ''}`;
             if (directUrl) {
               player.src = directUrl; player.load();
-              await player.play();
+              try{ await player.play(); } catch(_){ /* element yine çalamadı → WebAudio fallback */ }
+              // Yine başarısızsa WebAudio fallback dene
+              await playViaWebAudio(directUrl);
             }
           } catch(e2){ console.error('[Audio][fallback]', e2); }
         }
