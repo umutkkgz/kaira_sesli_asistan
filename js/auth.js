@@ -117,7 +117,8 @@
       try{ localStorage.setItem('kaira_auth_token', j.token); localStorage.setItem('kaira_user', JSON.stringify(j.user||{})); }catch(_){ }
       msg.textContent = 'Giriş başarılı'; msg.classList.remove('text-rose-400'); msg.classList.add('text-emerald-400');
       openBtn.textContent = (j.user && j.user.username) ? j.user.username : 'Üyelik';
-      setTimeout(hide, 600);
+      try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
+      setTimeout(()=>{ hide(); try{ window.location.href = 'profile.html'; }catch(_){ } }, 500);
     }catch(e){ msg.textContent = 'Hata: ' + (e && e.message || e); }
   });
 
