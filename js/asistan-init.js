@@ -151,9 +151,9 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition;
     if (SpeechRecognition){
       recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
-      recognition.onstart = ()=>{ isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent='Dinliyorum...'; setCoreState('listening'); };
-      recognition.onend = ()=>{ isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent==='Dinliyorum...') statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); };
-      recognition.onresult = (ev)=>{ const transcript = ev.results[0][0].transcript; addMessageToChat(transcript,'user'); getAIResponse(transcript); };
+      recognition.onstart = ()=>{ isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent='Dinliyorum...'; setCoreState('listening'); try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_start'); }catch(_){ } };
+      recognition.onend = ()=>{ isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent==='Dinliyorum...') statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_end'); }catch(_){ } };
+      recognition.onresult = (ev)=>{ const transcript = ev.results[0][0].transcript; try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_result', { len: (transcript||'').length }); }catch(_){ } addMessageToChat(transcript,'user'); getAIResponse(transcript); };
       recognition.onerror = (ev)=>{ console.error('[SR]', ev.error); statusEl.textContent = `Hata: ${ev.error}`; setCoreState('idle'); };
     }
 
@@ -201,6 +201,7 @@
       const fd = new FormData(); fd.append('text', (text||'').trim()); fd.append('angry', angry ? 'true' : 'false'); fd.append('history', JSON.stringify(chatHistory.slice(-10))); fd.append('user_id', USER_ID);
       const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 300000);
       try{
+        try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_request', { len: (text||'').length, angry: !!angry }); } catch(_){ }
         const res = await fetch(`${API_BASE}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
         if (!res.ok){ const txt = await res.text().catch(()=>'' ); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
         const data = await res.json();
@@ -251,11 +252,13 @@
         statusEl.textContent = 'Cevap oynatılıyor...';
         const out = data.text_response ?? data.clean_text ?? '';
         addMessageToChat(out, 'assistant');
+        try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_result', { sr: data.sr, duration: data.duration, peak: data.debug_peak, rms: data.debug_rms }); } catch(_){ }
         return data;
       } catch(err){
         console.error('[KAIRA-ASISTAN]', err);
         const msg = 'Hata: ' + (err?.message || err);
         statusEl.textContent = msg; addMessageToChat(msg, 'assistant'); micBtn.disabled=false; setCoreState('idle');
+        try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_error', { message: String(err&&err.message||err) }); } catch(_){ }
         throw err;
       } finally { hideWaitingContent(); clearTimeout(to); }
     }

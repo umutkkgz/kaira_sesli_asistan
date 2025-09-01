@@ -852,14 +852,30 @@ function App() {
       setIsLoading(false);
     }
   };
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!modifiedImage) return;
+    const fname = `kaira-edited-${Date.now()}.png`;
     const link = document.createElement('a');
     link.href = modifiedImage;
-    link.download = `kaira-edited-${Date.now()}.png`;
+    link.download = fname;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Sunucuya da yükle (BigData için sakla)
+    try {
+      const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
+      if (API_BASE) {
+        const resp = await fetch(modifiedImage);
+        const blob = await resp.blob();
+        const fd = new FormData();
+        try { fd.append('user_id', localStorage.getItem('kaira_uid') || ''); } catch(_){ }
+        fd.append('kind', 'photo_editor_generated');
+        fd.append('files', blob, fname);
+        const up = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd, headers: { 'ngrok-skip-browser-warning': 'true' } });
+        const j = await up.json().catch(()=>null);
+        try { if (window.KAIRA_LOG) window.KAIRA_LOG('photo_generated_upload', { ok: up.ok, session: j && j.session, files: j && j.files ? j.files.length : 0 }); } catch(_){ }
+      }
+    } catch(_){ /* sessiz */ }
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "bg-transparent min-h-screen text-white font-sans p-4 sm:p-8 flex flex-col items-center"

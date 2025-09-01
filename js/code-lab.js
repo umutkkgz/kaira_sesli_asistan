@@ -202,22 +202,26 @@ export function initializeCodeLab(){
   });
   document.getElementById('cl-save')?.addEventListener('click', ()=>{
     if (files[active]){ files[active].content = editor.value; saveFiles(files); }
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_save', { file: files[active]?.name }); }catch(_){ }
   });
   document.getElementById('cl-new-file')?.addEventListener('click', ()=>{
     const name = prompt('Yeni dosya adı (örn: helper.js, style.css):','script.js');
     if (!name) return;
     files.push({ name, content: '' });
     active = files.length - 1; saveFiles(files); loadActive();
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_new_file', { file: name }); }catch(_){ }
   });
   document.getElementById('cl-delete-file')?.addEventListener('click', ()=>{
     if (!files[active]) return;
     if (!confirm(`${files[active].name} silinsin mi?`)) return;
     files.splice(active,1); if (active >= files.length) active = files.length-1; if (active<0) active=0; saveFiles(files); loadActive();
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_delete_file'); }catch(_){ }
   });
   document.getElementById('cl-run')?.addEventListener('click', ()=>{
     if (files[active]){ files[active].content = editor.value; saveFiles(files); }
     const html = buildRunnerHTML(files);
     iframe.srcdoc = html;
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_run', { files: files.length }); }catch(_){ }
   });
   document.getElementById('cl-reset')?.addEventListener('click', ()=>{ iframe.srcdoc = '<!doctype html><meta charset="utf-8"><style>html,body{height:100%;margin:0;background:#000}</style>'; });
 
@@ -226,8 +230,10 @@ export function initializeCodeLab(){
     const prompt = (document.getElementById('cl-prompt')||{}).value || '';
     out.textContent = 'Üretiliyor…';
     try{
+      try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_generate', { prompt_len: (prompt||'').length, files: files.length }); }catch(_){ }
       const reply = await callAssistant(prompt, files);
       out.textContent = reply;
+      try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_generated', { reply_len: (reply||'').length }); }catch(_){ }
       // Otomatik uygulama yerine, kullanıcı 'Kodu Uygula' tuşuna basınca
     } catch(e){ out.textContent = 'Hata: ' + (e?.message||e); }
   });
@@ -276,6 +282,7 @@ export function initializeCodeLab(){
 
     // Değişikliklerden önce mevcut durumu yedekle
     saveHistorySnapshot(files);
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_apply', { blocks: blocks.length }); }catch(_){ }
 
     function getExt(name){ return String(name||'').split('.').pop()?.toLowerCase() || ''; }
     function markerWrap(name, id, inner){

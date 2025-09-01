@@ -466,6 +466,7 @@
           box.textContent = 'Hata: ' + msg;
         }
       } else { console.error('[KAIRA][UI-ERROR]', msg); }
+      try { if (window.KAIRA_LOG) window.KAIRA_LOG('ui_error', { message: String(msg||'') }); } catch(_){ }
     } catch(e) { console.error('[KAIRA][UI-ERROR-FAIL]', e, msg); }
   }
   window.__kairaShowError = showErr;
@@ -487,6 +488,7 @@
 })();
 </script>
 <script type="module" src="js/asistan-init.js"></script>
+<script type="module" src="js/telemetry.js"></script>
 
 <script id="chat-logger">
 (function(){
