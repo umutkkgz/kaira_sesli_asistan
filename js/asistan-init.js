@@ -67,7 +67,7 @@
     window.addEventListener('resize', ()=>{ setBgCanvasSize(); createParticles(); });
     setBgCanvasSize(); createParticles();
 
-    const API_BASE = 'https://1513c704aa10.ngrok-free.app';
+    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     const player = document.getElementById('asistan-player');
@@ -127,7 +127,7 @@
       const fd = new FormData(); fd.append('text', (text||'').trim()); fd.append('angry', angry ? 'true' : 'false'); fd.append('history', JSON.stringify(chatHistory.slice(-10))); fd.append('user_id', USER_ID);
       const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 300000);
       try{
-        const res = await fetch(`${API_BASE}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal });
+        const res = await fetch(`${API_BASE}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
         if (!res.ok){ const txt = await res.text().catch(()=>'' ); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
         const data = await res.json();
         if (!data.audio_data) throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
