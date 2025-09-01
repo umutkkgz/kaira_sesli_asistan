@@ -77,6 +77,17 @@
     const sendBtn   = document.getElementById('asistan-send-btn');
 
     let chatHistory = [];
+    function base64ToBlobUrl(base64) {
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
+        byteArrays.push(new Uint8Array(byteNumbers));
+      }
+      return URL.createObjectURL(new Blob(byteArrays, { type: 'audio/wav' }));
+    }
     function sendTyped(){
       const txt = (textInput && textInput.value ? textInput.value : '').trim();
       if (!txt) return;
@@ -106,8 +117,8 @@
     }
 
     function unlockAudio(){
-      try { if (player && player.context && player.context.state === 'suspended') player.context.resume(); } catch(_){ }
       try { if (audioContext && audioContext.state === 'suspended') audioContext.resume(); } catch(_){ }
+      try { player.muted = true; const p = player.play(); if (p && typeof p.catch === 'function') p.catch(()=>{}); player.pause(); player.currentTime = 0; player.muted = false; } catch(_){ }
     }
 
     function startRecognition(){
@@ -159,6 +170,34 @@
       if (chatHistory.length){ chatHistory.forEach(m => addMessageToChat(m.content, m.role)); }
       else { addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant'); }
     })();
+
+    // --- Event bağlayıcıları ---
+    if (micBtn){
+      micBtn.addEventListener('click', () => {
+        unlockAudio();
+        if (!recognition){
+          statusEl.textContent = 'Tarayıcınız konuşma tanımayı desteklemiyor.';
+          return;
+        }
+        if (isRecording) {
+          try { recognition.stop(); } catch(_){}
+        } else {
+          startRecognition();
+        }
+      });
+    }
+    if (sendBtn) sendBtn.addEventListener('click', sendTyped);
+    if (textInput) textInput.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendTyped(); }
+    });
+    if (clearChatBtn) clearChatBtn.addEventListener('click', ()=>{
+      chatHistory = []; localStorage.removeItem('kaira_asistan_chat_history'); chatContainer.innerHTML = '';
+      addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant');
+    });
+    if (player){
+      player.addEventListener('play', ()=>{ if (!isVisualizerSetup) setupVisualizer(); requestAnimationFrame(drawVisualizer); setCoreState('speaking'); });
+      player.addEventListener('ended', ()=>{ statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; setCoreState('idle'); });
+    }
 
     asistanInitialized = true;
   }
