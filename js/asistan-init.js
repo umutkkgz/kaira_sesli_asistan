@@ -98,6 +98,11 @@
     const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
+    try{
+      if (window.KairaAsistanProvider && statusEl){
+        statusEl.textContent = (statusEl.textContent||'') + ' • Öğrenen Mod aktif';
+      }
+    }catch(_){ }
     const player = document.getElementById('asistan-player');
     if (player) {
       try {

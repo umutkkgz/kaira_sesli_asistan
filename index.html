@@ -47,34 +47,44 @@
     <!-- Öğrenen Chatbot Sağlayıcısı -->
     <script>
       (function(){
-        var meta = document.querySelector('meta[name="kaira-api-base"]');
-        var API_BASE = (meta && meta.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||'');
-        if (!API_BASE) return;
-        window.setKairaAsistanProvider && window.setKairaAsistanProvider({
-          name: 'kaira-embed-only',
-          respond: async function({ text }){
-            try{
-              const r = await fetch((API_BASE.replace(/\/$/,'')+"/api/answer"), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text }) });
-              const data = await r.json().catch(()=>({}));
-              var outText = data && data.answer || '';
-              if (!outText){
-                var teach = confirm('Bu konu hakkında bilgim yok. Bana öğretmek ister misin?');
-                if (teach){
-                  var userResp = prompt('Lütfen doğru cevabı yaz:');
-                  if (userResp && userResp.trim()){
-                    await fetch((API_BASE.replace(/\/$/,'')+"/api/teach"), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text, response: userResp.trim() }) });
-                    outText = 'Teşekkürler, bilgiyi kaydettim.';
+        if (!window.setKairaAsistanProvider) window.setKairaAsistanProvider = function(p){ window.KairaAsistanProvider = p; };
+        var inited = false;
+        function initLearningProvider(){
+          if (inited) return;
+          var meta = document.querySelector('meta[name="kaira-api-base"]');
+          var API_BASE = (meta && meta.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||'');
+          if (!API_BASE) return; // henüz hazır değil
+          inited = true;
+          window.setKairaAsistanProvider({
+            name: 'kaira-embed-only',
+            respond: async function({ text }){
+              try{
+                const base = API_BASE.replace(/\/$/,'');
+                const r = await fetch(`${base}/api/answer`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text }) });
+                const data = await r.json().catch(()=>({}));
+                var outText = data && data.answer || '';
+                if (!outText){
+                  var teach = confirm('Bu konu hakkında bilgim yok. Bana öğretmek ister misin?');
+                  if (teach){
+                    var userResp = prompt('Lütfen doğru cevabı yaz:');
+                    if (userResp && userResp.trim()){
+                      await fetch(`${base}/api/teach`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text, response: userResp.trim() }) });
+                      outText = 'Teşekkürler, bilgiyi kaydettim.';
+                    } else {
+                      outText = 'Anladım. Şimdilik bu konuda bilgim yok.';
+                    }
                   } else {
-                    outText = 'Anladım. Şimdilik bu konuda bilgim yok.';
+                    outText = 'Tamam. Şimdilik bu konuda bilgim yok.';
                   }
-                } else {
-                  outText = 'Tamam. Şimdilik bu konuda bilgim yok.';
                 }
-              }
-              return { audioUrl: '', text: outText };
-            }catch(e){ return { audioUrl:'', text: 'Hata: '+(e && e.message || e) }; }
-          }
-        });
+                return { audioUrl: '', text: outText };
+              }catch(e){ return { audioUrl:'', text: 'Hata: '+(e && e.message || e) }; }
+            }
+          });
+        }
+        window.__initLearningProvider = initLearningProvider;
+        // Run after DOM ready and also retry shortly
+        window.addEventListener('DOMContentLoaded', function(){ setTimeout(initLearningProvider, 0); setTimeout(initLearningProvider, 800); });
       })();
     </script>
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
@@ -658,7 +668,7 @@
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="module" src="js/photo-editor.js"></script>
 
-    <script>window.API_PROXY_BASE = 'https://1513c704aa10.ngrok-free.app'; try{ localStorage.setItem('kaira_api_base', window.API_PROXY_BASE); }catch(_){ }</script>
+    <script>window.API_PROXY_BASE = 'https://1513c704aa10.ngrok-free.app'; try{ localStorage.setItem('kaira_api_base', window.API_PROXY_BASE); if (window.__initLearningProvider) window.__initLearningProvider(); }catch(_){ }</script>
     <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
     <script>
     window.initializeChatApp = () => {
