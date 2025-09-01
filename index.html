@@ -112,8 +112,7 @@
     <div id="learn-chat-panel" class="fixed top-20 left-5 z-[10050] hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" style="z-index:10050;">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <div class="text-white font-semibold">KΔIRA Öğrenen Chat</div>
-        <div class="flex items-center gap-2">
-          <button id="learn-chat-settings" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Ayar</button>
+      <div class="flex items-center gap-2">
           <button id="learn-chat-min" class="text-gray-400 hover:text-white">_</button>
           <button id="learn-chat-close" class="text-gray-400 hover:text-white">✕</button>
         </div>
@@ -1462,25 +1461,7 @@
 })();
 </script>
 
-<!-- Öğrenen Chat Sunucu Ayarı (kaira_api_base) -->
-<script>
-(function(){
-  const btn = document.getElementById('learn-chat-settings');
-  if (!btn) return;
-  btn.addEventListener('click', function(){
-    try{
-      var cur = localStorage.getItem('kaira_api_base') || (window.API_PROXY_BASE||'');
-      var v = prompt('Sunucu adresi (ör: http://127.0.0.1:5005)', cur||'');
-      if (v == null) return;
-      v = (v||'').trim();
-      try{ localStorage.setItem('kaira_api_base', v); }catch(_){ }
-      try{ var meta = document.querySelector('meta[name="kaira-api-base"]'); if (meta) meta.setAttribute('content', v); }catch(_){ }
-      alert('Sunucu güncellendi. Bağlantı sağlanırsa öğrenen mod aktif olur.');
-      try{ if (window.__initLearningProvider) setTimeout(window.__initLearningProvider, 100); }catch(_){ }
-    }catch(e){ console.warn('[KAIRA] settings error', e); }
-  });
-})();
-</script>
+<!-- Öğrenen Chat sunucu ayarı butonu kaldırıldı -->
 
 </body>
 </html>
