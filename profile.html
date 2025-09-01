@@ -106,9 +106,9 @@
   <script type="module">
     const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
     const token = localStorage.getItem('kaira_auth_token') || '';
-    if (!token){ location.href = 'index.html'; }
+    // Profil sayfasında misafir moduna izin veriyoruz; oturum yoksa düzenleme devre dışı kalır
 
-    const headers = { 'X-Auth-Token': token, 'Content-Type': 'application/json' };
+    const headers = token ? { 'X-Auth-Token': token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
     const avatar = document.getElementById('avatar');
     const username = document.getElementById('username');
     const email = document.getElementById('email');
@@ -119,8 +119,23 @@
 
     async function load(){
       const base = API();
+      if (!token){
+        try{
+          const banner = document.createElement('div');
+          banner.className = 'bg-amber-500/10 border border-amber-500/40 text-amber-200 px-4 py-3 rounded-xl mb-4';
+          banner.textContent = 'Giriş yapılmadı. Bilgileri düzenlemek için ana sayfadan Üyelik ile giriş yapın.';
+          document.querySelector('.max-w-4xl').prepend(banner);
+        }catch(_){ }
+        username.textContent = 'Misafir';
+        email.textContent = '';
+        first_in.disabled = true; last_in.disabled = true; email_in.disabled = true;
+        document.getElementById('save').disabled = true;
+        document.getElementById('pw_current').disabled = true; document.getElementById('pw_new').disabled = true; document.getElementById('pw_change').disabled = true;
+        const initial = 'G'; avatar.textContent = initial;
+        return;
+      }
       const res = await fetch(`${base}/api/auth/me`, { headers });
-      if (!res.ok){ localStorage.removeItem('kaira_auth_token'); localStorage.removeItem('kaira_user'); location.href='index.html'; return; }
+      if (!res.ok){ localStorage.removeItem('kaira_auth_token'); localStorage.removeItem('kaira_user'); return; }
       const j = await res.json();
       const u = j.user || {};
       try{ localStorage.setItem('kaira_user', JSON.stringify(u)); }catch(_){ }

@@ -53,17 +53,19 @@
   function hide(){ modal.classList.add('hidden'); }
 
   openBtn.addEventListener('click', (e)=>{
+    e.preventDefault(); // Biz yöneteceğiz
+    let logged = false;
     try{
       const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
       const tok = localStorage.getItem('kaira_auth_token');
-      if (tok && u && u.username) {
-        // allow default navigation to profile.html
-        return;
-      }
+      logged = !!(tok && u && u.username);
     }catch(_){ }
-    // Not logged in → stop default link and show modal
-    e.preventDefault();
-    show();
+    if (logged) {
+      try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
+      try{ window.location.href = 'profile.html'; }catch(_){ }
+    } else {
+      show();
+    }
   }, { capture: true });
   modal.querySelector('#auth-close').addEventListener('click', hide);
   modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
