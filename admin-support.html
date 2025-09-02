@@ -30,10 +30,18 @@
     <div id="console" class="hidden grid md:grid-cols-3 gap-4 mt-6">
       <div class="md:col-span-1 bg-gray-900/70 border border-gray-700 rounded-2xl p-4">
         <div class="flex items-center justify-between mb-3">
-          <div class="font-semibold">Aktif Sohbetler</div>
+          <div class="font-semibold">Sohbetler</div>
           <button id="refresh" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Yenile</button>
         </div>
+        <div class="flex gap-2 mb-2">
+          <button id="tab-active" class="px-2 py-1 text-xs rounded bg-emerald-700 text-white">Aktif</button>
+          <button id="tab-archived" class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-200">Arşiv</button>
+        </div>
+        <div id="archived-search-wrap" class="hidden mb-2">
+          <input id="archived-search" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white" placeholder="Arşivde ara..." />
+        </div>
         <ul id="chat-list" class="space-y-2 text-sm"></ul>
+        <ul id="archived-list" class="hidden space-y-2 text-sm"></ul>
       </div>
       <div class="md:col-span-2 bg-gray-900/70 border border-gray-700 rounded-2xl p-4 flex flex-col">
         <div id="chat-header" class="text-sm text-gray-300 mb-2 flex items-center justify-between">
@@ -73,6 +81,11 @@
     const tokenEl = document.getElementById('adm-token');
     const admMsg = document.getElementById('adm-msg');
     const listEl = document.getElementById('chat-list');
+    const archivedListEl = document.getElementById('archived-list');
+    const tabActive = document.getElementById('tab-active');
+    const tabArchived = document.getElementById('tab-archived');
+    const archivedSearchWrap = document.getElementById('archived-search-wrap');
+    const archivedSearch = document.getElementById('archived-search');
     const historyEl = document.getElementById('history');
     const headerEl = document.getElementById('chat-header');
     const sendInput = document.getElementById('reply');
@@ -146,6 +159,34 @@
         listEl.appendChild(li);
       });
     }
+
+    async function loadArchived(q){
+      archivedListEl.innerHTML='';
+      const tok = getTok();
+      // Preferred unified endpoint
+      let url = `/api/support/chats?status=closed&limit=100&token=${encodeURIComponent(tok)}`;
+      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      let res = await tryFetch(url);
+      if (!res.ok){
+        // Fallback legacy endpoints
+        const fallback = q && q.trim() ? `/api/support/search?q=${encodeURIComponent(q.trim())}&token=${encodeURIComponent(tok)}` : `/api/support/archived?token=${encodeURIComponent(tok)}&limit=100`;
+        res = await tryFetch(fallback);
+      }
+      if (!res.ok) return;
+      const j = await res.json();
+      const items = (j.chats || j.results || j.archived || []);
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'p-2 rounded bg-slate-800/40 hover:bg-slate-800/60 cursor-pointer';
+        const meta = item.meta || item;
+        const id = item.chat_id || item.id || '';
+        const nm = meta.name || ''; const em = meta.email || '';
+        const last = meta.last_text || item.last_text || '';
+        li.textContent = `${id} • ${nm}${em?(' • '+em):''}${last?(' • '+last.slice(0,40)) : ''}`;
+        li.addEventListener('click', ()=> openChat(id, meta));
+        archivedListEl.appendChild(li);
+      });
+    }
     async function openChat(chatId, meta){
       currentChat = chatId;
       headerEl.querySelector('div').textContent = `Sohbet: ${chatId} ${(meta && meta.name ? ' • '+meta.name : '')} ${(meta && meta.email ? ' • '+meta.email : '')} ${(meta && meta.ip ? ' • '+meta.ip : '')}`;
@@ -207,12 +248,24 @@
       await ensureNotifyPermission();
       connectAdminWS();
     });
-    refreshBtn.addEventListener('click', loadActive);
+    // Tabs
+    let tabMode = 'active';
+    function switchTab(mode){
+      tabMode = mode;
+      const on = (el)=>{ el.classList.remove('bg-slate-700','text-slate-200'); el.classList.add('bg-emerald-700','text-white'); };
+      const off = (el)=>{ el.classList.remove('bg-emerald-700','text-white'); el.classList.add('bg-slate-700','text-slate-200'); };
+      if (mode==='active'){ on(tabActive); off(tabArchived); listEl.classList.remove('hidden'); archivedListEl.classList.add('hidden'); archivedSearchWrap.classList.add('hidden'); loadActive(); }
+      else { on(tabArchived); off(tabActive); archivedListEl.classList.remove('hidden'); listEl.classList.add('hidden'); archivedSearchWrap.classList.remove('hidden'); loadArchived(archivedSearch.value); }
+    }
+    tabActive.addEventListener('click', ()=> switchTab('active'));
+    tabArchived.addEventListener('click', ()=> switchTab('archived'));
+    archivedSearch.addEventListener('input', ()=>{ if (tabMode==='archived') loadArchived(archivedSearch.value); });
+    refreshBtn.addEventListener('click', ()=>{ if (tabMode==='active') loadActive(); else loadArchived(archivedSearch.value); });
     sendBtn.addEventListener('click', send);
     sendInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 
     // Auto login if token stored
-    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); await loadActive(); await ensureNotifyPermission(); } })();
+    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); switchTab('active'); await ensureNotifyPermission(); } })();
     // Periodically refresh history for open chat
     setInterval(refreshHistory, 2000);
     // Optionally watch all chats for new messages (light polling)
