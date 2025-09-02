@@ -20,8 +20,8 @@
     <div id="login-card" class="max-w-md mx-auto bg-gray-900/70 border border-gray-700 rounded-2xl p-6">
       <div class="text-white font-semibold mb-2">Yönetici Girişi</div>
       <div class="text-gray-400 text-sm mb-3">Lütfen admin token/şifrenizi giriniz.</div>
-      <input id="adm-token" type="password" placeholder="Admin Token" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
-      <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-300"><input id="adm-remember" type="checkbox" class="rounded" />Beni hatırla</label>
+      <input id="adm-token" type="password" placeholder="Admin Token (varsayılan: 210858)" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-300"><input id="adm-remember" type="checkbox" class="rounded" checked />Beni hatırla</label>
       <button id="adm-login" class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Giriş</button>
       <div id="adm-msg" class="text-sm h-5 mt-2 text-rose-400"></div>
     </div>
@@ -71,6 +71,7 @@
   </script>
   <script type="module">
     const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
+    const DEFAULT_ADMIN_TOKEN = '210858';
     const tokenKey = 'support_admin_token';
     const rememberEl = document.getElementById('adm-remember');
     const getTok = ()=> sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey) || '';
@@ -264,8 +265,14 @@
     sendBtn.addEventListener('click', send);
     sendInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 
-    // Auto login if token stored
-    (async ()=>{ const tok = getTok(); if (tok){ setLoggedIn(true); switchTab('active'); await ensureNotifyPermission(); } })();
+    // Auto login: if no stored token, use DEFAULT_ADMIN_TOKEN
+    (async ()=>{
+      let tok = getTok();
+      if (!tok && DEFAULT_ADMIN_TOKEN){
+        try{ localStorage.setItem(tokenKey, DEFAULT_ADMIN_TOKEN); tok = DEFAULT_ADMIN_TOKEN; }catch(_){ }
+      }
+      if (tok){ setLoggedIn(true); switchTab('active'); await ensureNotifyPermission(); connectAdminWS(); }
+    })();
     // Periodically refresh history for open chat
     setInterval(refreshHistory, 2000);
     // Optionally watch all chats for new messages (light polling)
