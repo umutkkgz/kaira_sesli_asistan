@@ -5,6 +5,8 @@
             overflow-x: hidden;
             overflow-y: auto;
         }
+        /* Global starfield background canvas */
+        #starfield-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -3; pointer-events: none; }
         .view { display: none; }
         .view.active { display: block; }
 

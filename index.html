@@ -92,6 +92,8 @@
 
 </head>
 <body class="antialiased">
+    <!-- Global Starfield Background -->
+    <canvas id="starfield-canvas" aria-hidden="true"></canvas>
 
     <!-- Intro overlay moved inside the single document body -->
     <div id="intro-container">
@@ -1460,5 +1462,7 @@
   if (input){ input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } }); }
 })();
 </script>
+  <!-- Global starfield script -->
+  <script src="js/starfield.js"></script>
 </body>
 </html>
