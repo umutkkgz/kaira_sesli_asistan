@@ -358,6 +358,7 @@ export function initializeCodeLab(){
       return (current ? current.replace(/\n*$/, '\n') : '') + regionText + '\n';
     }
 
+    const applied = [];
     blocks.forEach(b => {
       let fname = b.filename;
       if (!fname){
@@ -375,14 +376,17 @@ export function initializeCodeLab(){
           if (/\.html?$/i.test(activeName) && /html/i.test(info)) fname = activeName;
         }catch(_){ }
       }
+      // Son çare: hiçbir şey bulunamadıysa aktif dosyaya uygula
+      if (!fname){ fname = files[active]?.name || 'main.js'; }
       if (!fname) return;
-      const idx = files.findIndex(f => f.name === fname);
+      const idx = files.findIndex(f => String(f.name||'').toLowerCase() === String(fname||'').toLowerCase());
       const exists = idx >= 0;
       const current = exists ? String(files[idx].content||'') : '';
       const mode = (b.mode === 'replace') ? 'replace' : 'merge';
 
       if (mode === 'replace'){
-        if (exists) files[idx].content = b.content; else files.push({ name: fname, content: b.content });
+        if (exists) { files[idx].content = b.content; applied.push({ file: fname, mode: 'replace', existed: true }); }
+        else { files.push({ name: fname, content: b.content }); applied.push({ file: fname, mode: 'replace', existed: false }); }
         return;
       }
 
@@ -390,20 +394,22 @@ export function initializeCodeLab(){
       const det = detectRegion(b.content||'');
       if (det && det.id && det.full){
         const merged = replaceOrAppendRegion(fname, current, det.id, det.full);
-        if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
+        if (exists) { files[idx].content = merged; } else { files.push({ name: fname, content: merged }); }
+        applied.push({ file: fname, mode: 'merge', existed: exists, region: det.id });
       } else {
         // Marker yoksa: dosya varsa güvenli olarak yeni bir bölge oluşturup ekleyelim
         // Benzersiz id üretelim ki aynı saniye içinde birden çok blok çakışmasın
         const autoId = 'auto-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6);
         const wrapped = markerWrap(fname, autoId, b.content||'');
         const merged = replaceOrAppendRegion(fname, current, autoId, wrapped);
-        if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
+        if (exists) { files[idx].content = merged; } else { files.push({ name: fname, content: merged }); }
+        applied.push({ file: fname, mode: 'merge', existed: exists, region: autoId });
       }
     });
     saveFiles(files); loadActive();
     try{
-      const list = blocks.map((b,i)=>`- ${b.filename || fallbackFilenameFor(b.info||'')} (${(b.mode||'merge')})`).join('\n');
-      if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı)\n${list}`;
+      const list = applied.map((a)=>`- ${a.file} • ${a.mode}${a.region?` [${a.region}]`:''}${a.existed?' (güncellendi)':' (yeni)'}`).join('\n');
+      if (out) out.textContent += `\n\n(${applied.length}/${blocks.length} blok uygulandı)\n${list}`;
     }catch(_){ if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı)`; }
   }
   document.getElementById('cl-apply')?.addEventListener('click', applyBlocksFromOutput);
