@@ -480,6 +480,7 @@
                         <div class="text-gray-300 font-medium">Dosyalar</div>
                         <div class="space-x-2">
                             <button id="cl-new-file" class="px-2 py-1 text-xs rounded bg-indigo-600 text-white">Yeni</button>
+                            <button id="cl-rename-file" class="px-2 py-1 text-xs rounded bg-amber-500 text-black">Yeniden Adlandır</button>
                             <button id="cl-delete-file" class="px-2 py-1 text-xs rounded bg-rose-600 text-white">Sil</button>
                         </div>
                     </div>
@@ -1498,6 +1499,17 @@
   <script src="js/form-input-safety.js"></script>
   <script type="module" src="js/default-system-prompt.js"></script>
   <script type="module" src="js/main-controller.js"></script>
+
+  <script>
+    // Service Worker registration (best-effort, ignored on file://)
+    (function(){
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function(){
+          try { navigator.serviceWorker.register('/sw.js'); } catch(_) {}
+        });
+      }
+    })();
+  </script>
 
   <script>
 // Mini Öğrenen Sohbet — doğrudan /api/answer & /api/teach kullanır

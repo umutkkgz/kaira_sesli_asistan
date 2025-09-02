@@ -91,3 +91,36 @@ index.html dosyasını doğrudan tarayıcınızda açın. En iyi deneyim için V
 
 Geliştirici
 Umut Kökgöz - GitHub Profili
+
+
+---
+
+Kurulum (Vite) ve Komutlar
+
+- Gereksinimler: Node.js 18+, npm 9+
+- Kurulum: `npm install`
+- Geliştirme: `npm run dev` (http://localhost:5173)
+- Prod derleme: `npm run build`
+- Prod önizleme: `npm run preview`
+- Lint: `npm run lint` • Düzelt: `npm run lint:fix`
+- Format: `npm run format`
+
+PWA / Çevrimdışı Desteği
+
+- Basit bir Service Worker (`sw.js`) eklendi. İlk ziyaretten sonra temel sayfalar ve önemli modüller önbelleğe alınır.
+- Geliştirme sırasında SW etkisini görmek için `npm run preview` kullanın (file:// üzerinde çalışmaz).
+
+Code Lab İyileştirmeleri
+
+- Dosya yeniden adlandırma butonu eklendi (Yeniden Adlandır).
+- Kısayollar:
+  - Ctrl/Cmd+S: Kaydet
+  - Ctrl/Cmd+Enter: Çalıştır
+  - Ctrl/Cmd+B: Kodu Uygula
+
+Önerilen İleri Adımlar
+
+- CodeMirror/Monaco ile syntax highlighting ve gelişmiş editör deneyimi.
+- Projeyi ZIP olarak dışa aktarma ve içe aktarma.
+- Vitest + Playwright ile temel test altyapısı.
+- Workbox ile gelişmiş önbellekleme stratejileri.

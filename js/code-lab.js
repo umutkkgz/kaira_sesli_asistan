@@ -211,6 +211,16 @@ export function initializeCodeLab(){
     active = files.length - 1; saveFiles(files); loadActive();
     try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_new_file', { file: name }); }catch(_){ }
   });
+  document.getElementById('cl-rename-file')?.addEventListener('click', ()=>{
+    if (!files[active]) return;
+    const oldName = files[active].name;
+    const name = prompt('Yeni dosya adı:', oldName);
+    if (!name || name === oldName) return;
+    if (files.some((f,i)=> i!==active && f.name === name)) { try{ alert('Aynı isimde bir dosya zaten var.'); }catch(_){} return; }
+    files[active].name = name;
+    saveFiles(files); loadActive();
+    try{ if (window.KAIRA_LOG) window.KAIRA_LOG('codelab_rename_file', { from: oldName, to: name }); }catch(_){ }
+  });
   document.getElementById('cl-delete-file')?.addEventListener('click', ()=>{
     if (!files[active]) return;
     if (!confirm(`${files[active].name} silinsin mi?`)) return;
@@ -361,6 +371,31 @@ export function initializeCodeLab(){
     const ok = undoLast();
     if (!ok){ try{ alert('Geri alacak bir değişiklik yok.'); }catch(_){ }
   }});
+
+  // Kısayollar: Ctrl/Cmd+S => Kaydet, Ctrl/Cmd+Enter => Çalıştır, Ctrl/Cmd+B => Kodu Uygula
+  try {
+    const onKey = (e) => {
+      const isMeta = e.metaKey || e.ctrlKey;
+      if (!isMeta) return;
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        const btn = document.getElementById('cl-save');
+        if (btn) btn.click();
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const btn = document.getElementById('cl-run');
+        if (btn) btn.click();
+      }
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        const btn = document.getElementById('cl-apply');
+        if (btn) btn.click();
+      }
+    };
+    editor?.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey);
+  } catch(_) {}
 }
 
 // otomatik export
