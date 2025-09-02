@@ -513,17 +513,3 @@ function animateDemo() {
     // Anti-embedding (clickjacking)
     try { if (window.top !== window.self) window.top.location = window.location; } catch(_){ /* ignore */ }
 })();
-
-// URL parametrelerine göre Editor görünümünü otomatik aç
-(function autoOpenEditorFromURL(){
-  try {
-    const params = new URLSearchParams(window.location.search);
-    let shouldOpen = false;
-    if (params.get('userBrief')) shouldOpen = true;
-    if (params.get('autoSuggest') === 'true' || params.get('autoGenerate') === 'true') shouldOpen = true;
-    params.forEach((v, k) => { if (/^contextimage/i.test(k)) shouldOpen = true; });
-    if (shouldOpen) {
-      switchView('editor');
-    }
-  } catch(_) { /* ignore */ }
-})();

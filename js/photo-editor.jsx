@@ -366,52 +366,6 @@
                 fetchApiKey();
             }, []);
 
-            // URL'den gelen parametreleri işle: userBrief, contextImage*, autoSuggest/autoGenerate
-            useEffect(() => {
-              try {
-                const params = new URLSearchParams(window.location.search);
-                const userBriefParam = params.get('userBrief');
-                const autoSuggestParam = params.get('autoSuggest');
-                const autoGenerateParam = params.get('autoGenerate');
-                const contextImages = [];
-
-                params.forEach((value, key) => {
-                  if (key && key.toLowerCase().startsWith('contextimage')) {
-                    let dataUrl = value;
-                    if (!/^data:image\//i.test(value)) {
-                      dataUrl = `data:image/png;base64,${value}`;
-                    }
-                    contextImages.push(dataUrl);
-                  }
-                });
-
-                if (userBriefParam) {
-                  setUserBrief(userBriefParam);
-                }
-                if (contextImages.length > 0) {
-                  setOriginalImages(prev => {
-                    const next = [...prev];
-                    for (let i = 0; i < Math.min(next.length, contextImages.length); i++) {
-                      next[i] = contextImages[i];
-                    }
-                    return next;
-                  });
-                }
-
-                if (autoSuggestParam === 'true' && autoGenerateParam === 'true' && !isLoading) {
-                  setTimeout(() => {
-                    try {
-                      Promise.resolve(handleSuggest()).then(() => {
-                        try { handleGenerate(); } catch(_) {}
-                      }).catch(() => {
-                        try { handleGenerate(); } catch(_) {}
-                      });
-                    } catch(_) {}
-                  }, 500);
-                }
-              } catch(_) { /* sessiz */ }
-            }, []);
-
             const makeUploadHandler = (idx) => (e) => {
               const file = e.target.files && e.target.files[0];
               if (!file) return;
