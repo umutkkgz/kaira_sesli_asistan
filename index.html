@@ -178,14 +178,16 @@
     <!-- DIGITAL AFTERLIFE GÖRÜNÜMÜ -->
     <div id="afterlife-view" class="view">
         <div class="howto-hint" tabindex="0">
-          <span class="howto-label">Nasıl kullanılır?</span>
-          <div class="howto-popover">
-            <h4>Digital Afterlife • Kısa Rehber</h4>
+          <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-afterlife-pop">Nasıl kullanılır?</button>
+          <div class="howto-popover" id="howto-afterlife-pop" role="dialog" aria-labelledby="howto-afterlife-title">
+            <h4 id="howto-afterlife-title">Digital Afterlife • Kısa Rehber</h4>
             <ul>
-              <li>Aşağı kaydırarak bölümleri keşfet.</li>
-              <li>Sol üstten “Geri” ile seçim ekranına dön.</li>
-              <li>En alttaki “Mail Gönder” ile iletişime geç.</li>
-              <li>İpucu: Animasyonlar yoğunsa tarayıcıda donanım hızlandırmayı aç.</li>
+              <li>Bölümler boyunca aşağı kaydırarak anlatımı takip et.</li>
+              <li>Sol üstteki “Geri” ile modül seçim ekranına dön.</li>
+              <li>Geri sayım kutusu canlıdır; etkinlik tarihi yaklaştıkça güncellenir.</li>
+              <li>“Bir Yankı Nasıl Yaratılır?” bölümünde 3 adımı incele.</li>
+              <li>En altta “Mail Gönder” ile proje hakkında iletişime geç.</li>
+              <li>Performans: Tarayıcı donanım hızlandırmasını aç; düşük cihazlarda animasyon yoğunluğu azalır.</li>
             </ul>
           </div>
         </div>
@@ -259,15 +261,17 @@
 <!-- KΔIRA SESLİ ASİSTAN GÖRÜNÜMÜ (YENİ) -->
   <div id="asistan-view" class="view">
     <div class="howto-hint" tabindex="0">
-      <span class="howto-label">Nasıl kullanılır?</span>
-      <div class="howto-popover">
-        <h4>KΔIRA Sesli Asistan • Kısa Rehber</h4>
+      <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-asistan-pop">Nasıl kullanılır?</button>
+      <div class="howto-popover" id="howto-asistan-pop" role="dialog" aria-labelledby="howto-asistan-title">
+        <h4 id="howto-asistan-title">KΔIRA Sesli Asistan • Kısa Rehber</h4>
         <ul>
-          <li>Önce yetkilendirme ekranında giriş yap.</li>
-          <li>Mikrofon simgesine dokun, tarayıcı iznini ver ve konuş.</li>
-          <li>Yazıyla konuşmak için alttaki metin alanını kullan.</li>
-          <li>“Sohbeti Temizle” ile geçmişi sıfırlayabilirsin.</li>
-          <li>İpucu: Ekran kilitlenince kayıt durur; geri gelince devam edebilirsin.</li>
+          <li>Yetkilendirme penceresini doldur ve giriş yap.</li>
+          <li>İlk kullanımda mikrofon izni isteyebilir; “İzin ver”i seç.</li>
+          <li>Mikrofon simgesine dokunup konuş; yanıtı metin ve ses olarak al.</li>
+          <li>Yazılı giriş için metin alanına yazıp Enter’a bas.</li>
+          <li>“Sohbeti Temizle” sohbet geçmişini sıfırlar.</li>
+          <li>Ekran/görünürlük değiştiğinde kayıt durur; geri döndüğünde devam eder.</li>
+          <li>Gizlilik: Mikrofon yalnızca açıkça başlattığında etkinleşir.</li>
         </ul>
       </div>
     </div>
@@ -339,15 +343,16 @@
     <!-- FOTOĞRAF EDİTÖRÜ GÖRÜNÜMÜ -->
     <div id="editor-view" class="view">
         <div class="howto-hint" tabindex="0">
-          <span class="howto-label">Nasıl kullanılır?</span>
-          <div class="howto-popover">
-            <h4>Fotoğraf Editörü • Kısa Rehber</h4>
+          <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-editor-pop">Nasıl kullanılır?</button>
+          <div class="howto-popover" id="howto-editor-pop" role="dialog" aria-labelledby="howto-editor-title">
+            <h4 id="howto-editor-title">Fotoğraf Editörü • Kısa Rehber</h4>
             <ul>
-              <li>Sol panelden fotoğraf yükle (sürükle-bırak veya tıkla).</li>
-              <li>Sağ panel sonuçları gösterir; “Maske” ile bölgesel iyileştir.</li>
-              <li>Rol/Ağırlık ile referans görsellerin etkisini ayarla.</li>
-              <li>Promptu Türkçe yazabilirsin; Negatif satırı için “Negatif:” kullan.</li>
-              <li>İpucu: Sonucu indirmek için “İndir” simgesini kullan.</li>
+              <li>Sol panel: kaynak fotoğraf(larını) yükle (sürükle‑bırak veya tıkla).</li>
+              <li>Sağ panel: sonuç önizlemesi; “Maske” ile bölgesel iyileştirme uygula.</li>
+              <li>Rol/Ağırlık: her referansın etkisini ayarla (ör. Yüz ≥ %80 kimlik kilidi).</li>
+              <li>Prompt: Türkçe yaz; olumsuzlar için son satıra “Negatif: ...”.</li>
+              <li>Çeviri ve üretim için Gemini anahtarına ihtiyaç duyabilir.</li>
+              <li>“İndir” ile sonucu kaydet; gerekirse “Bölgeyi İyileştir” ile maskeli tekrar dene.</li>
             </ul>
           </div>
         </div>
@@ -360,15 +365,16 @@
     <!-- EVRENSEL SOHBET GÖRÜNÜMÜ -->
     <div id="chat-view" class="view bg-gray-900">
         <div class="howto-hint" tabindex="0">
-          <span class="howto-label">Nasıl kullanılır?</span>
-          <div class="howto-popover">
-            <h4>Evrensel Sohbet • Kısa Rehber</h4>
+          <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-chat-pop">Nasıl kullanılır?</button>
+          <div class="howto-popover" id="howto-chat-pop" role="dialog" aria-labelledby="howto-chat-title">
+            <h4 id="howto-chat-title">Evrensel Sohbet • Kısa Rehber</h4>
             <ul>
-              <li>Sağlayıcı ve model seç; gerekirse anahtarı gir.</li>
+              <li>Sağlayıcı ve model seç; gerekiyorsa API anahtarını gir.</li>
               <li>“Sunucudan Anahtarları Al” ile otomatik doldurmayı dene.</li>
-              <li>“Sistem Promptu”nu yaz ve “Uygula”ya tıkla.</li>
-              <li>Mesajını yaz, gönder; “Sohbeti Temizle” ile sıfırla.</li>
-              <li>İpucu: Uzun konuşmalar için önceki 10 mesaj bağlamda tutulur.</li>
+              <li>Gerekirse bir Sistem Promptu belirle ve “Uygula”.</li>
+              <li>Mesajını yaz ve gönder; Shift+Enter yeni satır ekler.</li>
+              <li>“Sohbeti Temizle” tüm geçmişi sıfırlar; yerel depodan da silinir.</li>
+              <li>Bağlam: Son ~10 mesaj isteğe eklenir; uzun yanıtlar daha tutarlı olur.</li>
             </ul>
           </div>
         </div>
@@ -444,15 +450,16 @@
     <!-- KΔIRA CODE LAB GÖRÜNÜMÜ -->
     <div id="code-view" class="view bg-gray-900">
         <div class="howto-hint" tabindex="0">
-          <span class="howto-label">Nasıl kullanılır?</span>
-          <div class="howto-popover">
-            <h4>Code Lab • Kısa Rehber</h4>
+          <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-code-pop">Nasıl kullanılır?</button>
+          <div class="howto-popover" id="howto-code-pop" role="dialog" aria-labelledby="howto-code-title">
+            <h4 id="howto-code-title">Code Lab • Kısa Rehber</h4>
             <ul>
               <li>“Yeni” ile dosya oluştur; “Kaydet” ile sakla.</li>
-              <li>“Çalıştır” çıktı penceresinde sonucu gösterir; “Sıfırla” temizler.</li>
-              <li>AI için modeli seç, istemini yaz, “Öneri Üret”e bas.</li>
-              <li>“Kodu Uygula” ile öneriyi dosyana yama olarak uygula.</li>
-              <li>Hata olduysa “Geri Al” ile son değişikliği geri al.</li>
+              <li>“Çalıştır” sağdaki iframe’de sonucu gösterir; “Sıfırla” temizler.</li>
+              <li>AI: modeli seç, isteğini yaz, “Öneri Üret”e tıkla; çıktı aşağıda.</li>
+              <li>“Kodu Uygula” öneriyi aktif dosyaya yama olarak ekler (tam üzerine yazmaz).</li>
+              <li>Geri alman gerekirse “Geri Al” butonunu kullan.</li>
+              <li>Not: Koşum ortamı tarayıcı sandbox’ıdır; ağ/izin kısıtları olabilir.</li>
             </ul>
           </div>
         </div>
@@ -517,15 +524,15 @@
     <!-- NASA GÖZLEM PLATFORMU (ADIM 1) -->
     <div id="nasa-view" class="view">
         <div class="howto-hint" tabindex="0">
-          <span class="howto-label">Nasıl kullanılır?</span>
-          <div class="howto-popover">
-            <h4>Gözlem Platformu • Kısa Rehber</h4>
+          <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-nasa-pop">Nasıl kullanılır?</button>
+          <div class="howto-popover" id="howto-nasa-pop" role="dialog" aria-labelledby="howto-nasa-title">
+            <h4 id="howto-nasa-title">Gözlem Platformu • Kısa Rehber</h4>
             <ul>
-              <li>Üst sekmelerden bölüm seç: APOD, Mars, Kütüphane.</li>
-              <li>Gökyüzü Haritasında sürükle-pan, tekerlek-zoom, sağ tık menü.</li>
-              <li>Mars bölümünde rover/tarih/kamera seçip “Getir”e bas.</li>
-              <li>API durumunu üstteki kutudan takip edebilirsin.</li>
-              <li>İpucu: Yakınlaştırma için +/− kontrollerini kullan.</li>
+              <li>Üst sekmeler: APOD (günün görseli), Mars (rover foto), Kütüphane.</li>
+              <li>Gökyüzü Haritası: sürükle‑pan, tekerlek‑zoom, sağ tık menü.</li>
+              <li>Alt kısımdaki +/− ile hızlı yakınlaştır; Full Sky ile geneli gör.</li>
+              <li>Mars: rover/tarih/kamera seç, “Getir” ile görselleri listele.</li>
+              <li>API anahtarlarının durumunu üstteki kutudan kontrol et.</li>
             </ul>
           </div>
         </div>
@@ -1541,5 +1548,7 @@
 </script>
   <!-- Global starfield script -->
   <script src="js/starfield.js"></script>
+  <!-- How-to hover/toggle helpers -->
+  <script src="js/howto.js"></script>
 </body>
 </html>
