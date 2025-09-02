@@ -142,7 +142,7 @@ async function callAssistant(prompt, files){
 
 function parseCodeBlocks(text){
   const blocks = [];
-  const re = /```([^\n]*)\n([\s\S]*?)```/g;
+  const re = /```([^\n]*)\n?([\s\S]*?)```/g;
   let m;
   const sanitizeFilename = (s)=> String(s||'').trim().replace(/^["'`]+|["'`]+$/g,'').replace(/[),.;:]+$/,'');
   const scanHeaderHints = (body)=>{
@@ -153,7 +153,7 @@ function parseCodeBlocks(text){
     return fn ? sanitizeFilename(fn) : null;
   };
   while ((m = re.exec(text))){
-    const info = (m[1]||'').trim();
+    let info = (m[1]||'').trim();
     let body = m[2] || '';
     let filename = null;
     let mode = null; // 'replace' | 'merge'
@@ -167,6 +167,14 @@ function parseCodeBlocks(text){
     }
     const mi = /(?:^|\s)mode\s*=\s*(replace|merge)/i.exec(info);
     if (mi) mode = mi[1].toLowerCase();
+    // info satırında filename/mode dışındaki kuyruk kod parçaları gövdeye taşınsın
+    try{
+      let tail = info;
+      tail = tail.replace(/^[^]*?(?:filename|file)\s*=\s*[^\s`]+/i, '');
+      tail = tail.replace(/(^|\s)mode\s*=\s*(replace|merge)/i, '');
+      tail = tail.trim();
+      if (tail) { body = tail + (body ? ('\n' + body) : ''); }
+    }catch(_){ }
     // 2/3) gövde üst satırlardan ipucu
     if (!filename){ filename = scanHeaderHints(body); }
     blocks.push({ info, filename, content: body, mode });
@@ -312,7 +320,21 @@ export function initializeCodeLab(){
       if (files[active]){ files[active].content = (document.getElementById('cl-editor')?.value || files[active].content); saveFiles(files); }
     }catch(_){ }
     if (!txt || !txt.includes('```')) { if (out) out.textContent += '\n\n(Blok bulunamadı — üç tırnaklı kod blokları bekleniyor.)'; return; }
-    const blocks = parseCodeBlocks(txt);
+    // Çit (``` → "backtick") normalizasyonu ve info satırına zorunlu satır sonu ekleri
+    function normalizeOutput(s){
+      try{
+        let t = String(s||'');
+        // 4,5,6 backtick → 3 backtick
+        t = t.replace(/``````/g, '```');
+        t = t.replace(/`````/g, '```');
+        t = t.replace(/````/g, '```');
+        // info satırı ile içerik aynı satırdaysa bir satır sonu ekle
+        t = t.replace(/```(\w+)([^\n`]*filename\s*=\s*[^\s`]+[^\n`]*)\s*(?=\S)/gi, '```$1$2\n');
+        t = t.replace(/```(\w+)([^\n`]*mode\s*=\s*(?:replace|merge)[^\n`]*)\s*(?=\S)/gi, '```$1$2\n');
+        return t;
+      }catch(_){ return s; }
+    }
+    const blocks = parseCodeBlocks(normalizeOutput(txt));
     if (!(blocks && blocks.length)) { if (out) out.textContent += '\n\n(Blok ayrıştırılamadı.)'; return; }
 
     // Değişikliklerden önce mevcut durumu yedekle
