@@ -252,8 +252,12 @@ export function initializeCodeLab(){
     const l = String(lang||'').toLowerCase();
     if (l.includes('html')) return 'index.html';
     if (l.includes('css')) return 'style.css';
-    if (l.includes('js')) return 'main.js';
-    if (l.includes('ts')) return 'main.ts';
+    if (/(^|\s)(jsx)($|\s)/.test(l)) return 'main.jsx';
+    if (/(^|\s)(tsx)($|\s)/.test(l)) return 'main.tsx';
+    if (/(^|\s)(ts)($|\s)/.test(l)) return 'main.ts';
+    if (/(^|\s)(js|javascript)($|\s)/.test(l)) return 'main.js';
+    if (l.includes('json')) return 'data.json';
+    if (l.includes('markdown') || l.includes('md')) return 'README.md';
     return 'snippet.txt';
   }
   // --- Sürüm geçmişi + Güvenli birleştirme ---
@@ -286,6 +290,10 @@ export function initializeCodeLab(){
   function applyBlocksFromOutput(){
     const out = document.getElementById('cl-ai-output');
     const txt = out ? out.textContent : '';
+    // Önce aktif dosyayı kaydet ki en güncel hali üzerinden birleştirelim
+    try{
+      if (files[active]){ files[active].content = (document.getElementById('cl-editor')?.value || files[active].content); saveFiles(files); }
+    }catch(_){ }
     if (!txt || !txt.includes('```')) { if (out) out.textContent += '\n\n(Blok bulunamadı — üç tırnaklı kod blokları bekleniyor.)'; return; }
     const blocks = parseCodeBlocks(txt);
     if (!(blocks && blocks.length)) { if (out) out.textContent += '\n\n(Blok ayrıştırılamadı.)'; return; }
@@ -357,14 +365,18 @@ export function initializeCodeLab(){
         if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
       } else {
         // Marker yoksa: dosya varsa güvenli olarak yeni bir bölge oluşturup ekleyelim
-        const autoId = 'auto-' + Math.floor(Date.now()/1000);
+        // Benzersiz id üretelim ki aynı saniye içinde birden çok blok çakışmasın
+        const autoId = 'auto-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6);
         const wrapped = markerWrap(fname, autoId, b.content||'');
         const merged = replaceOrAppendRegion(fname, current, autoId, wrapped);
         if (exists) files[idx].content = merged; else files.push({ name: fname, content: merged });
       }
     });
     saveFiles(files); loadActive();
-    if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı.)`;
+    try{
+      const list = blocks.map((b,i)=>`- ${b.filename || fallbackFilenameFor(b.info||'')} (${(b.mode||'merge')})`).join('\n');
+      if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı)\n${list}`;
+    }catch(_){ if (out) out.textContent += `\n\n(${blocks.length} blok uygulandı)`; }
   }
   document.getElementById('cl-apply')?.addEventListener('click', applyBlocksFromOutput);
   document.getElementById('cl-undo')?.addEventListener('click', ()=>{
