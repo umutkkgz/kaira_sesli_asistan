@@ -42,6 +42,11 @@
         </div>
         <ul id="chat-list" class="space-y-2 text-sm"></ul>
         <ul id="archived-list" class="hidden space-y-2 text-sm"></ul>
+        <div id="archived-controls" class="hidden mt-2 flex items-center gap-2">
+          <button id="archived-more" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Daha Fazla</button>
+          <button id="archived-load-all" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2 py-1 rounded">Tümünü Yükle</button>
+          <span id="archived-status" class="text-xs text-gray-400 ml-auto"></span>
+        </div>
       </div>
       <div class="md:col-span-2 bg-gray-900/70 border border-gray-700 rounded-2xl p-4 flex flex-col">
         <div id="chat-header" class="text-sm text-gray-300 mb-2 flex items-center justify-between">
@@ -83,6 +88,10 @@
     const admMsg = document.getElementById('adm-msg');
     const listEl = document.getElementById('chat-list');
     const archivedListEl = document.getElementById('archived-list');
+    const archivedControls = document.getElementById('archived-controls');
+    const archivedMoreBtn = document.getElementById('archived-more');
+    const archivedLoadAllBtn = document.getElementById('archived-load-all');
+    const archivedStatus = document.getElementById('archived-status');
     const tabActive = document.getElementById('tab-active');
     const tabArchived = document.getElementById('tab-archived');
     const archivedSearchWrap = document.getElementById('archived-search-wrap');
@@ -164,21 +173,45 @@
       });
     }
 
-    async function loadArchived(q){
-      archivedListEl.innerHTML='';
+    // Arşiv listeleme durumu (sayfalama)
+    let archivedState = { q:'', cursor:null, offset:0, page:1, hasMore:true, loading:false, total:0 };
+    let archivedSeen = new Set();
+
+    function updateArchivedControls(){
+      const inArchived = tabMode==='archived';
+      archivedControls.classList.toggle('hidden', !inArchived);
+      archivedMoreBtn.disabled = !archivedState.hasMore || archivedState.loading;
+      archivedLoadAllBtn.disabled = !archivedState.hasMore || archivedState.loading;
+      archivedStatus.textContent = archivedState.loading ? 'Yükleniyor...' : `Yüklendi: ${archivedState.total}${archivedState.hasMore ? ' • daha var' : ''}`;
+    }
+
+    async function fetchArchived(append=true){
+      if (archivedState.loading) return; archivedState.loading = true; updateArchivedControls();
       const tok = getTok();
-      // Preferred unified endpoint
-      let url = `/api/support/chats?status=closed&limit=100&token=${encodeURIComponent(tok)}`;
-      if (q && q.trim()) url += `&search=${encodeURIComponent(q.trim())}`;
+      const limit = 100;
+      let url = `/api/support/chats?status=closed&limit=${limit}&token=${encodeURIComponent(tok)}`;
+      if (archivedState.q) url += `&search=${encodeURIComponent(archivedState.q)}`;
+      if (archivedState.cursor) url += `&cursor=${encodeURIComponent(archivedState.cursor)}`;
+      else if (archivedState.offset) url += `&offset=${archivedState.offset}`;
+      else if (archivedState.page>1) url += `&page=${archivedState.page}`;
+
       let res = await tryFetch(url);
       if (!res.ok){
-        // Fallback legacy endpoints
-        const fallback = q && q.trim() ? `/api/support/search?q=${encodeURIComponent(q.trim())}&token=${encodeURIComponent(tok)}` : `/api/support/archived?token=${encodeURIComponent(tok)}&limit=100`;
-        res = await tryFetch(fallback);
+        if (archivedState.q){
+          url = `/api/support/search?q=${encodeURIComponent(archivedState.q)}&limit=${limit}&offset=${archivedState.offset}&page=${archivedState.page}&token=${encodeURIComponent(tok)}`;
+        } else {
+          url = `/api/support/archived?limit=${limit}&offset=${archivedState.offset}&page=${archivedState.page}&token=${encodeURIComponent(tok)}`;
+        }
+        res = await tryFetch(url);
       }
-      if (!res.ok) return;
+      if (!res.ok){ archivedState.loading=false; updateArchivedControls(); return; }
       const j = await res.json();
-      const items = (j.chats || j.results || j.archived || []);
+      const raw = (j.chats || j.results || j.archived || []);
+      const items = raw.filter(it => {
+        const id = (it.chat_id || it.id || '').toString();
+        if (!id || archivedSeen.has(id)) return false; archivedSeen.add(id); return true;
+      });
+      if (!append) archivedListEl.innerHTML='';
       items.forEach(item => {
         const li = document.createElement('li');
         li.className = 'p-2 rounded bg-slate-800/40 hover:bg-slate-800/60 cursor-pointer';
@@ -190,6 +223,23 @@
         li.addEventListener('click', ()=> openChat(id, meta));
         archivedListEl.appendChild(li);
       });
+      archivedState.total += items.length;
+      archivedState.cursor = j.next_cursor || j.cursor_next || j.cursor || archivedState.cursor;
+      if (typeof j.has_more !== 'undefined') archivedState.hasMore = !!j.has_more;
+      else archivedState.hasMore = items.length === limit;
+      if (items.length === 0) archivedState.hasMore = false; // duplicate page guard
+      archivedState.offset += items.length;
+      archivedState.page += 1;
+      archivedState.loading = false;
+      updateArchivedControls();
+    }
+
+    function resetArchived(q){
+      archivedState = { q: (q||'').trim(), cursor:null, offset:0, page:1, hasMore:true, loading:false, total:0 };
+      archivedSeen = new Set();
+      archivedListEl.innerHTML='';
+      updateArchivedControls();
+      fetchArchived(false);
     }
     async function openChat(chatId, meta){
       currentChat = chatId;
@@ -258,13 +308,35 @@
       tabMode = mode;
       const on = (el)=>{ el.classList.remove('bg-slate-700','text-slate-200'); el.classList.add('bg-emerald-700','text-white'); };
       const off = (el)=>{ el.classList.remove('bg-emerald-700','text-white'); el.classList.add('bg-slate-700','text-slate-200'); };
-      if (mode==='active'){ on(tabActive); off(tabArchived); listEl.classList.remove('hidden'); archivedListEl.classList.add('hidden'); archivedSearchWrap.classList.add('hidden'); loadActive(); }
-      else { on(tabArchived); off(tabActive); archivedListEl.classList.remove('hidden'); listEl.classList.add('hidden'); archivedSearchWrap.classList.remove('hidden'); loadArchived(archivedSearch.value); }
+      if (mode==='active'){
+        on(tabActive); off(tabArchived);
+        listEl.classList.remove('hidden');
+        archivedListEl.classList.add('hidden');
+        archivedSearchWrap.classList.add('hidden');
+        archivedControls.classList.add('hidden');
+        loadActive();
+      }
+      else {
+        on(tabArchived); off(tabActive);
+        archivedListEl.classList.remove('hidden');
+        listEl.classList.add('hidden');
+        archivedSearchWrap.classList.remove('hidden');
+        archivedControls.classList.remove('hidden');
+        resetArchived(archivedSearch.value);
+      }
     }
     tabActive.addEventListener('click', ()=> switchTab('active'));
     tabArchived.addEventListener('click', ()=> switchTab('archived'));
-    archivedSearch.addEventListener('input', ()=>{ if (tabMode==='archived') loadArchived(archivedSearch.value); });
-    refreshBtn.addEventListener('click', ()=>{ if (tabMode==='active') loadActive(); else loadArchived(archivedSearch.value); });
+    archivedSearch.addEventListener('input', ()=>{ if (tabMode==='archived') resetArchived(archivedSearch.value); });
+    refreshBtn.addEventListener('click', ()=>{ if (tabMode==='active') loadActive(); else resetArchived(archivedSearch.value); });
+    archivedMoreBtn.addEventListener('click', ()=>{ if (tabMode==='archived') fetchArchived(true); });
+    archivedLoadAllBtn.addEventListener('click', async ()=>{
+      if (tabMode!=='archived') return;
+      while (archivedState.hasMore && !archivedState.loading){
+        await fetchArchived(true);
+        await new Promise(r=>setTimeout(r, 120));
+      }
+    });
     sendBtn.addEventListener('click', send);
     sendInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 
