@@ -144,6 +144,14 @@ function parseCodeBlocks(text){
   const blocks = [];
   const re = /```([^\n]*)\n([\s\S]*?)```/g;
   let m;
+  const sanitizeFilename = (s)=> String(s||'').trim().replace(/^["'`]+|["'`]+$/g,'').replace(/[),.;:]+$/,'');
+  const scanHeaderHints = (body)=>{
+    const lines = String(body||'').split(/\r?\n/).slice(0,5).join('\n');
+    let fn = null;
+    let m1 = /file\s*:\s*([^\s]+)/i.exec(lines); if (m1) fn = m1[1];
+    if (!fn){ let m2 = /(?:\/\/|#|<!--|\/\*)\s*([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))/i.exec(lines); if (m2) fn = m2[1]; }
+    return fn ? sanitizeFilename(fn) : null;
+  };
   while ((m = re.exec(text))){
     const info = (m[1]||'').trim();
     let body = m[2] || '';
@@ -151,28 +159,37 @@ function parseCodeBlocks(text){
     let mode = null; // 'replace' | 'merge'
     // 1) info line: filename= veya file=
     const fi = /(?:^|\s)(?:filename|file)\s*=\s*([^\s]+)/i.exec(info);
-    if (fi) filename = fi[1].replace(/^"|"$/g,'');
+    if (fi) filename = sanitizeFilename(fi[1]);
     // 1b) info satırında doğrudan dosya adı (örn: ```script.js)
     if (!filename){
       const fInfo = /(?:^|\s)([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))(?:$|\s)/i.exec(info);
-      if (fInfo) filename = fInfo[1];
+      if (fInfo) filename = sanitizeFilename(fInfo[1]);
     }
     const mi = /(?:^|\s)mode\s*=\s*(replace|merge)/i.exec(info);
     if (mi) mode = mi[1].toLowerCase();
-    // 2) gövde ilk satır: file: NAME
-    if (!filename){
-      const firstLine = body.split(/\r?\n/)[0] || '';
-      const f2 = /file\s*:\s*([^\s]+)/i.exec(firstLine);
-      if (f2) filename = f2[1].trim();
-    }
-    // 3) gövde ilk satır: yorum içinde NAME.ext (// main.js, /* style.css */, <!-- index.html -->)
-    if (!filename){
-      const firstLine = body.split(/\r?\n/)[0] || '';
-      const f3 = /(?:\/\/|#|<!--|\/\*)\s*([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))/i.exec(firstLine);
-      if (f3) filename = f3[1].trim();
-    }
+    // 2/3) gövde üst satırlardan ipucu
+    if (!filename){ filename = scanHeaderHints(body); }
     blocks.push({ info, filename, content: body, mode });
   }
+  // Salvage: son blok kapanmamışsa (``` tek sayıda ise) en sondakini topla
+  try{
+    const ticks = (text.match(/```/g) || []).length;
+    if (ticks % 2 === 1) {
+      const m2 = /```([^\n]*)\n([\s\S]*)$/.exec(text);
+      if (m2){
+        const info = (m2[1]||'').trim();
+        const body = m2[2] || '';
+        const fi = /(?:^|\s)(?:filename|file)\s*=\s*([^\s]+)/i.exec(info);
+        let filename = fi ? sanitizeFilename(fi[1]) : null;
+        if (!filename){
+          const fInfo = /(?:^|\s)([^\s]+\.(?:js|jsx|ts|tsx|css|html|json|md))(?:$|\s)/i.exec(info);
+          if (fInfo) filename = sanitizeFilename(fInfo[1]);
+        }
+        if (!filename){ filename = scanHeaderHints(body); }
+        blocks.push({ info, filename, content: body, mode: null });
+      }
+    }
+  }catch(_){ }
   return blocks;
 }
 
@@ -346,6 +363,17 @@ export function initializeCodeLab(){
       if (!fname){
         // info line'da dil varsa uygun varsayılan isim
         fname = fallbackFilenameFor(b.info||'');
+        // Heuristik: filename verilmediyse aktif dosya ile eşleşen dile uygula
+        try{
+          const activeName = files[active]?.name || '';
+          const info = String(b.info||'');
+          if (/\.js$/i.test(activeName) && /(js|javascript)/i.test(info)) fname = activeName;
+          if (/\.jsx$/i.test(activeName) && /jsx/i.test(info)) fname = activeName;
+          if (/\.ts$/i.test(activeName) && /(^|\s)ts(\s|$)/i.test(info)) fname = activeName;
+          if (/\.tsx$/i.test(activeName) && /tsx/i.test(info)) fname = activeName;
+          if (/\.css$/i.test(activeName) && /css/i.test(info)) fname = activeName;
+          if (/\.html?$/i.test(activeName) && /html/i.test(info)) fname = activeName;
+        }catch(_){ }
       }
       if (!fname) return;
       const idx = files.findIndex(f => f.name === fname);
