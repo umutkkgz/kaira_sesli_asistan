@@ -143,7 +143,10 @@
 
     async function tryFetch(url){
       const full = `${API()}${url}`;
-      const res = await fetch(full, { headers: { 'ngrok-skip-browser-warning':'true' } });
+      const tok = getTok();
+      const headers = { 'ngrok-skip-browser-warning':'true' };
+      if (tok) headers['X-Admin-Token'] = tok;
+      const res = await fetch(full, { headers });
       return res;
     }
     async function loadActive(){
@@ -241,11 +244,11 @@
       const tok = tokenEl.value.trim(); if (!tok){ admMsg.textContent='Token gerekli'; return; }
       // Tokenı geçerli mi? aktif listeden deneyelim
       const res = await tryFetch(`/api/support/active?token=${encodeURIComponent(tok)}`);
-      if (!res.ok){ admMsg.textContent='Token hatalı'; return; }
+      if (!res.ok){ if (res.status !== 404 && res.status !== 501){ admMsg.textContent='Token hatalı veya erişim yok'; return; } }
       const remember = !!rememberEl.checked;
       try{ (remember ? localStorage : sessionStorage).setItem(tokenKey, tok); }catch(_){ }
       setLoggedIn(true);
-      await loadActive();
+      try{ await loadActive(); }catch(_){ }
       await ensureNotifyPermission();
       connectAdminWS();
     });
