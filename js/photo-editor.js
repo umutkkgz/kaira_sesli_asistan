@@ -588,6 +588,59 @@ function App() {
     };
     fetchApiKey();
   }, []);
+
+  // URL'den gelen parametreleri işlemek için: userBrief, contextImage*, autoSuggest/autoGenerate
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const userBriefParam = params.get('userBrief');
+      const autoSuggestParam = params.get('autoSuggest');
+      const autoGenerateParam = params.get('autoGenerate');
+      const contextImages = [];
+
+      // contextImage1, contextImage2, ... şeklindeki tüm parametreleri topla
+      params.forEach((value, key) => {
+        if (key && key.toLowerCase().startsWith('contextimage')) {
+          // Eğer veri zaten data URL ise aynen kullan; değilse PNG varsay ve başlık ekle
+          let dataUrl = value;
+          if (!/^data:image\//i.test(value)) {
+            dataUrl = `data:image/png;base64,${value}`;
+          }
+          contextImages.push(dataUrl);
+        }
+      });
+
+      if (userBriefParam) {
+        setUserBrief(userBriefParam);
+      }
+
+      if (contextImages.length > 0) {
+        setOriginalImages(prev => {
+          const next = [...prev];
+          for (let i = 0; i < Math.min(next.length, contextImages.length); i++) {
+            next[i] = contextImages[i];
+          }
+          return next;
+        });
+      }
+
+      // Otomatik işlemler: önce Öneri Al (AI), sonra Değiştir
+      if (autoSuggestParam === 'true' && autoGenerateParam === 'true' && !isLoading) {
+        setTimeout(() => {
+          try {
+            Promise.resolve(handleSuggest()).then(() => {
+              try { handleGenerate(); } catch (_) {}
+            }).catch(() => {
+              // Öneri başarısız olsa bile, elinizde prompt varsa yine de deneyin
+              try { handleGenerate(); } catch (_) {}
+            });
+          } catch (_) {}
+        }, 500);
+      }
+    } catch (_) {
+      // sessizce geç
+    }
+  }, []);
   const makeUploadHandler = idx => e => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
