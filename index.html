@@ -40,7 +40,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <!-- React için Gerekli Scriptler -->
     <script>
-      // Fill meta with API base for learning-bot embed
+      // Fill meta for mini learning chat API base
       try {
         var meta = document.querySelector('meta[name="kaira-api-base"]');
         if (meta) {
@@ -48,51 +48,6 @@
           meta.setAttribute('content', base);
         }
       } catch(_){ }
-      // Provider setter for Asistan integration
-      window.setKairaAsistanProvider = function(p){ window.KairaAsistanProvider = p; };
-    </script>
-    <!-- Öğrenen Chatbot Sağlayıcısı -->
-    <script>
-      (function(){
-        if (!window.setKairaAsistanProvider) window.setKairaAsistanProvider = function(p){ window.KairaAsistanProvider = p; };
-        var inited = false;
-        function initLearningProvider(){
-          if (inited) return;
-          var meta = document.querySelector('meta[name="kaira-api-base"]');
-          var API_BASE = (meta && meta.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||'');
-          if (!API_BASE) return; // henüz hazır değil
-          inited = true;
-          window.setKairaAsistanProvider({
-            name: 'kaira-embed-only',
-            respond: async function({ text }){
-              try{
-                const base = API_BASE.replace(/\/$/,'');
-                const r = await fetch(`${base}/api/answer`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text }) });
-                const data = await r.json().catch(()=>({}));
-                var outText = data && data.answer || '';
-                if (!outText){
-                  var teach = confirm('Bu konu hakkında bilgim yok. Bana öğretmek ister misin?');
-                  if (teach){
-                    var userResp = prompt('Lütfen doğru cevabı yaz:');
-                    if (userResp && userResp.trim()){
-                      await fetch(`${base}/api/teach`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt: text, response: userResp.trim() }) });
-                      outText = 'Teşekkürler, bilgiyi kaydettim.';
-                    } else {
-                      outText = 'Anladım. Şimdilik bu konuda bilgim yok.';
-                    }
-                  } else {
-                    outText = 'Tamam. Şimdilik bu konuda bilgim yok.';
-                  }
-                }
-                return { audioUrl: '', text: outText };
-              }catch(e){ return { audioUrl:'', text: 'Hata: '+(e && e.message || e) }; }
-            }
-          });
-        }
-        window.__initLearningProvider = initLearningProvider;
-        // Run after DOM ready and also retry shortly
-        window.addEventListener('DOMContentLoaded', function(){ setTimeout(initLearningProvider, 0); setTimeout(initLearningProvider, 800); });
-      })();
     </script>
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
