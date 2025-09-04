@@ -98,7 +98,14 @@
     const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
-    // Öğrenen chatbot bilgisi sesli asistandan ayrıldı; burada durum etiketi eklemiyoruz
+    // Öğrenen mod rozeti kalmışsa temizle ve varsayılan metni ata
+    try {
+      if (statusEl) {
+        statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun';
+        // Güvenlik: varsa sonuna ekli tüm '• ...' rozetlerini kaldır
+        statusEl.textContent = (statusEl.textContent || '').replace(/\s*•\s*.*$/,'').trim();
+      }
+    } catch(_){}
     const player = document.getElementById('asistan-player');
     if (player) {
       try {
@@ -326,6 +333,13 @@
 
   function enterAsistan(force=false){
     showView('asistan-view', 'asistan');
+    try {
+      const st = document.getElementById('asistan-status');
+      if (st) {
+        st.textContent = 'Konuşmak için mikrofon simgesine dokunun';
+        st.textContent = (st.textContent||'').replace(/\s*•\s*.*$/,'').trim();
+      }
+    } catch(_){}
     if (!force && !isAsistanAuthorized()) { showAsistanAuth(); return; }
     if (!asistanInitialized) { initAsistan().then(()=>{ animateAsistan(); }).catch(e=>console.error(e)); }
     else { animateAsistan(); }

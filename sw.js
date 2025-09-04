@@ -1,7 +1,7 @@
 /*
   KAIRA Service Worker — basic offline shell + runtime caching
 */
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const CACHE_NAME = `kaira-cache-${VERSION}`;
 const CORE_ASSETS = [
   '/',
@@ -65,4 +65,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
