@@ -95,7 +95,8 @@
     window.addEventListener('resize', ()=>{ setBgCanvasSize(); createParticles(); });
     setBgCanvasSize(); createParticles();
 
-    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
+    // Sunucu ile hizalama: belirtilen uzak tabanı kullan (ngrok) veya window.API_PROXY_BASE
+    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || 'https://1513c704aa10.ngrok-free.app';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     // Öğrenen mod rozeti kalmışsa temizle ve varsayılan metni ata
