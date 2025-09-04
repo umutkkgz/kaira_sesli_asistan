@@ -212,11 +212,20 @@
       const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 300000);
       try{
         try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_request', { len: (text||'').length, angry: !!angry }); } catch(_){ }
-        const res = await fetch(`${API_BASE}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
+        const res = await fetch(`${API_BASE.replace(/\/$/,'')}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
         if (!res.ok){ const txt = await res.text().catch(()=>'' ); throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`); }
         const data = await res.json();
         // Önce varsa doğrudan URL'yi tercih et (base64 bazı tarayıcılarda sessiz kalabiliyor)
-        const direct = (data.session_audio_url || data.audio_url) ? `${API_BASE}${data.session_audio_url || data.audio_url}` : null;
+        let direct = null;
+        try {
+          const path = data.session_audio_url || data.audio_url || '';
+          if (path) {
+            direct = /^https?:\/\//i.test(path) ? path : `${API_BASE.replace(/\/$/,'')}${path}`;
+            // ngrok banner bypass + cache buster
+            const sep = direct.includes('?') ? '&' : '?';
+            direct = `${direct}${sep}ngrok-skip-browser-warning=true&t=${Date.now()}`;
+          }
+        } catch(_){ direct = null; }
         let audioUrl = null;
         if (!direct) {
           if (!data.audio_data) throw new Error("API yanıtında 'audio_data' alanı bulunamadı.");
@@ -229,7 +238,7 @@
         if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
         player.srcObject = null; player.muted = false; player.volume = 1.0;
         if (direct) {
-          player.src = `${direct}?t=${Date.now()}`; player.load();
+          player.src = direct; player.load();
         } else {
           player.previousUrl = audioUrl; player.src = audioUrl; player.load();
         }
@@ -250,7 +259,15 @@
           console.warn('[Audio] Blob çalma başarısız, URL ile denenecek:', e);
           // Sunucunun verdiği URL ile tekrar dene
           try {
-            const directUrl = `${API_BASE}${data.session_audio_url || data.audio_url || ''}`;
+            let directUrl = null;
+            try {
+              const path2 = data.session_audio_url || data.audio_url || '';
+              if (path2) {
+                directUrl = /^https?:\/\//i.test(path2) ? path2 : `${API_BASE.replace(/\/$/,'')}${path2}`;
+                const sep = directUrl.includes('?') ? '&' : '?';
+                directUrl = `${directUrl}${sep}ngrok-skip-browser-warning=true&t=${Date.now()}`;
+              }
+            } catch(_){ directUrl = null; }
             if (directUrl) {
               player.src = directUrl; player.load();
               try{ await player.play(); } catch(_){ /* element yine çalamadı → WebAudio fallback */ }
