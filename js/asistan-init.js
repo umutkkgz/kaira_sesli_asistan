@@ -98,11 +98,7 @@
     const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || '';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
-    try{
-      if (window.KairaAsistanProvider && statusEl){
-        statusEl.textContent = (statusEl.textContent||'') + ' • Öğrenen Mod aktif';
-      }
-    }catch(_){ }
+    // Öğrenen chatbot bilgisi sesli asistandan ayrıldı; burada durum etiketi eklemiyoruz
     const player = document.getElementById('asistan-player');
     if (player) {
       try {
@@ -197,18 +193,7 @@
     }
     async function getAIResponse(text, angry=false){
       if (!isAsistanAuthorized()) { if (statusEl) statusEl.textContent = 'Yetkili şifresi gerekli'; showAsistanAuth(); return; }
-      // Learning-bot / external provider integration
-      try{
-        if (window.KairaAsistanProvider && typeof window.KairaAsistanProvider.respond === 'function'){
-          micBtn.disabled=true; if (!isVisualizerSetup) setupVisualizer();
-          const res = await window.KairaAsistanProvider.respond({ text });
-          const outText = (res && (res.text || res.answer || res.reply)) || '';
-          const display = outText || 'Şimdilik bu konuda bilgim yok.';
-          addMessageToChat(display, 'assistant');
-          statusEl.textContent = 'Yanıt hazır'; micBtn.disabled=false; setCoreState('idle');
-          return { text_response: display };
-        }
-      }catch(_){ /* fall through to server */ }
+      // Öğrenen-bot entegrasyonu sesli asistanda devre dışı; doğrudan sunucu TTS kullanılacak
       micBtn.disabled=true;
       if (!isVisualizerSetup) setupVisualizer();
       let waitingTimeout;
