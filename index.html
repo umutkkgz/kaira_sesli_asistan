@@ -26,6 +26,22 @@
       });
     </script>
 
+    <!-- Ensure API base is defined early for all modules -->
+    <script>
+      (function(){
+        try {
+          var stored = localStorage.getItem('kaira_api_base') || '';
+          var fallback = 'https://0b3ace67b5c8.ngrok-free.app';
+          if (!window.API_PROXY_BASE || !String(window.API_PROXY_BASE).trim()) {
+            window.API_PROXY_BASE = stored || fallback;
+          }
+          if (!stored) {
+            localStorage.setItem('kaira_api_base', window.API_PROXY_BASE);
+          }
+        } catch(_) { /* ignore */ }
+      })();
+    </script>
+
     <!-- Intro-only styles moved here to avoid duplicate <html> documents -->
     <link rel="stylesheet" href="css/intro.css">
     <link rel="stylesheet" href="css/kaira-debug-overrides.css">

@@ -70,9 +70,20 @@
   </div>
 
   <script>
-    if (!window.API_PROXY_BASE) {
-      try { window.API_PROXY_BASE = localStorage.getItem('kaira_api_base') || ''; } catch(_){ }
-    }
+    // Ensure a default API base is available across standalone admin page loads
+    (function(){
+      try {
+        const stored = localStorage.getItem('kaira_api_base') || '';
+        const fallback = 'https://0b3ace67b5c8.ngrok-free.app';
+        if (!window.API_PROXY_BASE || !String(window.API_PROXY_BASE).trim()) {
+          window.API_PROXY_BASE = stored || fallback;
+        }
+        // Persist for other pages/sessions
+        if (!stored) {
+          localStorage.setItem('kaira_api_base', window.API_PROXY_BASE);
+        }
+      } catch(_) { /* ignore */ }
+    })();
   </script>
   <script type="module">
     const API = ()=> (window.API_PROXY_BASE || '').replace(/\/$/, '');
