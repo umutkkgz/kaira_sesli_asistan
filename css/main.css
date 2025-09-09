@@ -182,12 +182,23 @@
 }
 /* === How-to hover hints === */
 .howto-hint { position: fixed; top: 16px; right: 16px; z-index: 30; }
-.howto-hint .howto-label { display: inline-block; font-size: 12px; color: #93c5fd; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.35); padding: 6px 10px; border-radius: 9999px; backdrop-filter: blur(8px); cursor: default; }
+.howto-hint .howto-label { display: inline-block; font-size: 12px; color: #93c5fd; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.35); padding: 6px 10px; border-radius: 9999px; backdrop-filter: blur(8px); cursor: pointer; touch-action: manipulation; }
 .howto-hint .howto-popover { position: absolute; top: 40px; right: 0; width: min(92vw, 360px); background: rgba(2,6,23,0.92); border: 1px solid rgba(148,163,184,0.25); color: #e5e7eb; padding: 12px 14px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
-.howto-hint:hover .howto-popover, .howto-hint:focus-within .howto-popover, .howto-hint.open .howto-popover { opacity: 1; transform: translateY(0); pointer-events: auto; }
+/* Enable hover/focus open only on hover-capable devices */
+@media (hover: hover) {
+  .howto-hint:hover .howto-popover, .howto-hint:focus-within .howto-popover { opacity: 1; transform: translateY(0); pointer-events: auto; }
+}
+/* JS toggled open state (always allowed) */
+.howto-hint.open .howto-popover { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .howto-popover h4 { margin: 0 0 6px; font-size: 14px; color: #93c5fd; }
 .howto-popover ul { margin: 0; padding-left: 18px; font-size: 13px; color: #cbd5e1; }
 .howto-popover li { margin: 4px 0; }
+/* Mobile sizing: limit height and allow scroll, smaller width */
+@media (max-width: 640px) {
+  .howto-hint .howto-popover { max-height: 60vh; overflow: auto; width: min(94vw, 320px); right: 8px; }
+}
+/* Optional close button styling (injected on mobile) */
+.howto-popover .howto-close { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 8px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.25); color: #93c5fd; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; }
 /* === Post-intro black-hole EXIT reveal === */
 #site-content { position: relative; will-change: clip-path; }
 #site-content.reveal-prep { clip-path: circle(0% at 50% 50%); }

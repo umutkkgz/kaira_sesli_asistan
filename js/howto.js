@@ -2,6 +2,7 @@
 (function(){
   const hints = Array.from(document.querySelectorAll('.howto-hint'));
   if (!hints.length) return;
+  const IS_MOBILE = (typeof window.matchMedia === 'function' && (window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches)) || (window.innerWidth < 768);
 
   function closeAll(except){
     for (const h of hints){ if (h === except) continue; h.classList.remove('open'); const b = h.querySelector('.howto-label[aria-expanded]'); if (b) b.setAttribute('aria-expanded','false'); }
@@ -30,6 +31,26 @@
     });
   }
 
+  // Inject a close button for mobile to quickly dismiss the popover
+  if (IS_MOBILE) {
+    for (const hint of hints) {
+      const button = hint.querySelector('.howto-label');
+      const pop = hint.querySelector('.howto-popover');
+      if (!pop || pop.querySelector('.howto-close')) continue;
+      const close = document.createElement('button');
+      close.className = 'howto-close';
+      close.type = 'button';
+      close.setAttribute('aria-label','Kapat');
+      close.textContent = '×';
+      close.addEventListener('click', (ev)=>{
+        ev.preventDefault(); ev.stopPropagation();
+        hint.classList.remove('open');
+        if (button) button.setAttribute('aria-expanded','false');
+      });
+      pop.appendChild(close);
+    }
+  }
+
   // Click outside to close
   document.addEventListener('click', (e)=>{
     const target = e.target;
@@ -44,4 +65,3 @@
   // Orientation/resize: close all to avoid misplacement
   ['resize','orientationchange'].forEach(evt => window.addEventListener(evt, ()=> closeAll()));
 })();
-
