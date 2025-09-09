@@ -5,6 +5,14 @@
             overflow-x: hidden;
             overflow-y: auto;
         }
+        /* Safe-area + small-viewport helpers for mobile */
+        :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+        .h-screen-safe { height: 100vh; height: 100svh; min-height: 100svh; }
+        .min-h-screen-safe { min-height: 100vh; min-height: 100svh; }
+        .pb-safe { padding-bottom: calc(1rem + var(--safe-bottom)); }
+        .mb-safe { margin-bottom: var(--safe-bottom); }
+        /* Smooth scrolling on iOS */
+        .overflow-y-auto { -webkit-overflow-scrolling: touch; }
         /* Global starfield background canvas */
         #starfield-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -3; pointer-events: none; }
         .view { display: none; }
@@ -221,3 +229,16 @@
           pointer-events: auto !important;
         }
         #code-view { position: relative; z-index: 2000; }
+
+        /* Mobile-friendly tweaks */
+        @media (max-width: 640px) {
+          .glass-container { padding: 1rem; }
+          #asistan-status { font-size: 13px; }
+          #asistan-view .rounded-full.w-16.h-16 { width: 60px; height: 60px; }
+        }
+
+        /* Respect reduced-motion preferences: tone down background glow */
+        @media (prefers-reduced-motion: reduce) {
+          .mic-wrapper::before { animation: none; opacity: .4; }
+          .is-listening { animation: none !important; }
+        }

@@ -77,7 +77,11 @@
     function setBgCanvasSize(){ bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
     function createParticles(){
       asistanParticles = [];
-      const particleCount = (bgCanvas.width * bgCanvas.height) / 8000;
+      const IS_MOBILE = (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) || (window.innerWidth < 768);
+      const REDUCED = (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      let particleCount = (bgCanvas.width * bgCanvas.height) / 8000;
+      if (IS_MOBILE) particleCount = particleCount * 0.6; // mobilde azalt
+      if (REDUCED) particleCount = particleCount * 0.35; // reduced-motion'da daha da azalt
       for (let i=0; i<particleCount; i++){
         asistanParticles.push({
           x: Math.random()*bgCanvas.width,
@@ -319,9 +323,13 @@
       });
     }
     if (sendBtn) sendBtn.addEventListener('click', sendTyped);
-    if (textInput) textInput.addEventListener('keydown', (e)=>{
+    if (textInput) {
+      textInput.addEventListener('keydown', (e)=>{
       if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendTyped(); }
-    });
+      });
+      // Mobile: ensure latest messages visible when keyboard opens
+      textInput.addEventListener('focus', ()=>{ setTimeout(()=>{ try{ chatContainer.scrollTop = chatContainer.scrollHeight; }catch(_){ } }, 100); });
+    }
     if (clearChatBtn) clearChatBtn.addEventListener('click', ()=>{
       chatHistory = []; localStorage.removeItem('kaira_asistan_chat_history'); chatContainer.innerHTML = '';
       addMessageToChat('Merhaba! Size nasıl yardımcı olabilirim?', 'assistant');

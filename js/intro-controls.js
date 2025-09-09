@@ -1,12 +1,15 @@
 // --- Three.js Sahne Kurulumu ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+const IS_MOBILE = (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) || (window.innerWidth < 768);
+const REDUCED = (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: !IS_MOBILE });
 renderer.setSize(window.innerWidth, window.innerHeight);
+try { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 1.5 : 2)); } catch(_) {}
 camera.position.z = 250; // Başlangıçta kamera daha uzakta
 
 // --- Parçacık Sistemi ---
-const particleCount = 15000; // Daha fazla parçacıkla daha yoğun bir etki
+const particleCount = REDUCED ? 1200 : (IS_MOBILE ? 3500 : 15000); // mobile/reduced-motion için düşür
 const positions = new Float32Array(particleCount * 3);
 const colors = new Float32Array(particleCount * 3);
 const sizes = new Float32Array(particleCount);
@@ -75,7 +78,12 @@ window.addEventListener('mousemove', (event) => {
 const clock = new THREE.Clock();
 function animate() {
     const elapsedTime = clock.getElapsedTime();
-    requestAnimationFrame(animate);
+    // Reduced motion ise animasyon frekansını düşür
+    if (REDUCED) {
+      setTimeout(()=>requestAnimationFrame(animate), 33); // ~30fps
+    } else {
+      requestAnimationFrame(animate);
+    }
 
     // YENİ: Fare pozisyonuna göre sahneyi yavaşça döndür
     // Bu, parçacıkların fareyi takip ettiği hissini verir
@@ -91,6 +99,7 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    try { renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 1.5 : 2)); } catch(_) {}
 });
 
 // --- YENİ: Geliştirilmiş GSAP Giriş Animasyonu ---

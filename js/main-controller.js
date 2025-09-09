@@ -378,7 +378,25 @@ async function initDemo() {
      const bgCanvas = document.getElementById('demo-bg-canvas'); 
     const bgCtx = bgCanvas.getContext('2d');
     function setBgCanvasSize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
-    function createParticles() { demoParticles = []; const particleCount = (bgCanvas.width * bgCanvas.height) / 8000; for (let i = 0; i < particleCount; i++) { demoParticles.push({ x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height, originX: Math.random() * bgCanvas.width, originY: Math.random() * bgCanvas.height, size: Math.random() * 2 + 1, speed: Math.random() * 0.5 + 0.1, color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})` }); } }
+    function createParticles() {
+      demoParticles = [];
+      const IS_MOBILE = (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) || (window.innerWidth < 768);
+      const REDUCED = (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      let particleCount = (bgCanvas.width * bgCanvas.height) / 8000;
+      if (IS_MOBILE) particleCount = particleCount * 0.6;
+      if (REDUCED) particleCount = particleCount * 0.35;
+      for (let i = 0; i < particleCount; i++) {
+        demoParticles.push({
+          x: Math.random() * bgCanvas.width,
+          y: Math.random() * bgCanvas.height,
+          originX: Math.random() * bgCanvas.width,
+          originY: Math.random() * bgCanvas.height,
+          size: Math.random() * 2 + 1,
+          speed: Math.random() * 0.5 + 0.1,
+          color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.3})`
+        });
+      }
+    }
     window.addEventListener('mousemove', e => { demoMouse.x = e.x; demoMouse.y = e.y; }); 
     window.addEventListener('mouseout', () => { demoMouse.x = null; demoMouse.y = null; }); 
     window.addEventListener('resize', () => { setBgCanvasSize(); createParticles(); });
