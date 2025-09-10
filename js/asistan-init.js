@@ -71,6 +71,12 @@
     const avatarCanvas = document.getElementById('asistan-avatar-canvas');
     if (avatarCanvas) initAvatar(avatarCanvas);
 
+    // Safari/iOS tespiti: Safari'de element tabanlı çalma sessiz kalabiliyor → WebAudio tercih et
+    const UA = navigator.userAgent || '';
+    const IS_IOS = /iP(ad|hone|od)/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(UA);
+    const PREFER_WEBAUDIO = IS_IOS || IS_SAFARI;
+
     // Arkaplan parçacıkları
     const bgCanvas = document.getElementById('asistan-bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
@@ -238,47 +244,61 @@
         // Mikrofonda açık tanıma varsa kapat (bazı tarayıcılarda çalma engellenebilir)
         try { if (window.KAIRA_AUDIO && typeof window.KAIRA_AUDIO.stopRecognizer === 'function') window.KAIRA_AUDIO.stopRecognizer(); } catch(_){ }
         try { if (recognition && typeof recognition.stop === 'function') recognition.stop(); } catch(_){ }
-        // Mevcut URL'yi bırak ve yeni kaynağı yükle
-        if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
-        player.srcObject = null; player.muted = false; player.volume = 1.0;
-        if (direct) {
-          player.src = direct; player.load();
-        } else {
-          player.previousUrl = audioUrl; player.src = audioUrl; player.load();
-        }
-        try {
-          await player.play();
-          // Eğer element oynuyor ama ses yoksa (bazı cihazlarda) → kısa bir gecikmeden sonra süreyi/doğal akışı kontrol et
-          await new Promise(r=>setTimeout(r, 250));
-          if (!player.muted && player.volume > 0 && (isNaN(player.duration) || player.duration > 0)){
-            // timeupdate tetiklenmiyorsa ve ses gelmiyorsa WebAudio fallback dene
-            const started = player.currentTime; await new Promise(r=>setTimeout(r, 400));
-            const progressed = player.currentTime > started + 0.05;
-            if (!progressed && direct) {
-              console.warn('[Audio] Element akışı ilerlemiyor, WebAudio fallback deneniyor');
-              await playViaWebAudio(direct);
-            }
-          }
-        } catch(e) {
-          console.warn('[Audio] Blob çalma başarısız, URL ile denenecek:', e);
-          // Sunucunun verdiği URL ile tekrar dene
+        // Safari/iOS'ta doğrudan WebAudio ile çal (ringer/silent ve autoplay kısıtları için daha güvenilir)
+        if (PREFER_WEBAUDIO && direct) {
           try {
-            let directUrl = null;
-            try {
-              const path2 = data.session_audio_url || data.audio_url || '';
-              if (path2) {
-                directUrl = /^https?:\/\//i.test(path2) ? path2 : `${API_BASE.replace(/\/$/,'')}${path2}`;
-                const sep = directUrl.includes('?') ? '&' : '?';
-                directUrl = `${directUrl}${sep}ngrok-skip-browser-warning=true&t=${Date.now()}`;
+            // Elementi durdur ve WebAudio ile çal
+            try { player.pause(); } catch(_){}
+            player.removeAttribute('src');
+            await playViaWebAudio(direct);
+          } catch(e){
+            console.warn('[Audio][safari-pref-webaudio-failed], element ile denenecek', e);
+            // WebAudio başarısızsa element akışıyla dene
+            if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
+            player.srcObject = null; player.muted = false; player.volume = 1.0;
+            player.src = direct; player.load();
+            try { await player.play(); } catch(_){ /* alttaki kontrol tetikler */ }
+          }
+        } else {
+          // Mevcut URL'yi bırak ve yeni kaynağı yükle
+          if (player.previousUrl) URL.revokeObjectURL(player.previousUrl);
+          player.srcObject = null; player.muted = false; player.volume = 1.0;
+          if (direct) {
+            player.src = direct; player.load();
+          } else {
+            player.previousUrl = audioUrl; player.src = audioUrl; player.load();
+          }
+          try {
+            await player.play();
+            // Eğer element oynuyor ama ses yoksa (bazı cihazlarda) → kısa bir gecikmeden sonra süreyi/doğal akışı kontrol et
+            await new Promise(r=>setTimeout(r, 250));
+            if (!player.muted && player.volume > 0 && (isNaN(player.duration) || player.duration > 0)){
+              // timeupdate tetiklenmiyorsa ve ses gelmiyorsa WebAudio fallback dene
+              const started = player.currentTime; await new Promise(r=>setTimeout(r, 400));
+              const progressed = player.currentTime > started + 0.05;
+              if (!progressed && direct) {
+                console.warn('[Audio] Element akışı ilerlemiyor, WebAudio fallback deneniyor');
+                await playViaWebAudio(direct);
               }
-            } catch(_){ directUrl = null; }
-            if (directUrl) {
-              player.src = directUrl; player.load();
-              try{ await player.play(); } catch(_){ /* element yine çalamadı → WebAudio fallback */ }
-              // Yine başarısızsa WebAudio fallback dene
-              await playViaWebAudio(directUrl);
             }
-          } catch(e2){ console.error('[Audio][fallback]', e2); }
+          } catch(e) {
+            console.warn('[Audio] Blob/URL element çalma başarısız, fallback akışwa', e);
+            // Sunucunun verdiği URL ile WebAudio fallback dene
+            try {
+              let directUrl = null;
+              try {
+                const path2 = data.session_audio_url || data.audio_url || '';
+                if (path2) {
+                  directUrl = /^https?:\/\//i.test(path2) ? path2 : `${API_BASE.replace(/\/$/,'')}${path2}`;
+                  const sep = directUrl.includes('?') ? '&' : '?';
+                  directUrl = `${directUrl}${sep}ngrok-skip-browser-warning=true&t=${Date.now()}`;
+                }
+              } catch(_){ directUrl = null; }
+              if (directUrl) {
+                await playViaWebAudio(directUrl);
+              }
+            } catch(e2){ console.error('[Audio][fallback]', e2); }
+          }
         }
         statusEl.textContent = 'Cevap oynatılıyor...';
         const out = data.text_response ?? data.clean_text ?? '';
