@@ -14,7 +14,13 @@
   }
 
   function inAsistan(){ return window.activeView === 'asistan'; }
-  function isAsistanAuthorized(){ try { return sessionStorage.getItem('kaira_asistan_auth') === '1'; } catch(_){ return false; } }
+  function isAsistanAuthorized(){
+    try {
+      const loggedToken = localStorage.getItem('kaira_auth_token');
+      if (loggedToken && loggedToken.length > 0) return true;
+      return sessionStorage.getItem('kaira_asistan_auth') === '1';
+    } catch(_){ return false; }
+  }
   function showAsistanAuth(msg){
     const overlay = document.getElementById('asistan-auth-overlay');
     const input = document.getElementById('asistan-auth-input');
@@ -165,7 +171,15 @@
     function setupVisualizer(){ if (isVisualizerSetup) return; audioContext = new (window.AudioContext||window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); source = audioContext.createMediaElementSource(player); source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 256; dataArray = new Uint8Array(analyser.frequencyBinCount); isVisualizerSetup = true; }
     function drawVisualizer(){ if (!inAsistan()) return; requestAnimationFrame(drawVisualizer); if (!isVisualizerSetup) return; analyser.getByteFrequencyData(dataArray); const avgLevel = dataArray.reduce((a,b)=>a+b,0)/dataArray.length/255; updateAudioLevel(avgLevel); visualizerCtx.clearRect(0,0,visualizerCanvas.width,visualizerCanvas.height); const barWidth=(visualizerCanvas.width/dataArray.length)*1.5; let x=0; for (let i=0;i<dataArray.length;i++){ const barHeight=dataArray[i]/2; const g=visualizerCtx.createLinearGradient(0,visualizerCanvas.height,0,visualizerCanvas.height-barHeight); g.addColorStop(0,'#0ea5e9'); g.addColorStop(1,'#6366f1'); visualizerCtx.fillStyle=g; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } }
 
-    const USER_ID = (()=>{ let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id; })();
+    const USER_ID = (()=>{
+      try{
+        const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+        if (u && u.username){ localStorage.setItem('kaira_uid', u.username); return u.username; }
+      }catch(_){ }
+      let id = localStorage.getItem('kaira_uid');
+      if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id); }
+      return id;
+    })();
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; let recognition;
     if (SpeechRecognition){

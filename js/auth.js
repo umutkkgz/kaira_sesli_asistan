@@ -129,7 +129,11 @@
         const loginRes = await fetch(`${base2}/api/auth/login`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ identifier: payload.username, password: payload.password }) });
         const lj = await loginRes.json();
         if (loginRes.ok){
-          try{ localStorage.setItem('kaira_auth_token', lj.token); localStorage.setItem('kaira_user', JSON.stringify(lj.user||{})); }catch(_){ }
+          try{
+            localStorage.setItem('kaira_auth_token', lj.token);
+            localStorage.setItem('kaira_user', JSON.stringify(lj.user||{}));
+            if (lj.user && lj.user.username) localStorage.setItem('kaira_uid', lj.user.username);
+          }catch(_){ }
           try{ window.location.href = 'profile.html'; }catch(_){ }
         }
       }catch(_){ }
@@ -147,9 +151,13 @@
       const res = await fetch(`${base}/api/auth/login`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok){ msg.textContent = j && j.error ? j.error : 'Giriş başarısız'; return; }
-      try{ localStorage.setItem('kaira_auth_token', j.token); localStorage.setItem('kaira_user', JSON.stringify(j.user||{})); }catch(_){ }
+      try{
+        localStorage.setItem('kaira_auth_token', j.token);
+        localStorage.setItem('kaira_user', JSON.stringify(j.user||{}));
+        if (j.user && j.user.username) localStorage.setItem('kaira_uid', j.user.username);
+      }catch(_){ }
       msg.textContent = 'Giriş başarılı'; msg.classList.remove('text-rose-400'); msg.classList.add('text-emerald-400');
-      openBtn.textContent = (j.user && j.user.username) ? j.user.username : 'Üyelik';
+      openBtn.textContent = (j.user && j.user.username) ? `Profil (${j.user.username})` : 'Üyelik';
       try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
       setTimeout(()=>{ hide(); try{ window.location.href = 'profile.html'; }catch(_){ } }, 500);
     }catch(e){ msg.textContent = 'Hata: ' + (e && e.message || e); }
@@ -159,7 +167,11 @@
   try{
     const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
     const tok = localStorage.getItem('kaira_auth_token');
-    if (u && u.username && tok){ openBtn.textContent = u.username; try{ openBtn.setAttribute('href','profile.html'); }catch(_){ } }
+    if (u && u.username && tok){
+      openBtn.textContent = `Profil (${u.username})`;
+      try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
+      try{ localStorage.setItem('kaira_uid', u.username); }catch(_){ }
+    }
     else { try{ openBtn.setAttribute('href','#'); }catch(_){ } }
   }catch(_){ try{ openBtn.setAttribute('href','#'); }catch(__){} }
 })();

@@ -428,7 +428,10 @@ async function initDemo() {
         for (let i = 0; i < dataArray.length; i++) { const barHeight = dataArray[i] / 2; const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight); gradient.addColorStop(0, '#0ea5e9'); gradient.addColorStop(1, '#6366f1'); visualizerCtx.fillStyle = gradient; visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight); x += barWidth + 2; } 
     }
     
-    const USER_ID = (() => { let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id; })();
+    const USER_ID = (() => {
+      try{ const u = JSON.parse(localStorage.getItem('kaira_user')||'null'); if (u && u.username){ localStorage.setItem('kaira_uid', u.username); return u.username; } }catch(_){ }
+      let id = localStorage.getItem('kaira_uid'); if (!id) { id = crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`; localStorage.setItem('kaira_uid', id); } return id;
+    })();
      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
     let recognition;
     if (SpeechRecognition) {

@@ -2,7 +2,13 @@
 // Sends structured events to the server's /api/log endpoint (BigData-ready)
 
 (function(){
-  const UID = (()=>{ try{ let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id; }catch(_){ return 'anon'; } })();
+  const UID = (()=>{
+    try{
+      const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+      if (u && u.username){ localStorage.setItem('kaira_uid', u.username); return u.username; }
+      let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id;
+    }catch(_){ return 'anon'; }
+  })();
 
   async function post(event, data){
     const API_BASE = (window.API_PROXY_BASE || '').replace(/\/$/, '');

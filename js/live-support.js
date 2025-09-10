@@ -18,7 +18,13 @@
   const HISTORY_KEY = 'kaira_support_history_v1';
   let currentChatId = null; // set on welcome
   let loadedSavedOnce = false;
-  function uid(){ try{ let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id; } catch(_){ return `user_${Date.now()}`; } }
+  function uid(){
+    try{
+      const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+      if (u && u.username){ localStorage.setItem('kaira_uid', u.username); return u.username; }
+      let id = localStorage.getItem('kaira_uid'); if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}${Math.random()}`); localStorage.setItem('kaira_uid', id);} return id;
+    } catch(_){ return `user_${Date.now()}`; }
+  }
   function readHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); }catch(_){ return []; } }
   function writeHistory(arr){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }catch(_){ }
   }

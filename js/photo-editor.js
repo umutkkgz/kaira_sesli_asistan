@@ -868,7 +868,12 @@ function App() {
         const resp = await fetch(modifiedImage);
         const blob = await resp.blob();
         const fd = new FormData();
-        try { fd.append('user_id', localStorage.getItem('kaira_uid') || ''); } catch(_){ }
+        try {
+          let uid = '';
+          try{ const u = JSON.parse(localStorage.getItem('kaira_user')||'null'); if (u && u.username){ uid = u.username; localStorage.setItem('kaira_uid', uid); } }catch(_){ }
+          if (!uid) uid = localStorage.getItem('kaira_uid') || '';
+          fd.append('user_id', uid);
+        } catch(_){ }
         fd.append('kind', 'photo_editor_generated');
         fd.append('files', blob, fname);
         const up = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd, headers: { 'ngrok-skip-browser-warning': 'true' } });

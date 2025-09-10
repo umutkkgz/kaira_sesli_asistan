@@ -129,7 +129,9 @@ async function callAssistant(prompt, files){
     'Tam dosya yenilemek ZORUNLUYSA info satırına mode=replace ekle (örn: ```javascript filename=main.js mode=replace```).',
     'Yeni dosya gerekiyorsa aynı formatta ayrı blok olarak ver.'
   ].join(' ');
-  const payload = { model, system: sys, prompt: `${context}\n\nİstek: ${prompt}` };
+  let user_id = '';
+  try{ const u = JSON.parse(localStorage.getItem('kaira_user')||'null'); user_id = (u && u.username) ? u.username : (localStorage.getItem('kaira_uid')||''); }catch(_){ }
+  const payload = { model, system: sys, prompt: `${context}\n\nİstek: ${prompt}`, user_id };
   const res = await fetch(`${base}/api/chat`, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'ngrok-skip-browser-warning':'true' },

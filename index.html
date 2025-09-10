@@ -688,6 +688,12 @@
   async function sendLog(obj){
     try{
       const BASE = serverBase(); if (!BASE) return; // henüz hazır değilse atla
+      // Attach user_id for traceability (username if logged)
+      try{
+        const u = JSON.parse(localStorage.getItem('kaira_user')||'null');
+        const name = (u && u.username) ? u.username : (localStorage.getItem('kaira_uid')||'');
+        if (name && !obj.user_id) obj.user_id = name;
+      }catch(_){ }
       await fetch(`${BASE}/api/log`, {
         method: 'POST',
         headers: {
