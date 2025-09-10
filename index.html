@@ -646,8 +646,15 @@
     showErr(m);
   });
   window.addEventListener('error', function(ev){
-    var m = ev && ev.message ? ev.message : 'Bilinmeyen JS hatası';
-    if (!/ResizeObserver/.test(m)) showErr(m);
+    try {
+      // Ignore non-ErrorEvent resource/media errors (no actionable message)
+      var isErrEvt = (ev && (ev.constructor && ev.constructor.name === 'ErrorEvent')) || ('message' in (ev||{}));
+      var tgt = ev && ev.target;
+      var isMedia = tgt && (tgt.tagName === 'AUDIO' || tgt.tagName === 'VIDEO');
+      if (!isErrEvt || isMedia) return;
+      var m = ev.message || 'Bilinmeyen JS hatası';
+      if (!/ResizeObserver/.test(m)) showErr(m);
+    } catch(_) {}
   }, true);
 
   // HTTPS uyarısı (mikrofon/TTS için)

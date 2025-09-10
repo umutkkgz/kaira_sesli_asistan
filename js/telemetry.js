@@ -74,6 +74,16 @@
   }, true);
 
   // Errors → server
-  window.addEventListener('error', (ev)=>{ try{ const m = ev && ev.message ? ev.message : 'Unknown error'; post('js_error', { message: m }); }catch(_){ } }, true);
+  window.addEventListener('error', (ev)=>{
+    try{
+      // Only report real ErrorEvents; ignore resource/media 'error' without message
+      const isErrEvt = (ev && (ev.constructor && ev.constructor.name === 'ErrorEvent')) || ('message' in (ev||{}));
+      const tgt = ev && ev.target;
+      const isMedia = tgt && (tgt.tagName === 'AUDIO' || tgt.tagName === 'VIDEO');
+      if (!isErrEvt || isMedia) return;
+      const m = ev && ev.message ? ev.message : 'Unknown error';
+      post('js_error', { message: m });
+    }catch(_){ }
+  }, true);
   window.addEventListener('unhandledrejection', (ev)=>{ try{ const r = ev && ev.reason; const m = (r && r.message) ? r.message : String(r); post('js_unhandledrejection', { message: m }); }catch(_){ } });
 })();

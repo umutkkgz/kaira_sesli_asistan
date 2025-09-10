@@ -337,6 +337,15 @@
     if (player){
       player.addEventListener('play', ()=>{ if (!isVisualizerSetup) setupVisualizer(); requestAnimationFrame(drawVisualizer); setCoreState('speaking'); });
       player.addEventListener('ended', ()=>{ statusEl.textContent = 'Konuşmak için mikrofon simgesine dokunun'; micBtn.disabled = false; setCoreState('idle'); });
+      player.addEventListener('error', async ()=>{
+        try{
+          const src = player.currentSrc || player.src || '';
+          if (src) {
+            console.warn('[Audio] HTMLMediaElement error, trying WebAudio fallback for', src);
+            await playViaWebAudio(src);
+          }
+        } catch(_){}
+      }, { passive: true });
     }
 
     asistanInitialized = true;
