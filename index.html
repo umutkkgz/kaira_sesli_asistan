@@ -1573,7 +1573,13 @@
     const b = document.createElement('div');
     b.className = 'max-w-[85%] px-3 py-2 rounded-lg text-sm ' + (role==='user' ? 'bg-indigo-700/40 text-indigo-100 self-end ml-auto' : 'bg-slate-700 text-white');
     b.textContent = String(text||'');
-    body.appendChild(b); body.scrollTop = body.scrollHeight;
+    body.appendChild(b); body.scrollTop = body.scrollHeight; return b;
+  }
+  function addStreamBubble(){
+    const b = document.createElement('div');
+    b.className = 'max-w-[85%] px-3 py-2 rounded-lg text-sm bg-slate-700 text-white';
+    b.textContent = '';
+    body.appendChild(b); body.scrollTop = body.scrollHeight; return b;
   }
   function addTeachPrompt(q){
     const wrap = document.createElement('div'); wrap.className='bg-amber-500/10 border border-amber-500/30 text-amber-100 rounded-lg p-2 text-xs';
@@ -1601,19 +1607,48 @@
     const b = base.replace(/\/$/,'');
     try{
       let ans = '';
+      let streamed = false;
       if (MODE === 'think'){
-        const r = await fetch(b + '/api/think', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
-        if (!r.ok){
-          const txt = await r.text().catch(()=> '');
-          throw new Error('Düşünen servis hatası: '+txt);
-        }
-        const j = await r.json().catch(()=>({}));
-        ans = j && j.answer ? String(j.answer) : '';
-        if (!ans && j && j.teachSuggested){
-          // Akıl yürütme bağlamı yetersiz → kullanıcıya "öğret" şansı ver
-          addTeachPrompt(t);
-          saveHistory();
-          return;
+        // Try streaming endpoint first
+        const reqBody = JSON.stringify({ prompt: t });
+        let resp;
+        try {
+          resp = await fetch(b + '/api/think/stream', { method:'POST', headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'}, body: reqBody });
+        } catch(e){ resp = null; }
+        if (resp && resp.ok && resp.body){
+          const bubble = addStreamBubble();
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+          let doneFlag = false;
+          let acc = '';
+          while(true){
+            const {value, done} = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream:true });
+            let idx;
+            while((idx = buf.indexOf('\n')) >= 0){
+              const line = buf.slice(0, idx).trim();
+              buf = buf.slice(idx+1);
+              if (!line) continue;
+              try {
+                const j = JSON.parse(line);
+                if (j && typeof j.response === 'string'){ acc += j.response; bubble.textContent = acc; body.scrollTop = body.scrollHeight; }
+                if (j && j.error){ bubble.textContent = 'Hata: ' + j.error; doneFlag = true; break; }
+                if (j && j.done === true){ doneFlag = true; break; }
+              } catch(_) { /* ignore non-JSON lines */ }
+            }
+            if (doneFlag) break;
+          }
+          ans = acc.trim();
+          streamed = true;
+        } else {
+          // Fallback to non-stream JSON endpoint
+          const r = await fetch(b + '/api/think', { method:'POST', headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'}, body: reqBody });
+          if (!r.ok){ const txt = await r.text().catch(()=> ''); throw new Error('Düşünen servis hatası: '+txt); }
+          const j = await r.json().catch(()=>({}));
+          ans = j && j.answer ? String(j.answer) : '';
+          if (!ans && j && j.teachSuggested){ addTeachPrompt(t); saveHistory(); return; }
         }
       } else { // MODE === 'learn'
         const r = await fetch(b + '/api/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
@@ -1625,7 +1660,7 @@
         ans = (j && j.answer) ? j.answer : '';
       }
 
-      if (ans){ addMsg(ans,'bot'); }
+      if (ans && !streamed){ addMsg(ans,'bot'); }
       else { addTeachPrompt(t); }
       saveHistory();
     }catch(e){ addMsg('Hata: '+(e&&e.message||e),'bot'); }
