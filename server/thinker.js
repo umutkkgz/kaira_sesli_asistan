@@ -86,8 +86,10 @@ async function ollamaChat({ systemPrompt, userPrompt, context, history }){
   msgs.push({ role: 'user', content: stitched });
 
   // Try /api/chat first, then fallback to /api/generate
+  let modelTag = OLLAMA_MODEL;
+  if (modelTag && !modelTag.includes(':')) modelTag += ':latest';
   const payload = {
-    model: OLLAMA_MODEL,
+    model: modelTag,
     stream: false,
     messages: msgs,
     options: { temperature: 0.7 }
@@ -102,20 +104,20 @@ async function ollamaChat({ systemPrompt, userPrompt, context, history }){
     const flat = parts.join('\n\n');
     const gen = await fetch(`${OLLAMA_BASE}/api/generate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: OLLAMA_MODEL, prompt: flat, stream: false, options: { temperature: 0.7 } })
+      body: JSON.stringify({ model: modelTag, prompt: flat, stream: false, options: { temperature: 0.7 } })
     });
     if (gen.status === 404){
       // Try OpenAI-compatible /v1/chat/completions
       const oaMsgs = msgs.map(m => ({ role: m.role === 'assistant' ? 'assistant' : (m.role === 'system' ? 'system' : 'user'), content: m.content }));
       let r3 = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: OLLAMA_MODEL, messages: oaMsgs, temperature: 0.7 })
+        body: JSON.stringify({ model: modelTag, messages: oaMsgs, temperature: 0.7 })
       });
       if (r3.status === 404){
         // Try /v1/completions with flat prompt
         const r4 = await fetch(`${OLLAMA_BASE}/v1/completions`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: OLLAMA_MODEL, prompt: flat, temperature: 0.7 })
+          body: JSON.stringify({ model: modelTag, prompt: flat, temperature: 0.7 })
         });
         if (!r4.ok){ const t = await r4.text().catch(()=> ''); throw new Error(`OpenAI compat HTTP ${r4.status} ${r4.statusText}: ${t}`); }
         const j4 = await r4.json();
