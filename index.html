@@ -85,14 +85,18 @@
         </div>
     </div>
 
-    <!-- Öğrenen Chatbot: Yüzen Buton ve Panel (HER ZAMAN GÖRÜNÜR) -->
+    <!-- Mini Chatbot (Düşünen / Öğrenen seçilebilir) -->
     <button id="learn-chat-toggle" class="fixed bottom-5 left-5 z-[10050] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg" style="z-index:10050;">
-      Öğrenen Chatbot
+      Chatbot
     </button>
     <div id="learn-chat-panel" class="fixed bottom-24 left-5 z-[10050] hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" style="z-index:10050;">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-        <div class="text-white font-semibold">KΔIRA Öğrenen Chatbot</div>
-      <div class="flex items-center gap-2">
+        <div id="learn-chat-title" class="text-white font-semibold">KΔIRA Chatbot</div>
+        <div class="flex items-center gap-2">
+          <div class="bg-gray-800 rounded-lg p-0.5 flex items-center">
+            <button id="learn-mode-think" class="px-2 py-1 text-xs rounded text-gray-300 hover:text-white focus:outline-none">Düşünen</button>
+            <button id="learn-mode-learn" class="px-2 py-1 text-xs rounded text-gray-300 hover:text-white focus:outline-none">Öğrenen</button>
+          </div>
           <button id="learn-chat-min" class="text-gray-400 hover:text-white">_</button>
           <button id="learn-chat-close" class="text-gray-400 hover:text-white">✕</button>
         </div>
@@ -767,7 +771,21 @@
     <!-- FOTOĞRAF EDİTÖRÜ İÇİN REACT KODU -->
     <script type="module" src="js/photo-editor.js"></script>
 
-    <script>window.API_PROXY_BASE = 'https://0b3ace67b5c8.ngrok-free.app'; try{ localStorage.setItem('kaira_api_base', window.API_PROXY_BASE); if (window.__initLearningProvider) window.__initLearningProvider(); }catch(_){ }</script>
+    <script>
+      (function(){
+        try{
+          var cur = localStorage.getItem('kaira_api_base');
+          // If user already set a local/base, respect it; otherwise use fallback ngrok
+          if (!cur || !String(cur).trim()){
+            window.API_PROXY_BASE = 'https://0b3ace67b5c8.ngrok-free.app';
+            localStorage.setItem('kaira_api_base', window.API_PROXY_BASE);
+          } else {
+            window.API_PROXY_BASE = cur;
+          }
+          if (window.__initLearningProvider) window.__initLearningProvider();
+        }catch(_){ }
+      })();
+    </script>
     <!-- EVRENSEL SOHBET ARAYÜZÜ İÇİN JAVASCRIPT KODU -->
     <script>
     window.initializeChatApp = () => {
@@ -1505,8 +1523,33 @@
   const sendBtn = document.getElementById('learn-chat-send');
   const closeBtn = document.getElementById('learn-chat-close');
   const minBtn = document.getElementById('learn-chat-min');
+  const titleEl = document.getElementById('learn-chat-title');
+  const modeThinkBtn = document.getElementById('learn-mode-think');
+  const modeLearnBtn = document.getElementById('learn-mode-learn');
   const META = document.querySelector('meta[name="kaira-api-base"]');
   function API(){ return (META && META.content) || (window.API_PROXY_BASE||'') || (localStorage.getItem('kaira_api_base')||''); }
+  function THINKER_BASE(){ return (localStorage.getItem('kaira_thinker_base') || '').trim() || API(); }
+  function LEARNER_BASE(){ return (localStorage.getItem('kaira_learner_base') || '').trim() || API(); }
+  let MODE = (localStorage.getItem('kaira_chat_mode') || 'think'); // 'think' | 'learn'
+  function applyModeUI(){
+    if (titleEl){ titleEl.textContent = 'KΔIRA Chatbot — ' + (MODE==='think' ? 'Düşünen' : 'Öğrenen'); }
+    if (modeThinkBtn && modeLearnBtn){
+      const on = 'bg-indigo-600 text-white';
+      const off = 'text-gray-300 hover:text-white';
+      modeThinkBtn.classList.remove('bg-indigo-600','text-white','text-gray-300','hover:text-white');
+      modeLearnBtn.classList.remove('bg-indigo-600','text-white','text-gray-300','hover:text-white');
+      if (MODE==='think'){
+        modeThinkBtn.classList.add('bg-indigo-600','text-white');
+        modeLearnBtn.classList.add('text-gray-300','hover:text-white');
+      } else {
+        modeLearnBtn.classList.add('bg-indigo-600','text-white');
+        modeThinkBtn.classList.add('text-gray-300','hover:text-white');
+      }
+    }
+  }
+  applyModeUI();
+  if (modeThinkBtn) modeThinkBtn.addEventListener('click', ()=>{ MODE='think'; localStorage.setItem('kaira_chat_mode', MODE); applyModeUI(); });
+  if (modeLearnBtn) modeLearnBtn.addEventListener('click', ()=>{ MODE='learn'; localStorage.setItem('kaira_chat_mode', MODE); applyModeUI(); });
   function addMsg(text, role){
     const b = document.createElement('div');
     b.className = 'max-w-[85%] px-3 py-2 rounded-lg text-sm ' + (role==='user' ? 'bg-indigo-700/40 text-indigo-100 self-end ml-auto' : 'bg-slate-700 text-white');
@@ -1520,7 +1563,12 @@
     teachBtn.addEventListener('click', async ()=>{
       const a = prompt('Lütfen doğru cevabı yaz:');
       if (a && a.trim()){
-        try{ await fetch(API().replace(/\/$/,'')+'/api/teach', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: q, response: a.trim() }) }); addMsg('Teşekkürler, bilgiyi kaydettim.', 'bot'); wrap.remove(); }catch(e){ addMsg('Kaydedilemedi: '+(e&&e.message||e), 'bot'); }
+        try{
+          const base = LEARNER_BASE().replace(/\/$/,'');
+          await fetch(base + '/api/teach', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: q, response: a.trim() }) });
+          addMsg('Teşekkürler, bilgiyi kaydettim.', 'bot');
+          wrap.remove();
+        }catch(e){ addMsg('Kaydedilemedi: '+(e&&e.message||e), 'bot'); }
       }
     });
     wrap.appendChild(teachBtn); body.appendChild(wrap); body.scrollTop = body.scrollHeight;
@@ -1531,10 +1579,33 @@
     const t = (input.value||'').trim(); if (!t) return; input.value=''; addMsg(t,'user'); saveHistory();
     const base = API();
     if (!base){ addMsg('Sunucu ayarlı değil.', 'bot'); return; }
+    const b = base.replace(/\/$/,'');
     try{
-      const r = await fetch(base.replace(/\/$/,'')+'/api/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
-      const j = await r.json().catch(()=>({}));
-      const ans = (j && j.answer) ? j.answer : '';
+      let ans = '';
+      if (MODE === 'think'){
+        const r = await fetch(b + '/api/think', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
+        if (!r.ok){
+          const txt = await r.text().catch(()=> '');
+          throw new Error('Düşünen servis hatası: '+txt);
+        }
+        const j = await r.json().catch(()=>({}));
+        ans = j && j.answer ? String(j.answer) : '';
+        if (!ans && j && j.teachSuggested){
+          // Akıl yürütme bağlamı yetersiz → kullanıcıya "öğret" şansı ver
+          addTeachPrompt(t);
+          saveHistory();
+          return;
+        }
+      } else { // MODE === 'learn'
+        const r = await fetch(b + '/api/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
+        if (!r.ok){
+          const txt = await r.text().catch(()=> '');
+          throw new Error('Öğrenen servis hatası: '+txt);
+        }
+        const j = await r.json().catch(()=>({}));
+        ans = (j && j.answer) ? j.answer : '';
+      }
+
       if (ans){ addMsg(ans,'bot'); }
       else { addTeachPrompt(t); }
       saveHistory();

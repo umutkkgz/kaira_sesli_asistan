@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "thinker": "node server/thinker.js"
   },
   "keywords": [],
   "author": "",
@@ -23,5 +24,10 @@
     "eslint": "^9.10.0",
     "prettier": "^3.3.3",
     "vite": "^7.1.3"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0"
   }
 }
