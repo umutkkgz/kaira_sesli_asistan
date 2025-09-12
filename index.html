@@ -774,13 +774,18 @@
     <script>
       (function(){
         try{
-          var cur = localStorage.getItem('kaira_api_base');
-          // If user already set a local/base, respect it; otherwise use fallback ngrok
-          if (!cur || !String(cur).trim()){
-            window.API_PROXY_BASE = 'https://0b3ace67b5c8.ngrok-free.app';
-            localStorage.setItem('kaira_api_base', window.API_PROXY_BASE);
-          } else {
-            window.API_PROXY_BASE = cur;
+          var base = localStorage.getItem('kaira_api_base');
+          if (!base || !String(base).trim()){
+            base = 'https://0b3ace67b5c8.ngrok-free.app';
+            localStorage.setItem('kaira_api_base', base);
+          }
+          window.API_PROXY_BASE = base;
+          // Set separate Thinker/Learner bases if unset
+          if (!localStorage.getItem('kaira_thinker_base')){
+            localStorage.setItem('kaira_thinker_base', base);
+          }
+          if (!localStorage.getItem('kaira_learner_base')){
+            localStorage.setItem('kaira_learner_base', base);
           }
           if (window.__initLearningProvider) window.__initLearningProvider();
         }catch(_){ }

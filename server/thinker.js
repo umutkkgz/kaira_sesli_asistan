@@ -85,24 +85,32 @@ async function ollamaChat({ systemPrompt, userPrompt, context, history }){
   }
   msgs.push({ role: 'user', content: stitched });
 
-  const r = await fetch(`${OLLAMA_BASE}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: OLLAMA_MODEL,
-      stream: false,
-      messages: msgs,
-      options: { temperature: 0.7 }
-    })
+  // Try /api/chat first, then fallback to /api/generate
+  const payload = {
+    model: OLLAMA_MODEL,
+    stream: false,
+    messages: msgs,
+    options: { temperature: 0.7 }
+  };
+  let resp = await fetch(`${OLLAMA_BASE}/api/chat`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
   });
-  if (!r.ok){
-    const t = await r.text().catch(()=> '');
-    throw new Error(`Ollama HTTP ${r.status} ${r.statusText}: ${t}`);
+  if (resp.status === 404) {
+    // Flatten to prompt and use /api/generate
+    const parts = [];
+    for (const m of msgs){ parts.push(`[${m.role.toUpperCase()}]\n${m.content}`); }
+    const flat = parts.join('\n\n');
+    const gen = await fetch(`${OLLAMA_BASE}/api/generate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: OLLAMA_MODEL, prompt: flat, stream: false, options: { temperature: 0.7 } })
+    });
+    if (!gen.ok){ const t = await gen.text().catch(()=> ''); throw new Error(`Ollama gen HTTP ${gen.status} ${gen.statusText}: ${t}`); }
+    const j2 = await gen.json();
+    return (j2 && j2.response ? String(j2.response).trim() : '');
   }
-  const j = await r.json();
-  // non-stream result → { message: { role:'assistant', content: '...' }, ... }
-  const out = j && j.message && j.message.content ? String(j.message.content).trim() : '';
-  return out;
+  if (!resp.ok){ const t = await resp.text().catch(()=> ''); throw new Error(`Ollama HTTP ${resp.status} ${resp.statusText}: ${t}`); }
+  const j = await resp.json();
+  return j && j.message && j.message.content ? String(j.message.content).trim() : '';
 }
 
 // Helper: minimal LLM call via Ollama, Groq or Google
