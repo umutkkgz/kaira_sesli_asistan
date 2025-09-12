@@ -66,10 +66,24 @@
       } catch(_){ }
     </script>
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
 
 </head>
 <body class="antialiased">
+    <script>
+      // Force all client calls to your ngrok URL (Thinker + Learner)
+      (function(){
+        try{
+          var base = 'https://0b3ace67b5c8.ngrok-free.app';
+          window.API_PROXY_BASE = base;
+          localStorage.setItem('kaira_api_base', base);
+          localStorage.setItem('kaira_thinker_base', base);
+          localStorage.setItem('kaira_learner_base', base);
+          var meta = document.querySelector('meta[name="kaira-api-base"]');
+          if (meta) meta.setAttribute('content', base);
+        }catch(_){ }
+      })();
+    </script>
     <!-- Global Starfield Background -->
     <canvas id="starfield-canvas" aria-hidden="true"></canvas>
 
@@ -1582,7 +1596,7 @@
   function loadHistory(){ try{ const h = localStorage.getItem('kaira_learn_chat'); if (h) body.innerHTML = h; }catch(_){ } }
   async function send(){
     const t = (input.value||'').trim(); if (!t) return; input.value=''; addMsg(t,'user'); saveHistory();
-    const base = API();
+    const base = (MODE==='think' ? THINKER_BASE() : LEARNER_BASE()) || API();
     if (!base){ addMsg('Sunucu ayarlı değil.', 'bot'); return; }
     const b = base.replace(/\/$/,'');
     try{

@@ -104,6 +104,29 @@ async function ollamaChat({ systemPrompt, userPrompt, context, history }){
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: OLLAMA_MODEL, prompt: flat, stream: false, options: { temperature: 0.7 } })
     });
+    if (gen.status === 404){
+      // Try OpenAI-compatible /v1/chat/completions
+      const oaMsgs = msgs.map(m => ({ role: m.role === 'assistant' ? 'assistant' : (m.role === 'system' ? 'system' : 'user'), content: m.content }));
+      let r3 = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages: oaMsgs, temperature: 0.7 })
+      });
+      if (r3.status === 404){
+        // Try /v1/completions with flat prompt
+        const r4 = await fetch(`${OLLAMA_BASE}/v1/completions`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: OLLAMA_MODEL, prompt: flat, temperature: 0.7 })
+        });
+        if (!r4.ok){ const t = await r4.text().catch(()=> ''); throw new Error(`OpenAI compat HTTP ${r4.status} ${r4.statusText}: ${t}`); }
+        const j4 = await r4.json();
+        const txt4 = (j4 && j4.choices && j4.choices[0] && j4.choices[0].text) ? j4.choices[0].text : '';
+        return String(txt4 || '').trim();
+      }
+      if (!r3.ok){ const t = await r3.text().catch(()=> ''); throw new Error(`OpenAI compat HTTP ${r3.status} ${r3.statusText}: ${t}`); }
+      const j3 = await r3.json();
+      const txt3 = j3 && j3.choices && j3.choices[0] && j3.choices[0].message && j3.choices[0].message.content;
+      return String(txt3 || '').trim();
+    }
     if (!gen.ok){ const t = await gen.text().catch(()=> ''); throw new Error(`Ollama gen HTTP ${gen.status} ${gen.statusText}: ${t}`); }
     const j2 = await gen.json();
     return (j2 && j2.response ? String(j2.response).trim() : '');
