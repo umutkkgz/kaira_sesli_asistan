@@ -112,7 +112,7 @@
     setBgCanvasSize(); createParticles();
 
     // Sunucu ile hizalama: belirtilen uzak tabanı kullan (ngrok) veya window.API_PROXY_BASE
-    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || 'https://0b3ace67b5c8.ngrok-free.app';
+    const API_BASE = (window.API_PROXY_BASE && window.API_PROXY_BASE.trim()) || 'https://565dece6af27.ngrok-free.app';
     const micBtn = document.getElementById('asistan-mic-btn');
     const statusEl = document.getElementById('asistan-status');
     // Öğrenen mod rozeti kalmışsa temizle ve varsayılan metni ata
