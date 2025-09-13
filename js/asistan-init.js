@@ -321,9 +321,11 @@
         return data;
       } catch(err){
         console.error('[KAIRA-ASISTAN]', err);
-        const msg = 'Hata: ' + (err?.message || err);
+        const orig = (err && err.message) ? err.message : String(err);
+        const mapped = (window.KAIRA_FRIENDLY_ERROR ? window.KAIRA_FRIENDLY_ERROR(orig) : orig);
+        const msg = (mapped !== orig) ? mapped : ('Hata: ' + mapped);
         statusEl.textContent = msg; addMessageToChat(msg, 'assistant'); micBtn.disabled=false; setCoreState('idle');
-        try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_error', { message: String(err&&err.message||err) }); } catch(_){ }
+        try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_error', { message: String(orig||'') }); } catch(_){ }
         throw err;
       } finally { hideWaitingContent(); clearTimeout(to); }
     }

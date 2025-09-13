@@ -668,19 +668,78 @@
     <!-- Tanılama / Ağ Hatası Yüzeyleme -->
 <script id="diagnostics">
 (function(){
+  // Harici gösterimler için tek yerde mesaj haritalama
+  function mapFriendlyErrorMessage(msg){
+    try {
+      var raw = (typeof msg === 'string') ? msg : (msg && msg.message) || String(msg) || '';
+      var lower = String(raw).toLowerCase();
+      var netLike = /(failed to fetch|networkerror|network error|timeout|abort|504|503|502|service unavailable|bad gateway|gateway time-out|temporarily unavailable|econnrefused|ecconnrefused|enotfound|cors|typeerror: failed to fetch)/i;
+      if (netLike.test(lower)) {
+        return 'Sunucu şu an güncelleniyor. Lütfen daha sonra tekrar deneyin. Destek: a20224402051@icloud.com';
+      }
+      return raw;
+    } catch(_) { return String(msg||''); }
+  }
+
+  // Global erişim
+  try { window.KAIRA_FRIENDLY_ERROR = mapFriendlyErrorMessage; } catch(_){}
+
+  function pickErrorTarget(){
+    // Öncelik: chat error kutusu → asistan status → genel status
+    var el = document.getElementById('error-message');
+    if (el) return el;
+    el = document.getElementById('asistan-status');
+    if (el) return el;
+    el = document.getElementById('status');
+    if (el) return el;
+    return null;
+  }
+
+  function ensureGlobalBanner(){
+    var id = 'kaira-net-banner';
+    var el = document.getElementById(id);
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = id;
+    el.style.position = 'fixed';
+    el.style.bottom = '16px';
+    el.style.left = '50%';
+    el.style.transform = 'translateX(-50%)';
+    el.style.maxWidth = '92vw';
+    el.style.zIndex = '2147483647';
+    el.style.background = 'rgba(185,28,28,0.9)'; // red-700
+    el.style.color = '#fff';
+    el.style.padding = '10px 14px';
+    el.style.borderRadius = '12px';
+    el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.45)';
+    el.style.fontSize = '14px';
+    document.body.appendChild(el);
+    return el;
+  }
+
   function showErr(msg){
     try {
-      var box = document.getElementById('error-message') || document.getElementById('status');
-      if (box) {
-        if (box.id === 'status') {
-          box.textContent = 'Hata: ' + msg;
-          box.classList.add('text-red-400');
-        } else {
-          box.classList.remove('hidden');
-          box.textContent = 'Hata: ' + msg;
+      var mapped = mapFriendlyErrorMessage(msg);
+      var target = pickErrorTarget();
+      if (target) {
+        // Chat kutusu gizli ise görünür yap
+        if (target.id === 'error-message') target.classList.remove('hidden');
+        // Mapped mesaj network-dostuysa başına "Hata:" eklemeyelim
+        var original = (typeof msg === 'string') ? msg : (msg && msg.message) || String(msg);
+        var isFriendly = (mapped !== original);
+        target.textContent = isFriendly ? mapped : ('Hata: ' + mapped);
+        // Stiller
+        if (target.id === 'status' || target.id === 'asistan-status') {
+          target.classList.add(isFriendly ? 'text-amber-300' : 'text-red-400');
         }
-      } else { console.error('[KAIRA][UI-ERROR]', msg); }
-      try { if (window.KAIRA_LOG) window.KAIRA_LOG('ui_error', { message: String(msg||'') }); } catch(_){ }
+      } else {
+        // Hedef bulunamazsa kısa süreli banner göster
+        var banner = ensureGlobalBanner();
+        banner.textContent = mapFriendlyErrorMessage(msg);
+        clearTimeout(banner._h);
+        banner._h = setTimeout(function(){ try{ banner.remove(); }catch(_){ } }, 6000);
+      }
+      try { if (window.KAIRA_LOG) window.KAIRA_LOG('ui_error', { message: String(mapped||'') }); } catch(_){ }
     } catch(e) { console.error('[KAIRA][UI-ERROR-FAIL]', e, msg); }
   }
   window.__kairaShowError = showErr;
@@ -972,7 +1031,11 @@
         }
 
         function showError(message) {
-            errorMessageDiv.textContent = `Hata: ${message}`;
+            const mapped = (window.KAIRA_FRIENDLY_ERROR ? window.KAIRA_FRIENDLY_ERROR(message) : message);
+            // Friendly mesaj döndüyse başına "Hata:" eklemeyelim
+            const original = (typeof message === 'string') ? message : (message && message.message) || String(message);
+            const isFriendly = (mapped !== original);
+            errorMessageDiv.textContent = isFriendly ? mapped : `Hata: ${mapped}`;
             errorMessageDiv.classList.remove('hidden');
         }
 
@@ -1368,7 +1431,10 @@
         }
 
         function showError(message) {
-            errorMessageDiv.textContent = `Hata: ${message}`;
+            const mapped = (window.KAIRA_FRIENDLY_ERROR ? window.KAIRA_FRIENDLY_ERROR(message) : message);
+            const original = (typeof message === 'string') ? message : (message && message.message) || String(message);
+            const isFriendly = (mapped !== original);
+            errorMessageDiv.textContent = isFriendly ? mapped : `Hata: ${mapped}`;
             errorMessageDiv.classList.remove('hidden');
         }
 
