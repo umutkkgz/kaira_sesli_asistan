@@ -181,9 +181,11 @@ window.addEventListener('error', (e) => {
   }
 }, true);
 let nasaInitialized = false;
- export function switchView(viewName) {
+export function switchView(viewName) {
+    const target = document.getElementById(`${viewName}-view`);
+    if (!target) { console.warn('[KAIRA] switchView: target not found:', viewName); return; }
     views.forEach(v => v.classList.remove('active'));
-    document.getElementById(`${viewName}-view`).classList.add('active');
+    target.classList.add('active');
     activeView = viewName;
      if (afterlifeAnimationId) cancelAnimationFrame(afterlifeAnimationId);
     if (demoAnimationId) cancelAnimationFrame(demoAnimationId);
@@ -284,6 +286,22 @@ selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
 selectNasaBtn.addEventListener('click', () => switchView('nasa'));
 if (selectCodeBtn) selectCodeBtn.addEventListener('click', () => switchView('code'));
 backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
+
+// Lightweight deep-linking: support ?start=chat and #/chat etc.
+try {
+  const startParam = new URLSearchParams(location.search).get('start');
+  let startView = startParam && startParam.trim();
+  if (!startView && location.hash) {
+    const m = location.hash.match(/^#\/?([a-zA-Z0-9_-]+)/);
+    if (m && m[1]) startView = m[1];
+  }
+  if (startView) {
+    // Delay to allow DOM and modules to settle
+    setTimeout(() => {
+      try { switchView(startView); } catch(e){ console.warn('[KAIRA] auto-start failed', e); }
+    }, 0);
+  }
+} catch(_){ }
 // --- AFTERLIFE & DEMO KODLARI ---
 let afterlifeScene, afterlifeCamera, afterlifeRenderer, stars, meteors = [];
 function initAfterlife() {
