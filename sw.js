@@ -35,7 +35,8 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first for same-origin GET requests to static files.
+// Network-first for all same-origin GET requests (fresh by default),
+// fallback to cache for offline resiliency.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -53,15 +54,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache first, then network fallback
-  event.respondWith(
-    caches.match(req).then((cached) => {
+  // For all other same-origin GET requests, network-first
+  event.respondWith((async () => {
+    try {
+      const fresh = await fetch(req);
+      // Update cache in background (best-effort)
+      try {
+        const copy = fresh.clone();
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, copy);
+      } catch(_){}
+      return fresh;
+    } catch(_) {
+      // Offline: try cache
+      const cached = await caches.match(req);
       if (cached) return cached;
-      return fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
-        return res;
-      });
-    })
-  );
+      // As a last resort, return a generic Response
+      return new Response('Offline', { status: 503, statusText: 'Offline' });
+    }
+  })());
 });

@@ -47,7 +47,11 @@
     <link rel="stylesheet" href="css/kaira-debug-overrides.css">
     <link rel="stylesheet" href="css/main.css">
     <!-- İkonlar / PWA -->
-    <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#111827">
+  <!-- Prevent aggressive browser caching during active development -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
     <link rel="manifest" href="/site.webmanifest">
     <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -55,6 +59,19 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <!-- React için Gerekli Scriptler -->
+    <script>
+      // Dev: Disable Service Worker + clear caches by default.
+      // Set localStorage 'kaira_enable_sw' = '1' to re-enable PWA caching.
+      (function(){
+        try{
+          var enable = (localStorage.getItem('kaira_enable_sw') === '1');
+          if (!enable && 'serviceWorker' in navigator){
+            navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); });
+            if (window.caches && caches.keys){ caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); }); }
+          }
+        }catch(_){ }
+      })();
+    </script>
     <script>
       // Fill meta for mini learning chat API base
       try {
@@ -1530,9 +1547,10 @@
   <script type="module" src="js/main-controller.js"></script>
 
   <script>
-    // Service Worker registration (best-effort, ignored on file://)
+    // Service Worker registration (disabled by default in dev).
+    // To enable, run in console: localStorage.setItem('kaira_enable_sw','1'); location.reload();
     (function(){
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && localStorage.getItem('kaira_enable_sw')==='1') {
         window.addEventListener('load', function(){
           try { navigator.serviceWorker.register('/sw.js'); } catch(_) {}
         });

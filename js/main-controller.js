@@ -514,7 +514,17 @@ function animateDemo() {
     }
     // Stop common easy-leak vectors
     const stop = (e)=>{ e.preventDefault(); e.stopPropagation(); return false; };
-    ['contextmenu','copy','cut','paste','dragstart'].forEach(evt => document.addEventListener(evt, stop, {capture:true}));
+    // Allow paste globally; keep copy/cut/drag blocked
+    ['copy','cut','dragstart'].forEach(evt => document.addEventListener(evt, stop, {capture:true}));
+    // Context menu: allow inside inputs/textareas/contentEditable and .allow-select areas for usability (paste via menu)
+    document.addEventListener('contextmenu', (e)=>{
+        try{
+            const t = e.target;
+            const isField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+            const allowed = isField || (t && (t.classList?.contains('allow-select') || t.closest?.('.allow-select')));
+            if (!allowed) return stop(e);
+        }catch(_){ return stop(e); }
+    }, {capture:true});
     // Key combos (Ctrl/Cmd + S/P/U/C/X/A, DevTools, PrintScreen)
     document.addEventListener('keydown', (e)=>{
         const k = (e.key || '').toLowerCase();
