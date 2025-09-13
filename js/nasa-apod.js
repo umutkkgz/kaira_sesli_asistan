@@ -65,7 +65,14 @@ export function initNasa(){
     if (section) section.classList.add('active');
   }
   function renderApodLoading(){ apodContainer.innerHTML = '<div class="text-center text-gray-400 p-8">Yükleniyor...</div>'; }
-  function renderApodError(msg){ apodContainer.innerHTML = `<div class="text-center text-red-400 p-8">Hata: ${escapeHTML(msg)}</div>`; }
+  function renderApodError(msg){
+    try{
+      const map = (window.KAIRA_FRIENDLY_ERROR ? window.KAIRA_FRIENDLY_ERROR(msg) : msg);
+      const orig = (typeof msg === 'string') ? msg : (msg && msg.message) || String(msg);
+      const friendly = (map !== orig);
+      apodContainer.innerHTML = `<div class="text-center ${friendly?'text-amber-300':'text-red-400'} p-8">${escapeHTML(friendly?map:('Hata: '+map))}</div>`;
+    }catch(_){ apodContainer.innerHTML = `<div class="text-center text-red-400 p-8">Hata: ${escapeHTML(String(msg||''))}</div>`; }
+  }
 
   async function fetchApod(date){
     try{
@@ -117,7 +124,16 @@ export function initNasa(){
   }
 
   function renderMarsLoading(){ const r=document.getElementById('mars-results'); if(r) r.innerHTML='<div class="col-span-full text-center text-gray-400 p-8">Yükleniyor...</div>'; }
-  function renderMarsError(msg){ const r=document.getElementById('mars-results'); if(r) r.innerHTML=`<div class="col-span-full text-center text-red-400 p-8">Hata: ${escapeHTML(msg)}</div>`; }
+  function renderMarsError(msg){
+    const r=document.getElementById('mars-results');
+    if(!r) return;
+    try{
+      const map = (window.KAIRA_FRIENDLY_ERROR ? window.KAIRA_FRIENDLY_ERROR(msg) : msg);
+      const orig = (typeof msg === 'string') ? msg : (msg && msg.message) || String(msg);
+      const friendly = (map !== orig);
+      r.innerHTML = `<div class="col-span-full text-center ${friendly?'text-amber-300':'text-red-400'} p-8">${escapeHTML(friendly?map:('Hata: '+map))}</div>`;
+    }catch(_){ r.innerHTML = `<div class="col-span-full text-center text-red-400 p-8">Hata: ${escapeHTML(String(msg||''))}</div>`; }
+  }
   function renderMarsPhotos(photos){
     const results=document.getElementById('mars-results');
     if(!results) return;

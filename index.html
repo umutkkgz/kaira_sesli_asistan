@@ -673,7 +673,7 @@
     try {
       var raw = (typeof msg === 'string') ? msg : (msg && msg.message) || String(msg) || '';
       var lower = String(raw).toLowerCase();
-      var netLike = /(failed to fetch|networkerror|network error|timeout|abort|504|503|502|service unavailable|bad gateway|gateway time-out|temporarily unavailable|econnrefused|ecconnrefused|enotfound|cors|typeerror: failed to fetch)/i;
+      var netLike = /(failed to fetch|networkerror|network error|timeout|abort|load failed|net::err_|err_failed|err_connection|err_network|dns|504|503|502|service unavailable|bad gateway|gateway time-out|temporarily unavailable|econnrefused|ecconnrefused|enotfound|cors|typeerror: failed to fetch|the network connection was lost|operation couldn’t be completed)/i;
       if (netLike.test(lower)) {
         return 'Sunucu şu an güncelleniyor. Lütfen daha sonra tekrar deneyin. Destek: a20224402051@icloud.com';
       }
