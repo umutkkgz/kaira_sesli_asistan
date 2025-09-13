@@ -1742,7 +1742,10 @@
           if (!r.ok){ const txt = await r.text().catch(()=> ''); throw new Error('Düşünen servis hatası: '+txt); }
           const j = await r.json().catch(()=>({}));
           ans = j && j.answer ? String(j.answer) : '';
-          if (!ans && j && j.teachSuggested){ addTeachPrompt(t); saveHistory(); return; }
+          if (!ans && j && j.teachSuggested){
+            // Düşünen modda öğret önerisini göstermiyoruz
+            if (MODE === 'learn') { addTeachPrompt(t); saveHistory(); return; }
+          }
         }
       } else { // MODE === 'learn'
         const r = await fetch(b + '/api/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ prompt: t }) });
@@ -1753,9 +1756,18 @@
         const j = await r.json().catch(()=>({}));
         ans = (j && j.answer) ? j.answer : '';
       }
-
-      if (ans && !streamed){ addMsg(ans,'bot'); }
-      else { addTeachPrompt(t); }
+      // Yanıtı gösterme/öğretme mantığı
+      if (MODE === 'learn') {
+        if (ans && !streamed){ addMsg(ans,'bot'); }
+        else if (!ans) { addTeachPrompt(t); }
+        // streamed => sadece think modunda kullanılıyor
+      } else { // MODE === 'think'
+        if (!streamed) {
+          if (ans) { addMsg(ans,'bot'); }
+          // Boş yanıt durumunda öğretme çağrısı yapılmaz
+        }
+        // streamed ise cevap balonuna zaten yazıldı; hiçbir ek çağrı yapılmaz
+      }
       saveHistory();
     }catch(e){ addMsg('Hata: '+(e&&e.message||e),'bot'); }
   }
