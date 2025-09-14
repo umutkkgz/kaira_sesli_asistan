@@ -666,6 +666,20 @@
         </div>
     </div>
     </div>
+    <!-- YORUMLAR / TOPLULUK -->
+    <section id="comments-section" class="mt-24 px-4 max-w-5xl mx-auto">
+      <h2 class="text-2xl md:text-3xl font-semibold text-white mb-4">Topluluk Yorumları</h2>
+      <p class="text-slate-400 mb-4">Olumlu deneyim ve sorularınızı paylaşın. Küfür/olumsuz içerik yayınlanmaz. Yorum yapabilmek için giriş yapın.</p>
+      <div id="comment-auth-hint" class="mb-3 text-sm text-amber-300 hidden">Yorum için giriş gerekli. <a href="profile.html" class="underline">Üyelik</a></div>
+      <div id="comment-form" class="bg-gray-900/60 border border-gray-700 rounded-2xl p-4 mb-6">
+        <textarea id="comment-text" rows="3" placeholder="Mesajınızı yazın (yalnızca olumlu, yapıcı içerikler yayınlanır)" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        <div class="mt-3 flex items-center gap-2">
+          <button id="comment-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
+          <div id="comment-msg" class="text-sm"></div>
+        </div>
+      </div>
+      <div id="comments-list" class="space-y-3"></div>
+    </section>
 <script type="module" src="js/system-prompt-helpers.js"></script>
     <!-- Tanılama / Ağ Hatası Yüzeyleme -->
 <script id="diagnostics">
@@ -1786,6 +1800,7 @@
   <script src="js/starfield.js"></script>
   <!-- How-to hover/toggle helpers -->
   <script src="js/howto.js"></script>
+  <script type="module" src="js/comments.js"></script>
   <script src="js/status-badge.js"></script>
 </body>
 </html>
