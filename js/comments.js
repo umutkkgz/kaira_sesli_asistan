@@ -17,11 +17,9 @@ function setAuthUI(){
   const ok = !!t;
   if (!ok){
     formEl.classList.add('opacity-60');
-    if (sendBtn) sendBtn.disabled = true;
     if (authHint) authHint.classList.remove('hidden');
   } else {
     formEl.classList.remove('opacity-60');
-    if (sendBtn) sendBtn.disabled = false;
     if (authHint) authHint.classList.add('hidden');
   }
 }
@@ -96,3 +94,7 @@ try{
   }
 }catch(_){ loadComments(); }
 
+// Login durumu sonrası formu otomatik etkinleştir
+window.addEventListener('storage', (e)=>{ if (e.key === 'kaira_auth_token') setAuthUI(); });
+window.addEventListener('focus', setAuthUI);
+document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') setAuthUI(); });

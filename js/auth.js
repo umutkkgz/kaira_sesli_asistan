@@ -174,4 +174,23 @@
     }
     else { try{ openBtn.setAttribute('href','#'); }catch(_){ } }
   }catch(_){ try{ openBtn.setAttribute('href','#'); }catch(__){} }
+
+  // Auto-restore user info on load if token exists but user missing
+  (async function restoreMe(){
+    try{
+      const tok = localStorage.getItem('kaira_auth_token');
+      if (!tok) return;
+      let u = null; try{ u = JSON.parse(localStorage.getItem('kaira_user')||'null'); }catch(_){ u=null; }
+      if (u && u.username) return; // already present
+      const base = API(); if (!base) return;
+      const res = await fetch(`${base}/api/auth/me`, { headers: { 'X-Auth-Token': tok } });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (j && j.user && j.user.username){
+        try{ localStorage.setItem('kaira_user', JSON.stringify(j.user)); localStorage.setItem('kaira_uid', j.user.username); }catch(_){ }
+        openBtn.textContent = `Profil (${j.user.username})`;
+        try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
+      }
+    }catch(_){ }
+  })();
 })();

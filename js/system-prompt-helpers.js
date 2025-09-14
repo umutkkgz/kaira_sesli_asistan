@@ -51,13 +51,30 @@ function clearChatUI(){
       if (typeof g.clearHistory === 'function') { try { g.clearHistory(); } catch(_){} }
     } catch(_){ }
 
-    // 4) storage alanları (local + session) — chat/kaira içeriyorsa sil
+    // 4) storage alanları (local + session) — sadece sohbetle ilgili anahtarları sil
     try {
       const nuke = function(storage){
         const toDel = [];
         for (let i = 0; i < storage.length; i++) {
           const k = storage.key(i);
-          if (/chat|kaira/i.test(k)) toDel.push(k);
+          const PRESERVE = {
+            'kaira_auth_token': 1,
+            'kaira_user': 1,
+            'kaira_uid': 1,
+            'kaira_build_version': 1,
+            'kaira_api_base': 1,
+            'kaira_thinker_base': 1,
+            'kaira_learner_base': 1,
+            'groqApiKey': 1,
+            'googleApiKey': 1,
+            'kaira_support_name': 1,
+            'kaira_support_email': 1
+          };
+          if (PRESERVE[k]) continue;
+          // Yalnızca sohbet geçmişi / UI anahtarlarını temizle
+          if (/chat/i.test(k) || /universalChatHistory|kaira_asistan_chat_history|kaira_learn_chat|chatHistory/.test(k)) {
+            toDel.push(k);
+          }
         }
         toDel.forEach(function(k){ try { storage.removeItem(k); } catch(_){} });
       };
