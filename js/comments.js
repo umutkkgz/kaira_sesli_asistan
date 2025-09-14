@@ -24,6 +24,12 @@ function setAuthUI(){
   }
 }
 setAuthUI();
+// Ensure events inside form are not blocked by global capture listeners
+try{
+  ['keydown','keypress','keyup','click','mousedown','touchstart'].forEach(evt=>{
+    formEl.addEventListener(evt, (e)=>{ e.stopPropagation(); }, true);
+  });
+}catch(_){ }
 
 function fmtDate(iso){
   try{ const d=new Date(iso); return d.toLocaleString(); }catch(_){ return iso||''; }
