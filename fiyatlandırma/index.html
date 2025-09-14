@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>KΔIRA | Fiyatlandırma</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    body{ background: radial-gradient(1200px 800px at 70% -10%, rgba(34,197,94,.12), transparent 60%), radial-gradient(1200px 800px at 0% 110%, rgba(59,130,246,.12), transparent 60%), #000; }
+    .shell { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(17,24,39,0.65); border: 1px solid rgba(255,255,255,0.08); }
+    .pill { border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.7); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body class="antialiased text-slate-200">
+  <!-- Top navigation -->
+  <header class="fixed top-0 inset-x-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="h-16 flex items-center justify-between shell rounded-b-2xl px-4">
+        <a href="/index.html?skipIntro=1" class="flex items-center gap-2 text-white font-semibold">
+          <span class="text-cyan-300">KΔIRA</span><span class="text-slate-300">Fiyatlandırma</span>
+        </a>
+        <nav class="flex items-center gap-2">
+          <a href="/model" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">Model</a>
+          <a href="/fiyatlandırma" class="pill px-3 py-1.5 rounded-full text-sm text-white border border-emerald-500/50">Fiyatlandırma</a>
+          <a href="/index.html?skipIntro=1&start=chat" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">Deneyin</a>
+          <a href="/contact.html" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">İletişim</a>
+          <a href="/profile.html" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">Üyelik</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-24 pb-16">
+    <!-- Hero -->
+    <section>
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <h1 class="text-4xl md:text-6xl font-serif font-light text-white mb-4">İhtiyacınıza Uygun KΔIRA Paketleri</h1>
+            <p class="text-lg text-slate-300">Yapay zekâ model özelleştirme (fine‑tuning), API entegrasyonu, web sitesi kurulumu, veri satışı, veritabanı tasarımı ve teknik destek — hepsi tek çatıda.</p>
+            <div class="mt-6 flex gap-3">
+              <a href="#paketler" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-lg">Paketleri Gör</a>
+              <a href="/contact.html" class="pill px-4 py-2 rounded-lg text-gray-300 hover:text-white">Teklif Al</a>
+            </div>
+          </div>
+          <div class="shell rounded-2xl p-6">
+            <div class="text-sm text-slate-300 mb-2">Kapsam</div>
+            <ul class="text-slate-300/90 space-y-2 list-disc pl-5">
+              <li>Yapay zekâ fine‑tuning (TR odaklı veri)</li>
+              <li>Özel API servisi ve oran sınırlama</li>
+              <li>Web sitesi kurulumu ve devops</li>
+              <li>Veri satışı ve özel dataset hazırlama</li>
+              <li>Veritabanı (schema, index, yedekleme)</li>
+              <li>Teknik destek ve SLA</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Paketler -->
+    <section id="paketler" class="mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Paketler ve Hizmetler</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <!-- Başlangıç -->
+          <div class="shell rounded-2xl p-6 flex flex-col">
+            <div class="text-sm text-slate-300">Başlangıç</div>
+            <div class="text-2xl font-semibold text-white mt-1">Web + API</div>
+            <div class="text-slate-400 mt-2">Küçük projeler için uygun temel kurulum.</div>
+            <ul class="text-sm text-slate-300 mt-4 space-y-2 list-disc pl-5">
+              <li>Tek sayfa site ve iletişim formu</li>
+              <li>Basit AI API proxy (anahtar yönetimi)</li>
+              <li>Temel izleme (log/health)</li>
+            </ul>
+            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
+            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+          </div>
+          <!-- Profesyonel -->
+          <div class="shell rounded-2xl p-6 flex flex-col border border-indigo-500/30">
+            <div class="text-sm text-slate-300">Profesyonel</div>
+            <div class="text-2xl font-semibold text-white mt-1">Fine‑Tune + API</div>
+            <div class="text-slate-400 mt-2">Özel veriyle model özelleştirme ve entegrasyon.</div>
+            <ul class="text-sm text-slate-300 mt-4 space-y-2 list-disc pl-5">
+              <li>TR odaklı fine‑tune süreci</li>
+              <li>Özel API katmanı (oran sınırı, kimlik)</li>
+              <li>Veritabanı şeması ve yedekleme</li>
+              <li>Staging/Prod ortamları</li>
+            </ul>
+            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
+            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+          </div>
+          <!-- Kurumsal -->
+          <div class="shell rounded-2xl p-6 flex flex-col">
+            <div class="text-sm text-slate-300">Kurumsal</div>
+            <div class="text-2xl font-semibold text-white mt-1">Özel Çözümler</div>
+            <div class="text-slate-400 mt-2">Güvenlik, uyumluluk ve SLA’li hizmetler.</div>
+            <ul class="text-sm text-slate-300 mt-4 space-y-2 list-disc pl-5">
+              <li>Kurumsal güvenlik katmanı</li>
+              <li>Yük dengeleme, ölçeklendirme</li>
+              <li>24/7 kritik destek seçeneği</li>
+              <li>Yerinde/saha kurulumu opsiyonu</li>
+            </ul>
+            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
+            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hizmet Kartları -->
+    <section class="mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Hizmet Kapsamı</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">Fine‑Tuning</div><p class="text-slate-400 mt-2">Özel domain verisiyle TR odaklı model özelleştirme. Değerlendirme ve kalite metrikleri ile.</p></div>
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">API Hizmeti</div><p class="text-slate-400 mt-2">Oran sınırlama, anahtar yönetimi, izleme ve faturalandırma entegrasyonları.</p></div>
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">Web Sitesi</div><p class="text-slate-400 mt-2">Modern, performanslı ve SEO dostu site. Yönetim paneli ve form otomasyonları.</p></div>
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">Veri Satışı</div><p class="text-slate-400 mt-2">Seçilmiş/temizlenmiş veri setleri ve özel dataset hazırlama süreçleri.</p></div>
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">Database</div><p class="text-slate-400 mt-2">Şema tasarımı, indeksleme, yedekleme ve yüksek erişilebilirlik mimarileri.</p></div>
+          <div class="shell rounded-2xl p-6"><div class="text-xl font-semibold">Teknik Destek</div><p class="text-slate-400 mt-2">E‑posta/SLA, izleme, olay yönetimi ve sürekli iyileştirme.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="shell rounded-2xl p-6 md:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <div class="text-2xl font-semibold text-white">Projeniz için en uygun planı birlikte belirleyelim.</div>
+            <div class="text-slate-400 mt-1">Kısa bir görüşme sonrası kapsamı netleştirip teklif sunalım.</div>
+          </div>
+          <a href="/contact.html" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg">İletişime Geç</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ekibimiz -->
+    <section class="mt-16" id="ekip">
+      <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Ekibimiz</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="shell rounded-2xl p-6">
+            <div class="text-white font-semibold text-xl">Umut Kökgöz</div>
+            <div class="text-slate-400">Kurucu • Antalya</div>
+            <ul class="text-sm text-slate-300 mt-3 space-y-1 list-disc pl-5">
+              <li>Yapay zekâ ürün geliştirme</li>
+              <li>Model entegrasyonu ve API tasarımı</li>
+              <li>Veri hazırlama ve kalite süreçleri</li>
+            </ul>
+          </div>
+        </div>
+        <div class="text-slate-400 text-sm mt-3">Ekip büyüyor — yeni pozisyonlar yakında.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mt-16">
+    <div class="max-w-7xl mx-auto px-4 pb-10">
+      <div class="shell rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="text-slate-400 text-sm">© KΔIRA • Tüm hakları saklıdır.</div>
+        <div class="flex items-center gap-3 text-sm">
+          <a href="/contact.html" class="pill px-3 py-1.5 rounded-full text-gray-300 hover:text-white">İletişim</a>
+          <a href="https://huggingface.co/umutkkgz" target="_blank" rel="noopener" class="pill px-3 py-1.5 rounded-full text-gray-300 hover:text-white">Hugging Face</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Arka plan yıldız alanı ve durum rozeti -->
+  <canvas id="starfield-canvas" aria-hidden="true"></canvas>
+  <script src="/js/starfield.js"></script>
+  <script src="/js/status-badge.js"></script>
+</body>
+</html>
+
