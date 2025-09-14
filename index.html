@@ -31,7 +31,7 @@
       (function(){
         try {
           var stored = localStorage.getItem('kaira_api_base') || '';
-          var fallback = 'https://565dece6af27.ngrok-free.app';
+          var fallback = location.origin;
           if (!window.API_PROXY_BASE || !String(window.API_PROXY_BASE).trim()) {
             window.API_PROXY_BASE = stored || fallback;
           }
