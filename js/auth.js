@@ -131,6 +131,9 @@
         if (loginRes.ok){
           try{
             localStorage.setItem('kaira_auth_token', lj.token);
+            // cookie fallback
+            const sec = (location.protocol === 'https:');
+            document.cookie = 'kaira_token='+ encodeURIComponent(lj.token) + '; path=/; max-age='+(60*60*24*180) + (sec?'; Secure':'') + '; SameSite=Lax';
             localStorage.setItem('kaira_user', JSON.stringify(lj.user||{}));
             if (lj.user && lj.user.username) localStorage.setItem('kaira_uid', lj.user.username);
           }catch(_){ }
@@ -153,6 +156,8 @@
       if (!res.ok){ msg.textContent = j && j.error ? j.error : 'Giriş başarısız'; return; }
       try{
         localStorage.setItem('kaira_auth_token', j.token);
+        const sec = (location.protocol === 'https:');
+        document.cookie = 'kaira_token='+ encodeURIComponent(j.token) + '; path=/; max-age='+(60*60*24*180) + (sec?'; Secure':'') + '; SameSite=Lax';
         localStorage.setItem('kaira_user', JSON.stringify(j.user||{}));
         if (j.user && j.user.username) localStorage.setItem('kaira_uid', j.user.username);
       }catch(_){ }
@@ -178,7 +183,14 @@
   // Auto-restore user info on load if token exists but user missing
   (async function restoreMe(){
     try{
-      const tok = localStorage.getItem('kaira_auth_token');
+      let tok = localStorage.getItem('kaira_auth_token');
+      if (!tok){
+        try{
+          const m = document.cookie.match(/(?:^|; )kaira_token=([^;]+)/);
+          tok = m ? decodeURIComponent(m[1]) : '';
+          if (tok) localStorage.setItem('kaira_auth_token', tok);
+        }catch(_){ }
+      }
       if (!tok) return;
       let u = null; try{ u = JSON.parse(localStorage.getItem('kaira_user')||'null'); }catch(_){ u=null; }
       if (u && u.username) return; // already present
