@@ -90,7 +90,7 @@
     (function(){
       try {
         const stored = localStorage.getItem('kaira_api_base') || '';
-        const fallback = 'https://565dece6af27.ngrok-free.app';
+        const fallback = 'https://53575c229bbb.ngrok-free.app';
         if (!window.API_PROXY_BASE || !String(window.API_PROXY_BASE).trim()) {
           window.API_PROXY_BASE = stored || fallback;
         }
