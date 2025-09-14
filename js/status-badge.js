@@ -95,7 +95,11 @@
     }catch(_){ return { maintenance:false }; }
   }
 
+  let _lastReq = 0;
   async function refresh(){
+    const now = Date.now();
+    if (now - _lastReq < 5000) return; // basit anti-spam (5 sn)
+    _lastReq = now;
     const [health, mRemote] = await Promise.all([checkHealth(), checkMaintRemote()]);
     const mLocal = checkMaintLocal();
     const state = { online: !!health.online, maintenance: !!(mRemote.maintenance || mLocal.maintenance), note: mLocal.note || mRemote.note || '' };
@@ -103,10 +107,13 @@
   }
 
   function start(){
-    ensureBadgeRoot();
+    const el = ensureBadgeRoot();
+    // İlk yüklemede bir kez kontrol et
     refresh();
-    setInterval(refresh, 30000); // 30s
+    // Otomatik periyodik ping yok; sadece görünür olduğunda veya kullanıcı tıklayınca
+    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible') refresh(); });
+    window.addEventListener('online', refresh);
+    try { el.addEventListener('click', refresh); } catch(_){ }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
-
