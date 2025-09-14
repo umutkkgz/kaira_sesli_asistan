@@ -92,21 +92,18 @@
         .chat-user-bubble { background-color: #4f46e5; align-self: flex-end; }
         .chat-assistant-bubble { background-color: #374151; align-self: flex-start; }
 
-        /* === Anti-copy baseline (casual users) === */
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
+        /* Enable selection/copy site-wide (was previously disabled globally) */
+        /* If you ever need to disable selection in a specific area, wrap it
+           with a class like .no-select and target it explicitly instead of * */
+        /* Example:
+           .no-select, .no-select * { user-select: none; -webkit-user-select: none; }
+        */
         input, textarea, select, [contenteditable], .allow-select {
-    -webkit-user-select: text !important;
-    user-select: text !important;
-    pointer-events: auto !important;   /* tıklanıp odaklanabilsin */
-    caret-color: #fff;                 /* koyu zeminde imleç görünür olsun */
-}
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            pointer-events: auto !important;   /* tıklanıp odaklanabilsin */
+            caret-color: #fff;                 /* koyu zeminde imleç görünür olsun */
+        }
         /* Disable printing */
         @media print { html, body { display: none !important; } }
 

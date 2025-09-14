@@ -522,43 +522,40 @@ function animateDemo() {
     demoParticles.forEach(p => { bgCtx.fillStyle = p.color; bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); bgCtx.fill(); if (demoMouse.x !== null) { let dx = demoMouse.x - p.x; let dy = demoMouse.y - p.y; let distance = Math.sqrt(dx * dx + dy * dy); if (distance < 150) { p.x -= dx / 10 * p.speed; p.y -= dy / 10 * p.speed; } else { p.x += (p.originX - p.x) * 0.01 * p.speed; p.y += (p.originY - p.y) * 0.01 * p.speed; } } }); 
     demoAnimationId = requestAnimationFrame(animateDemo);
 }
-// --- Client-side hardening (casual deterrence) ---
-(function harden(){
-    // Watermark stamp
+// --- Client-side policy: block right-click, allow only copy & paste (keyboard) ---
+(function guard(){
+    // Keep watermark stamp for branding
     const overlay = document.getElementById('anti-leak-overlay');
     if (overlay) {
         const stamp = new Date().toISOString().replace('T',' ').split('.')[0];
         overlay.setAttribute('data-stamp', stamp);
     }
-    // Stop common easy-leak vectors
-    const stop = (e)=>{ e.preventDefault(); e.stopPropagation(); return false; };
-    // Allow paste globally; keep copy/cut/drag blocked
-    ['copy','cut','dragstart'].forEach(evt => document.addEventListener(evt, stop, {capture:true}));
-    // Context menu: allow inside inputs/textareas/contentEditable and .allow-select areas for usability (paste via menu)
-    document.addEventListener('contextmenu', (e)=>{
-        try{
-            const t = e.target;
-            const isField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
-            const allowed = isField || (t && (t.classList?.contains('allow-select') || t.closest?.('.allow-select')));
-            if (!allowed) return stop(e);
-        }catch(_){ return stop(e); }
-    }, {capture:true});
-    // Key combos (Ctrl/Cmd + S/P/U/C/X/A, DevTools, PrintScreen)
+
+    const stop = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){ } return false; };
+
+    // Disable context menu everywhere
+    document.addEventListener('contextmenu', stop, { capture: true });
+
+    // Allow copy/paste; block cut and drag-start
+    document.addEventListener('cut', stop, { capture: true });
+    document.addEventListener('dragstart', stop, { capture: true });
+
+    // Keyboard combos: block DevTools / view-source / print / save / cut
     document.addEventListener('keydown', (e)=>{
-        const k = (e.key || '').toLowerCase();
+        const k = (e.key||'').toLowerCase();
         const ctrl = e.ctrlKey || e.metaKey;
-        if (k==='f12' || k==='printscreen' || (ctrl && ['s','p','u','i','j','k','c','x','a'].includes(k)) || (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k))) {
-            e.preventDefault(); e.stopPropagation(); return false;
-        }
-    }, {capture:true});
-    // Attempt to clear clipboard on PrintScreen (best-effort; OS screenshots still possible)
-    document.addEventListener('keyup', (e)=>{
-        if ((e.key||'').toLowerCase()==='printscreen') {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText('Screenshots are disabled').catch(()=>{});
-            }
-        }
-    });
-    // Anti-embedding (clickjacking)
+        const shift = e.shiftKey;
+        // Allow explicit copy/paste
+        if (ctrl && (k === 'c' || k === 'v')) return; 
+        // Block DevTools and common inspection shortcuts
+        if (k === 'f12') return stop(e);
+        if (ctrl && shift && (k === 'i' || k === 'j' || k === 'c')) return stop(e);
+        // Block view source, save, print, cut
+        if (ctrl && (k === 'u' || k === 's' || k === 'p' || k === 'x')) return stop(e);
+        // Optional: block PrintScreen attempt
+        if (k === 'printscreen') return stop(e);
+    }, { capture: true });
+
+    // Anti-embedding (clickjacking) retained
     try { if (window.top !== window.self) window.top.location = window.location; } catch(_){ /* ignore */ }
 })();
