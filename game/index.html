@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>KΔIRA | Paralel Evrenler Oyunu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="theme-color" content="#0b0b0f" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    html, body { height: 100%; }
+    body { background: radial-gradient(1200px 800px at 70% -10%, rgba(99,102,241,.12), transparent 60%), #000; }
+    #game-wrap { position: relative; width: 100%; height: 100vh; height: 100svh; overflow: hidden; }
+    #game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .hud { position: absolute; inset-inline: 0; top: 0; display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; z-index: 10; }
+    .hud .badge { background: rgba(17,24,39,0.65); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #e5e7eb; font-size: 13px; padding: 8px 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 8px; }
+    .legend { position: absolute; left: 10px; bottom: 12px; z-index: 10; background: rgba(17,24,39,0.65); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 12px; padding: 10px 12px; border-radius: 12px; backdrop-filter: blur(8px); max-width: 92vw; }
+    .btn { background: rgba(17,24,39,0.7); border: 1px solid rgba(148,163,184,0.35); color: #e5e7eb; padding: 6px 10px; border-radius: 10px; font-size: 13px; }
+    .btn:hover { background: rgba(30,41,59,0.8); }
+    .center-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: white; font-size: 22px; font-weight: 600; text-shadow: 0 6px 30px rgba(0,0,0,.5); pointer-events: none; z-index: 5; opacity: 0; transition: opacity .35s ease; }
+    .center-toast.show { opacity: 1; }
+  </style>
+</head>
+<body class="antialiased text-slate-200">
+  <header class="fixed top-0 inset-x-0 z-20">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="h-14 flex items-center justify-between bg-gray-900/60 border border-gray-800 rounded-b-2xl px-4">
+        <a href="/index.html?skipIntro=1" class="flex items-center gap-2 text-white font-semibold">
+          <span class="text-cyan-300">KΔIRA</span><span class="text-slate-300">Parallel Realms</span>
+        </a>
+        <nav class="flex items-center gap-2">
+          <a href="/index.html?skipIntro=1" class="btn">Anasayfa</a>
+          <a href="/profile.html" class="btn">Üyelik</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+  <main class="pt-16">
+    <div id="game-wrap">
+      <canvas id="game-canvas" width="1280" height="720"></canvas>
+      <div class="hud">
+        <div class="badge"><span id="u-name">Evren: —</span><span id="u-meta" class="text-slate-400"></span></div>
+        <div class="badge">⏱ <span id="timer">00:00</span> • ✦ <span id="shards">0/3</span> • PB <span id="pb">—</span></div>
+      </div>
+      <div class="legend">
+        <div class="font-semibold text-slate-200 mb-1">Kontroller</div>
+        <div>Yön: ← → • Zıpla: ⎵ Space • Yeniden: R</div>
+        <div>Evren Değiştir: 1=Pastel • 2=Neon • 3=Noir • Q/E: Döngü</div>
+        <div class="text-slate-400 mt-1">Amaç: 3 parçayı (shard) topla, çıkış kapısına ulaş.</div>
+      </div>
+      <div id="toast" class="center-toast"></div>
+    </div>
+  </main>
+
+  <script src="/js/status-badge.js"></script>
+  <script src="/js/copy-policy.js"></script>
+  <script type="module" src="/js/game.js"></script>
+</body>
+</html>
+
