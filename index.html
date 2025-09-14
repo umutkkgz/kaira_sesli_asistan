@@ -87,17 +87,16 @@
 
 </head>
 <body class="antialiased">
+    <!-- API tabanı: mevcut değer korunur; yoksa head'deki fallback kullanılır -->
     <script>
-      // Force all client calls to your ngrok URL (Thinker + Learner)
       (function(){
         try{
-          var base = 'https://565dece6af27.ngrok-free.app';
-          window.API_PROXY_BASE = base;
-          localStorage.setItem('kaira_api_base', base);
-          localStorage.setItem('kaira_thinker_base', base);
-          localStorage.setItem('kaira_learner_base', base);
-          var meta = document.querySelector('meta[name="kaira-api-base"]');
-          if (meta) meta.setAttribute('content', base);
+          var stored = localStorage.getItem('kaira_api_base');
+          if (stored && String(stored).trim()) {
+            window.API_PROXY_BASE = stored;
+            var meta = document.querySelector('meta[name="kaira-api-base"]');
+            if (meta) meta.setAttribute('content', stored);
+          }
         }catch(_){ }
       })();
     </script>

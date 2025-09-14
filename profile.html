@@ -136,7 +136,11 @@
         return;
       }
       const res = await fetch(`${base}/api/auth/me`, { headers });
-      if (!res.ok){ localStorage.removeItem('kaira_auth_token'); localStorage.removeItem('kaira_user'); return; }
+      if (!res.ok){
+        // Oturumu düşürme; sadece Misafir göster
+        try{ save_msg.textContent=''; }catch(_){ }
+        return;
+      }
       const j = await res.json();
       const u = j.user || {};
       try{ localStorage.setItem('kaira_user', JSON.stringify(u)); }catch(_){ }
