@@ -28,6 +28,22 @@
 
     <!-- Console -->
     <div id="console" class="hidden grid md:grid-cols-3 gap-4 mt-6">
+      <div class="md:col-span-3 bg-gray-900/70 border border-amber-600/30 rounded-2xl p-4 mb-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-white font-semibold">Planlı Bakım Modu</div>
+            <div class="text-sm text-gray-400">Sarı uyarıyı tüm kullanıcılar için göster. Sunucu desteklemezse yerel override uygulanır.</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="inline-flex items-center gap-2 text-sm"><input id="maint-toggle" type="checkbox" class="rounded" /> Etkin</label>
+          </div>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <input id="maint-note" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="Duyuru mesajı (opsiyonel)" />
+          <button id="maint-save" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded">Kaydet</button>
+          <span id="maint-msg" class="text-sm ml-2"></span>
+        </div>
+      </div>
       <div class="md:col-span-1 bg-gray-900/70 border border-gray-700 rounded-2xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div class="font-semibold">Sohbetler</div>
@@ -161,12 +177,12 @@
     }
 
 
-    async function tryFetch(url){
+    async function tryFetch(url, init){
       const full = `${API()}${url}`;
       const tok = getTok();
-      const headers = { 'ngrok-skip-browser-warning':'true' };
+      const headers = Object.assign({ 'ngrok-skip-browser-warning':'true' }, (init && init.headers) || {});
       if (tok) headers['X-Admin-Token'] = tok;
-      const res = await fetch(full, { headers });
+      const res = await fetch(full, Object.assign({}, (init||{}), { headers }));
       return res;
     }
     async function loadActive(){
@@ -402,6 +418,58 @@
       const blob = new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `support_${currentChat}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     });
+
+    // --- Maintenance toggle ---
+    const maintToggle = document.getElementById('maint-toggle');
+    const maintNote = document.getElementById('maint-note');
+    const maintSave = document.getElementById('maint-save');
+    const maintMsg = document.getElementById('maint-msg');
+
+    async function loadMaint(){
+      if (!maintToggle) return;
+      maintMsg.textContent = '';
+      try{
+        const paths = ['/api/status', '/api/maintenance', '/api/flags'];
+        for (const p of paths){
+          const r = await tryFetch(p);
+          if (r.ok){
+            const j = await r.json().catch(()=>({}));
+            const m = j.maintenance || j.maint || j.plannedMaintenance || j.maintenance_mode;
+            if (typeof m !== 'undefined'){
+              maintToggle.checked = !!m; if (maintNote) maintNote.value = j.note || j.message || '';
+              return;
+            }
+          }
+        }
+      }catch(_){ }
+      try{
+        maintToggle.checked = (localStorage.getItem('kaira_maintenance_force') === '1');
+        if (maintNote) maintNote.value = localStorage.getItem('kaira_maintenance_note') || '';
+      }catch(_){ }
+    }
+
+    async function saveMaint(){
+      if (!maintToggle) return;
+      maintMsg.textContent = '';
+      const desired = !!maintToggle.checked; const note = maintNote ? maintNote.value.trim() : '';
+      const payload = JSON.stringify({ maintenance: desired, note });
+      const init = { method:'POST', headers:{ 'Content-Type':'application/json' }, body: payload };
+      let ok = false;
+      const paths = ['/api/admin/maintenance', '/api/maintenance', '/api/status'];
+      for (const p of paths){
+        try{
+          const r = await tryFetch(p, init);
+          if (r.ok){ ok = true; break; }
+        }catch(_){ }
+      }
+      if (!ok){
+        try{ localStorage.setItem('kaira_maintenance_force', desired ? '1':'0'); localStorage.setItem('kaira_maintenance_note', note); ok = true; }catch(_){ }
+      }
+      maintMsg.textContent = ok ? 'Kaydedildi' : 'Kaydedilemedi';
+      maintMsg.className = 'text-sm ' + (ok ? 'text-emerald-400' : 'text-rose-400');
+    }
+    if (maintSave) maintSave.addEventListener('click', saveMaint);
+    document.addEventListener('DOMContentLoaded', loadMaint);
   </script>
 </body>
 </html>

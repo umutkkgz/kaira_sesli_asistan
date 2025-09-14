@@ -43,6 +43,35 @@ app.get('/api/health', (_, res) => {
   res.json({ ok: true, thinker: true, learner_base: LEARNER_BASE || null });
 });
 
+// --- Runtime flags (maintenance) ---
+let MAINTENANCE = false;
+let MAINT_NOTE = '';
+
+function adminOk(req){
+  const tok = (req.headers['x-admin-token'] || req.query.token || (req.body && req.body.token) || '').toString();
+  const expected = (process.env.ADMIN_TOKEN || '210858').toString();
+  return tok && expected && tok === expected;
+}
+
+app.get('/api/status', (_req, res) => {
+  res.json({ ok:true, maintenance: MAINTENANCE, note: MAINT_NOTE });
+});
+app.get('/api/maintenance', (_req, res) => {
+  res.json({ ok:true, maintenance: MAINTENANCE, note: MAINT_NOTE });
+});
+app.post('/api/maintenance', (req, res) => {
+  if (!adminOk(req)) return res.status(401).json({ error: 'unauthorized' });
+  const m = !!req.body?.maintenance; const note = (req.body?.note || '').toString();
+  MAINTENANCE = m; MAINT_NOTE = note;
+  res.json({ ok:true, maintenance: MAINTENANCE });
+});
+app.post('/api/admin/maintenance', (req, res) => {
+  if (!adminOk(req)) return res.status(401).json({ error: 'unauthorized' });
+  const m = !!req.body?.maintenance; const note = (req.body?.note || '').toString();
+  MAINTENANCE = m; MAINT_NOTE = note;
+  res.json({ ok:true, maintenance: MAINTENANCE });
+});
+
 // Optional: expose masked keys so UI can auto-fill for convenience
 app.get('/api/get-groq-key', (_req, res) => {
   const apiKey = process.env.GROQ_API_KEY || '';
