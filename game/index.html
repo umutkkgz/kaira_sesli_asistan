@@ -45,7 +45,12 @@
       <canvas id="game-canvas" width="1280" height="720"></canvas>
       <div class="hud">
         <div class="badge"><span id="u-name">Evren: —</span><span id="u-meta" class="text-slate-400"></span></div>
-        <div class="badge">⏱ <span id="timer">00:00</span> • ✦ <span id="shards">0/3</span> • PB <span id="pb">—</span></div>
+        <div class="flex items-center gap-2">
+          <div class="badge">⏱ <span id="timer">00:00</span> • ✦ <span id="shards">0/3</span> • PB <span id="pb">—</span> • Skor <span id="score">0</span></div>
+          <button id="btn-hint" class="btn">İpucu</button>
+          <button id="btn-shuffle" class="btn">Karıştır</button>
+          <button id="btn-help" class="btn">Yardım</button>
+        </div>
       </div>
       <div class="legend">
         <div class="font-semibold text-slate-200 mb-1">Kontroller</div>
@@ -54,6 +59,22 @@
         <div class="text-slate-400 mt-1">Amaç: Aynı renkten en az 3'lü eşleştir, zincirler yap. 4+ eşleşmeler Shard kazandırır; 3 Shard ile kazanırsın.</div>
       </div>
       <div id="toast" class="center-toast"></div>
+      <!-- How-to overlay -->
+      <div id="howto" class="fixed inset-0 z-30 bg-black/70 hidden">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] max-w-[95vw] bg-gray-900/90 border border-gray-700 rounded-2xl p-4 text-slate-200">
+          <div class="flex items-center justify-between pb-2 border-b border-gray-700">
+            <div class="text-lg font-semibold">Nasıl Oynanır — Parallel Realms (Match‑3)</div>
+            <button id="howto-close" class="btn">Kapat</button>
+          </div>
+          <div class="mt-3 space-y-2 text-sm">
+            <p>• Amaç: Aynı renkten en az 3 taşı yatay/dikey hizalayarak temizle. 4+’lü eşleşmeler <b>Shard</b> kazandırır. 3 Shard = Zafer.</p>
+            <p>• Evrenler: <b>Pastel</b> (yavaş zaman), <b>Neon</b> (hızlı zaman), <b>Noir</b> (yerçekimi yukarı). 1/2/3 ile veya Q/E ile evren değiştir.</p>
+            <p>• Hamle: Yan yana iki taşı tıkla. Geçerli bir eşleşme üretmiyorsa hamle iptal olur.</p>
+            <p>• İpucu/Karıştır: Takıldığında üstteki butonları kullan. Hamle yoksa otomatik karıştırılır.</p>
+            <p>• PB: Kişisel en iyi süren kaydedilir. R ile sıfırdan başlatabilirsin.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 

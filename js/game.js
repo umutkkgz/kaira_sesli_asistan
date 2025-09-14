@@ -10,6 +10,12 @@
   const shardsEl = document.getElementById('shards');
   const pbEl = document.getElementById('pb');
   const toastEl = document.getElementById('toast');
+  const scoreEl = document.getElementById('score');
+  const btnHint = document.getElementById('btn-hint');
+  const btnShuffle = document.getElementById('btn-shuffle');
+  const btnHelp = document.getElementById('btn-help');
+  const howto = document.getElementById('howto');
+  const howtoClose = document.getElementById('howto-close');
 
   // Responsive fit
   function fit(){
@@ -40,6 +46,8 @@
   let score = 0, shards = 0, chains = 0;
   let selected = null; // {r,c}
   let animTimer = 0;
+  let hintCells = null; // [[r,c],[r,c]]
+  let lastAction = performance.now();
 
   // Layout
   const BOARD_SIZE = Math.min(C.height*0.9, C.height*0.9, C.width*0.9);
@@ -58,6 +66,7 @@
   function updateHud(){
     try{ uNameEl.textContent = 'Evren: ' + Uc.name; uMetaEl.textContent = ` • Zaman x${Uc.timeScale.toFixed(2)} • Yerçekimi ${(Uc.gravity==='down')?'↓':'↑'}`; }catch(_){ }
     shardsEl.textContent = `${shards}/3`;
+    if (scoreEl) scoreEl.textContent = String(score);
   }
   function updateTimer(){ const sec=(performance.now()-startT)/1000; const m=Math.floor(sec/60), s=Math.floor(sec%60); timerEl.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 
@@ -145,6 +154,31 @@
     }
   }
 
+  function anyMoveExists(){
+    // brute-force: try swap all adjacents and see if it yields a match
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        if (c+1<COLS){ const va=tileAt(r,c), vb=tileAt(r,c+1); setTile(r,c,vb); setTile(r,c+1,va); const ok=!!findMatches(); setTile(r,c,va); setTile(r,c+1,vb); if (ok) return [[r,c],[r,c+1]]; }
+        if (r+1<ROWS){ const va=tileAt(r,c), vb=tileAt(r+1,c); setTile(r,c,vb); setTile(r+1,c,va); const ok=!!findMatches(); setTile(r,c,va); setTile(r+1,c,vb); if (ok) return [[r,c],[r+1,c]]; }
+      }
+    }
+    return null;
+  }
+
+  function shuffleBoard(){
+    const vals=[]; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) vals.push(tileAt(r,c));
+    let tries=0;
+    while(tries++<200){
+      // Fisher-Yates
+      for(let i=vals.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=vals[i]; vals[i]=vals[j]; vals[j]=t; }
+      // fill
+      let k=0; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) setTile(r,c, vals[k++]);
+      // ensure no immediate matches and at least one move
+      if (!findMatches() && anyMoveExists()) return true;
+    }
+    return false;
+  }
+
   function trySwap(a,b){
     const ar=a.r, ac=a.c, br=b.r, bc=b.c;
     const adj = (ar===br && Math.abs(ac-bc)===1) || (ac===bc && Math.abs(ar-br)===1);
@@ -174,6 +208,7 @@
     const rect = C.getBoundingClientRect(); const scaleX = C.width / rect.width; const scaleY = C.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX; const y = (e.clientY - rect.top) * scaleY;
     const cell = posToCell(x,y); if (!cell) return;
+    lastAction = performance.now(); hintCells = null;
     if (!selected){ selected = cell; }
     else {
       if (cell.r===selected.r && cell.c===selected.c){ selected=null; return; }
@@ -182,6 +217,12 @@
       if (!ok) showToast('Geçersiz hamle');
     }
   });
+
+  // Buttons
+  if (btnHint) btnHint.addEventListener('click', ()=>{ lastAction = performance.now(); hintCells = anyMoveExists(); if (!hintCells) { showToast('Hamle yok, karıştırılıyor'); shuffleBoard(); } });
+  if (btnShuffle) btnShuffle.addEventListener('click', ()=>{ lastAction = performance.now(); shuffleBoard(); showToast('Karıştırıldı'); });
+  if (btnHelp) btnHelp.addEventListener('click', ()=>{ if (howto) howto.classList.remove('hidden'); });
+  if (howtoClose) howtoClose.addEventListener('click', ()=>{ if (howto) howto.classList.add('hidden'); });
 
   // Universe switching
   const keys = Object.create(null);
@@ -226,6 +267,15 @@
     if (selected){
       const x = BX + selected.c*TILE; const y = BY + selected.r*TILE;
       ctx.lineWidth = 3; ctx.strokeStyle = '#fbbf24'; roundRect(x+3,y+3,TILE-6,TILE-6,8); ctx.stroke();
+      // neighbor highlights
+      const neigh = [ [selected.r,selected.c-1], [selected.r,selected.c+1], [selected.r-1,selected.c], [selected.r+1,selected.c] ];
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(251,191,36,0.6)';
+      for (const [rr,cc] of neigh){ if (rr<0||rr>=ROWS||cc<0||cc>=COLS) continue; const xx=BX+cc*TILE, yy=BY+rr*TILE; roundRect(xx+4,yy+4,TILE-8,TILE-8,8); ctx.stroke(); }
+    }
+    // hint highlight
+    if (hintCells && hintCells.length===2){
+      ctx.lineWidth = 4; ctx.strokeStyle = '#22d3ee';
+      for (const [r,c] of hintCells){ const x=BX+c*TILE, y=BY+r*TILE; roundRect(x+2,y+2,TILE-4,TILE-4,9); ctx.stroke(); }
     }
   }
 
@@ -236,6 +286,10 @@
     requestAnimationFrame(loop);
     const dt = Math.min(0.033,(now-last)/1000) * Uc.timeScale; last = now;
     handleKeys(); updateTimer();
+    // idle hint after 6 seconds
+    if (!hintCells && (now - lastAction) > (6000 / Uc.timeScale)) hintCells = anyMoveExists();
+    // if no moves exist at all → shuffle
+    if (!anyMoveExists()) { shuffleBoard(); showToast('Hamle yok, karıştırıldı'); lastAction = now; hintCells = null; }
     if (animTimer>0) animTimer = Math.max(0, animTimer - dt);
     drawBackground(); drawBoard();
     if (switching>0){ switching=Math.max(0,switching - dt*1.8); ctx.globalAlpha=switching; const g=ctx.createRadialGradient(C.width*0.5,C.height*0.5,0,C.width*0.5,C.height*0.5,C.height*0.7); g.addColorStop(0,'rgba(255,255,255,0.0)'); g.addColorStop(1,'rgba(0,0,0,0.6)'); ctx.fillStyle=g; ctx.fillRect(0,0,C.width,C.height); ctx.globalAlpha=1; }
