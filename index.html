@@ -31,7 +31,7 @@
       (function(){
         try {
           var stored = localStorage.getItem('kaira_api_base') || '';
-          var fallback = location.origin;
+          var fallback = 'https://565dece6af27.ngrok-free.app';
           if (!window.API_PROXY_BASE || !String(window.API_PROXY_BASE).trim()) {
             window.API_PROXY_BASE = stored || fallback;
           }
@@ -39,6 +39,20 @@
             localStorage.setItem('kaira_api_base', window.API_PROXY_BASE);
           }
         } catch(_) { /* ignore */ }
+      })();
+    </script>
+    <script>
+      // Force API base to your provided address so all pages use the same backend
+      (function(){
+        try{
+          var base = 'https://565dece6af27.ngrok-free.app';
+          window.API_PROXY_BASE = base;
+          localStorage.setItem('kaira_api_base', base);
+          localStorage.setItem('kaira_thinker_base', base);
+          localStorage.setItem('kaira_learner_base', base);
+          var meta = document.querySelector('meta[name="kaira-api-base"]');
+          if (meta) meta.setAttribute('content', base);
+        }catch(_){ }
       })();
     </script>
 
