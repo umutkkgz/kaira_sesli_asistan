@@ -1,5 +1,5 @@
-// Parallel Realms — browser game (vanilla JS + Canvas)
-// Core idea: 3 universes with different physics/time/color. Switch to solve a simple level puzzle.
+// Parallel Realms — Match-3 (Candy Crush tarzı)
+// 3 evren (Pastel, Neon, Noir). Evrenler, renk paleti, zaman akışı ve "yerçekimi yönü" değiştirir (Noir: yukarı).
 
 (function(){
   const C = document.getElementById('game-canvas');
@@ -11,7 +11,7 @@
   const pbEl = document.getElementById('pb');
   const toastEl = document.getElementById('toast');
 
-  // Resize to fit while keeping aspect
+  // Responsive fit
   function fit(){
     const w = C.parentElement.clientWidth;
     const h = C.parentElement.clientHeight;
@@ -21,265 +21,224 @@
     C.style.width = vw + 'px';
     C.style.height = vh + 'px';
   }
-  window.addEventListener('resize', fit);
-  fit();
+  window.addEventListener('resize', fit); fit();
 
-  // Universe presets
+  // Universes
   const U = {
-    PASTEL: { name: 'Pastel', timeScale: 0.7, gravity: 1100*0.55, friction: 0.90, speed: 260, jump: 520, bg: ['#1b1f2a','#42526e','#9ad5ca'], tint: 'rgba(154,213,202,0.25)', stars: '#c0f5e7' },
-    NEON:   { name: 'Neon',   timeScale: 1.25, gravity: 1100*1.05, friction: 0.88, speed: 320, jump: 540, bg: ['#0a0b11','#0f162e','#08f7fe'], tint: 'rgba(8,247,254,0.22)',  stars: '#08f7fe' },
-    NOIR:   { name: 'Noir',   timeScale: 1.0, gravity: 1100*0.85, friction: 0.96, speed: 280, jump: 500, bg: ['#050507','#171923','#7c7d84'], tint: 'rgba(124,125,132,0.20)', stars: '#9aa0a6' },
+    PASTEL: { name:'Pastel', timeScale:0.9, mult:1.1, gravity:'down', bg:['#1b1f2a','#42526e','#9ad5ca'], tint:'rgba(154,213,202,0.22)', palette:['#f8c8dc','#b8e0d2','#ffd6a5','#c9c9ff','#bde0fe','#f1f7b5'] },
+    NEON:   { name:'Neon',   timeScale:1.3, mult:1.2, gravity:'down', bg:['#0a0b11','#0f162e','#08f7fe'], tint:'rgba(8,247,254,0.15)', palette:['#08f7fe','#f706cf','#f9f871','#05ffa1','#ff9933','#ff2079'] },
+    NOIR:   { name:'Noir',   timeScale:1.0, mult:1.0, gravity:'up',   bg:['#050507','#171923','#7c7d84'], tint:'rgba(124,125,132,0.16)', palette:['#cbd5e1','#94a3b8','#e2e8f0','#9aa0a6','#6b7280','#f5f5f5'] },
   };
   const UNAMES = ['PASTEL','NEON','NOIR'];
-  let currentUIndex = 0;
-  let currentU = U[UNAMES[currentUIndex]];
-  let switching = 0; // 0..1 transition alpha
+  let curIdx = 0;
+  let Uc = U[UNAMES[curIdx]];
+  let switching = 0;
 
-  function showToast(text){
-    toastEl.textContent = text;
-    toastEl.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 900);
-  }
+  // Board config
+  const COLS = 8, ROWS = 8, TYPES = 6;
+  const board = Array.from({length: ROWS}, ()=> Array.from({length: COLS}, ()=> 0));
+  let score = 0, shards = 0, chains = 0;
+  let selected = null; // {r,c}
+  let animTimer = 0;
 
-  // Level geometry
-  // Platforms with phase (which universe they are solid in). phase: 'ALL' | 'PASTEL' | 'NEON' | 'NOIR'
-  const platforms = [
-    {x:0, y:660, w:1280, h:60, phase:'ALL', col:'#0b1222'},
-    {x:60, y:560, w:260, h:18, phase:'PASTEL', col:'#6bc7b3'},
-    {x:360, y:520, w:220, h:18, phase:'NEON', col:'#08f7fe'},
-    {x:640, y:480, w:200, h:18, phase:'NOIR', col:'#7c7d84'},
-    {x:900, y:430, w:260, h:18, phase:'ALL', col:'#334155'},
-    {x:1160, y:380, w:60, h:280, phase:'NEON', col:'#08f7fe'}, // gate pillar
-    {x:1185, y:350, w:40, h:30, phase:'ALL', col:'#1f2937'}, // exit ledge base
-  ];
-  // Decorative or blocking walls in certain universes
-  const walls = [
-    {x:500, y:610, w:30, h:50, phase:'NOIR', col:'#54555d'},
-  ];
+  // Layout
+  const BOARD_SIZE = Math.min(C.height*0.9, C.height*0.9, C.width*0.9);
+  const TILE = Math.floor(Math.min(C.width*0.6, C.height*0.8)/COLS);
+  const BW = TILE*COLS, BH = TILE*ROWS;
+  const BX = Math.floor((C.width - BW)/2);
+  const BY = Math.floor((C.height - BH)/2);
 
-  // Shards (collectibles) exist only in some universes
-  const shards = [
-    {x:180, y:520-22, r:10, phase:'PASTEL', got:false},
-    {x:470, y:480-22, r:10, phase:'NEON', got:false},
-    {x:940, y:390-22, r:10, phase:'NOIR', got:false},
-  ];
-
-  // Exit door requires all shards
-  const exitDoor = { x:1190, y:320, w:30, h:60, open:false };
-
-  const player = {
-    x: 30,
-    y: 600,
-    w: 26,
-    h: 36,
-    vx: 0,
-    vy: 0,
-    onGround: false,
-  };
-
-  const keys = Object.create(null);
-  window.addEventListener('keydown', (e)=>{ keys[e.key.toLowerCase()] = true; if([' ','arrowup'].includes(e.key.toLowerCase())) e.preventDefault(); });
-  window.addEventListener('keyup', (e)=>{ keys[e.key.toLowerCase()] = false; });
-
-  function switchUniverse(i){
-    const idx = ((i % UNAMES.length) + UNAMES.length) % UNAMES.length;
-    if (idx === currentUIndex) return;
-    currentUIndex = idx; currentU = U[UNAMES[currentUIndex]]; switching = 1;
-    showToast('Evren: ' + currentU.name);
-    updateHud();
-  }
-  function cycle(dir){ switchUniverse(currentUIndex + (dir>0?1:-1)); }
-
-  function updateHud(){
-    try{ uNameEl.textContent = 'Evren: ' + currentU.name; uMetaEl.textContent = ` • Yerçekimi ${(currentU.gravity/1100).toFixed(2)} • Zaman x${currentU.timeScale.toFixed(2)}`; }catch(_){ }
-  }
-  updateHud();
-
-  // Stars background
-  const stars = Array.from({length: 120}).map(()=>({
-    x: Math.random()*1280,
-    y: Math.random()*720,
-    z: Math.random()*1 + 0.2,
-  }));
+  function showToast(text){ toastEl.textContent = text; toastEl.classList.add('show'); clearTimeout(showToast._t); showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 900); }
+  function bestStr(sec){ if (!Number.isFinite(sec)) return '—'; const m=Math.floor(sec/60), s=Math.floor(sec%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 
   // Timer & PB
   let startT = performance.now();
-  let done = false;
-  function bestStr(sec){ if (!Number.isFinite(sec)) return '—'; const m=Math.floor(sec/60), s=Math.floor(sec%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
-  function updateTimer(){
-    const now = performance.now();
-    const sec = (now - startT) / 1000;
-    const m = Math.floor(sec/60), s = Math.floor(sec%60);
-    timerEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  try{ const pb = Number(localStorage.getItem('kaira_game_pb_match3')||''); pbEl.textContent = bestStr(pb); }catch(_){ pbEl.textContent = '—'; }
+
+  function updateHud(){
+    try{ uNameEl.textContent = 'Evren: ' + Uc.name; uMetaEl.textContent = ` • Zaman x${Uc.timeScale.toFixed(2)} • Yerçekimi ${(Uc.gravity==='down')?'↓':'↑'}`; }catch(_){ }
+    shardsEl.textContent = `${shards}/3`;
   }
-  function shardsCount(){ return shards.filter(s=>s.got).length; }
-  function updateShardUI(){ shardsEl.textContent = `${shardsCount()}/3`; }
-  updateShardUI();
-  try{ const pb = Number(localStorage.getItem('kaira_game_pb')||''); pbEl.textContent = bestStr(pb); }catch(_){ pbEl.textContent = '—'; }
+  function updateTimer(){ const sec=(performance.now()-startT)/1000; const m=Math.floor(sec/60), s=Math.floor(sec%60); timerEl.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 
-  // Physics and collisions
-  function rectsIntersect(ax,ay,aw,ah,bx,by,bw,bh){ return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by; }
-  function activeSolids(){ return platforms.concat(walls).filter(p => p.phase==='ALL' || p.phase===UNAMES[currentUIndex]); }
+  function tileAt(r,c){ if (r<0||r>=ROWS||c<0||c>=COLS) return -1; return board[r][c]; }
+  function setTile(r,c,v){ if (r<0||r>=ROWS||c<0||c>=COLS) return; board[r][c]=v; }
+  function rndTile(){ return Math.floor(Math.random()*TYPES); }
 
-  function moveAndCollide(dt){
-    // Horizontal
-    player.x += player.vx * dt;
-    let solids = activeSolids();
-    for (const s of solids){
-      if (rectsIntersect(player.x,player.y,player.w,player.h, s.x,s.y,s.w,s.h)){
-        if (player.vx > 0) player.x = s.x - player.w; else if (player.vx < 0) player.x = s.x + s.w;
-        player.vx = 0;
-      }
-    }
-    // Vertical
-    player.vy += currentU.gravity * dt;
-    player.y += player.vy * dt;
-    player.onGround = false;
-    solids = activeSolids();
-    for (const s of solids){
-      if (rectsIntersect(player.x,player.y,player.w,player.h, s.x,s.y,s.w,s.h)){
-        if (player.vy > 0){ player.y = s.y - player.h; player.vy = 0; player.onGround = true; }
-        else if (player.vy < 0){ player.y = s.y + s.h; player.vy = 0; }
+  function hasLineAt(r,c){
+    const v = tileAt(r,c); if (v<0) return false;
+    // horiz
+    let count=1; let cc=c-1; while(tileAt(r,cc)===v){count++;cc--;}
+    cc=c+1; while(tileAt(r,cc)===v){count++;cc++;}
+    if (count>=3) return true;
+    // vert
+    count=1; let rr=r-1; while(tileAt(rr,c)===v){count++;rr--;}
+    rr=r+1; while(tileAt(rr,c)===v){count++;rr++;}
+    return count>=3;
+  }
+  function initBoard(){
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        do { setTile(r,c,rndTile()); } while (hasLineAt(r,c));
       }
     }
   }
 
-  // Input
-  function handleInput(dt){
-    const left = keys['arrowleft'] || keys['a'];
-    const right = keys['arrowright'] || keys['d'];
-    const jump = keys[' '] || keys['arrowup'] || keys['w'];
-    if (left && !right){ player.vx = -currentU.speed; }
-    else if (right && !left){ player.vx = currentU.speed; }
-    else { player.vx *= currentU.friction; }
-    if (player.onGround && jump){ player.vy = -currentU.jump; player.onGround = false; }
+  function findMatches(){
+    const marks = Array.from({length: ROWS}, ()=> Array.from({length: COLS}, ()=> false));
+    // horizontal
+    for(let r=0;r<ROWS;r++){
+      let run=1;
+      for(let c=1;c<=COLS;c++){
+        const same = (c<COLS && tileAt(r,c)===tileAt(r,c-1));
+        if (same) run++; else { if (run>=3){ for(let k=0;k<run;k++) marks[r][c-1-k]=true; } run=1; }
+      }
+    }
+    // vertical
+    for(let c=0;c<COLS;c++){
+      let run=1;
+      for(let r=1;r<=ROWS;r++){
+        const same = (r<ROWS && tileAt(r,c)===tileAt(r-1,c));
+        if (same) run++; else { if (run>=3){ for(let k=0;k<run;k++) marks[r-1-k][c]=true; } run=1; }
+      }
+    }
+    // gather
+    const cells=[]; let maxRun=false;
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ if (marks[r][c]){ cells.push([r,c]); } }
+    if (!cells.length) return null;
+    // crude run size check for shard reward: if any row/col run >=4 around a marked cell
+    for (const [r,c] of cells){
+      const v=tileAt(r,c);
+      // check horizontal
+      let cnt=1, cc=c-1; while(tileAt(r,cc)===v && marks[r][cc]){cnt++;cc--;}
+      cc=c+1; while(tileAt(r,cc)===v && marks[r][cc]){cnt++;cc++;}
+      if (cnt>=4) { maxRun=true; break; }
+      // vertical
+      cnt=1; let rr=r-1; while(tileAt(rr,c)===v && marks[rr][c]){cnt++;rr--;}
+      rr=r+1; while(tileAt(rr,c)===v && marks[rr][c]){cnt++;rr++;}
+      if (cnt>=4) { maxRun=true; break; }
+    }
+    return { cells, big: maxRun };
+  }
 
+  function removeCells(cells){
+    for (const [r,c] of cells){ setTile(r,c,-1); }
+    const gain = Math.floor(cells.length * 10 * Uc.mult * (1 + chains*0.15));
+    score += gain; animTimer = 0.15; // small flash
+    if (cells.length>=4){ shards = Math.min(3, shards + 1); showToast('Shard kazandın ✦'); }
+    updateHud();
+  }
+
+  function collapseAndRefill(){
+    if (Uc.gravity === 'down'){
+      for(let c=0;c<COLS;c++){
+        let wptr = ROWS-1;
+        for(let r=ROWS-1;r>=0;r--){ const v=tileAt(r,c); if (v>=0){ setTile(wptr,c,v); if (wptr!==r) setTile(r,c,-1); wptr--; } }
+        for(let r=wptr;r>=0;r--){ setTile(r,c,rndTile()); }
+      }
+    } else { // up
+      for(let c=0;c<COLS;c++){
+        let wptr = 0;
+        for(let r=0;r<ROWS;r++){ const v=tileAt(r,c); if (v>=0){ setTile(wptr,c,v); if (wptr!==r) setTile(r,c,-1); wptr++; } }
+        for(let r=wptr;r<ROWS;r++){ setTile(r,c,rndTile()); }
+      }
+    }
+  }
+
+  function trySwap(a,b){
+    const ar=a.r, ac=a.c, br=b.r, bc=b.c;
+    const adj = (ar===br && Math.abs(ac-bc)===1) || (ac===bc && Math.abs(ar-br)===1);
+    if (!adj) return false;
+    const va=tileAt(ar,ac), vb=tileAt(br,bc);
+    setTile(ar,ac,vb); setTile(br,bc,va);
+    const m = findMatches();
+    if (!m){ // revert
+      setTile(ar,ac,va); setTile(br,bc,vb);
+      return false;
+    }
+    // apply cascades
+    let total=0; chains=0;
+    while(true){
+      const f = findMatches(); if (!f) break;
+      removeCells(f.cells); total += f.cells.length; chains++;
+      collapseAndRefill();
+      if (chains>12) break; // sanity
+    }
+    if (total>0 && shards>=3){ showToast('Kapı açıldı! Kazandın'); try{ const t=(performance.now()-startT)/1000; const prev=Number(localStorage.getItem('kaira_game_pb_match3')||''); if(!prev||t<prev) localStorage.setItem('kaira_game_pb_match3', String(t)); pbEl.textContent = bestStr(Math.min(prev||Infinity, t)); }catch(_){ } }
+    return true;
+  }
+
+  // Input (click/tap select two adjacents)
+  function posToCell(x,y){ const c=Math.floor((x-BX)/TILE), r=Math.floor((y-BY)/TILE); if (r<0||r>=ROWS||c<0||c>=COLS) return null; return {r,c}; }
+  C.addEventListener('mousedown', (e)=>{
+    const rect = C.getBoundingClientRect(); const scaleX = C.width / rect.width; const scaleY = C.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX; const y = (e.clientY - rect.top) * scaleY;
+    const cell = posToCell(x,y); if (!cell) return;
+    if (!selected){ selected = cell; }
+    else {
+      if (cell.r===selected.r && cell.c===selected.c){ selected=null; return; }
+      const ok = trySwap(selected, cell);
+      selected = null;
+      if (!ok) showToast('Geçersiz hamle');
+    }
+  });
+
+  // Universe switching
+  const keys = Object.create(null);
+  window.addEventListener('keydown', (e)=>{ keys[e.key.toLowerCase()] = true; });
+  window.addEventListener('keyup', (e)=>{ keys[e.key.toLowerCase()] = false; });
+  function switchUniverse(i){ const idx=((i%UNAMES.length)+UNAMES.length)%UNAMES.length; if (idx===curIdx) return; curIdx=idx; Uc=U[UNAMES[curIdx]]; switching=1; updateHud(); showToast('Evren: '+Uc.name); }
+  function cycle(dir){ switchUniverse(curIdx + (dir>0?1:-1)); }
+
+  function handleKeys(){
     if (keys['1']) switchUniverse(0);
     if (keys['2']) switchUniverse(1);
     if (keys['3']) switchUniverse(2);
     if (keys['q']) { keys['q']=false; cycle(-1); }
     if (keys['e']) { keys['e']=false; cycle(1); }
-    if (keys['r']) reset();
+    if (keys['r']) { keys['r']=false; score=0; shards=0; startT=performance.now(); initBoard(); showToast('Yeniden başlatıldı'); updateHud(); }
   }
 
-  function reset(){
-    player.x = 30; player.y = 600; player.vx = 0; player.vy = 0; player.onGround=false;
-    shards.forEach(s=> s.got=false); updateShardUI(); exitDoor.open=false; done=false; startT = performance.now(); showToast('Yeniden başlatıldı');
-  }
-
-  // Rendering helpers
-  function drawBackground(){
-    const g = ctx.createLinearGradient(0,0, 0,C.height);
-    const pal = currentU.bg;
-    g.addColorStop(0, pal[0]); g.addColorStop(0.55, pal[1]); g.addColorStop(1, pal[0]);
-    ctx.fillStyle = g; ctx.fillRect(0,0,C.width,C.height);
-    ctx.globalAlpha = 0.9; ctx.fillStyle = currentU.tint; ctx.fillRect(0,0,C.width,C.height); ctx.globalAlpha = 1;
-  }
-  function drawStars(dt){
-    ctx.fillStyle = currentU.stars;
-    for (const s of stars){
-      ctx.globalAlpha = 0.5 + s.z*0.5;
-      ctx.fillRect(s.x, s.y, 2, 2);
-      s.x -= (12 * s.z) * dt * currentU.timeScale;
-      if (s.x < -2) { s.x = C.width + Math.random()*80; s.y = Math.random()*C.height; s.z = Math.random()*1 + 0.2; }
-    }
-    ctx.globalAlpha = 1;
-  }
-  function drawPlatforms(){
-    for (const p of platforms){
-      const active = (p.phase==='ALL' || p.phase===UNAMES[currentUIndex]);
-      ctx.globalAlpha = active ? 1 : 0.25;
-      ctx.fillStyle = p.col || '#334155';
-      ctx.fillRect(p.x,p.y,p.w,p.h);
-    }
-    for (const w of walls){
-      const active = (w.phase==='ALL' || w.phase===UNAMES[currentUIndex]);
-      ctx.globalAlpha = active ? 1 : 0.25;
-      ctx.fillStyle = w.col || '#1f2937';
-      ctx.fillRect(w.x,w.y,w.w,w.h);
-    }
-    ctx.globalAlpha = 1;
-  }
-  function drawShards(){
-    for (const s of shards){
-      if (s.got) continue;
-      const active = (s.phase===UNAMES[currentUIndex]);
-      ctx.globalAlpha = active ? 1 : 0.12;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-      ctx.fillStyle = active ? '#fbbf24' : '#94a3b8';
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-  }
-  function drawDoor(){
-    ctx.fillStyle = exitDoor.open ? '#22c55e' : '#64748b';
-    ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(exitDoor.x+6, exitDoor.y+10, exitDoor.w-12, exitDoor.h-20);
-  }
-  function drawPlayer(){
-    // Body
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-    // Accent mouth (universe color)
-    ctx.fillStyle = currentU.stars;
-    ctx.fillRect(player.x+5, player.y+player.h-8, player.w-10, 3);
-  }
-
-  function collectCheck(){
-    for (const s of shards){
-      if (s.got) continue;
-      if (s.phase!==UNAMES[currentUIndex]) continue; // only collectible in its phase
-      if (rectsIntersect(player.x,player.y,player.w,player.h, s.x-s.r, s.y-s.r, s.r*2, s.r*2)){
-        s.got = true; updateShardUI(); showToast('Parça toplandı ✦');
-        if (shardsCount()===3){ exitDoor.open = true; showToast('Kapı açıldı!'); }
+  // Rendering
+  function drawBackground(){ const g=ctx.createLinearGradient(0,0,0,C.height); const pal=Uc.bg; g.addColorStop(0,pal[0]); g.addColorStop(0.6,pal[1]); g.addColorStop(1,pal[0]); ctx.fillStyle=g; ctx.fillRect(0,0,C.width,C.height); ctx.globalAlpha=1; ctx.fillStyle=Uc.tint; ctx.fillRect(0,0,C.width,C.height); }
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function drawBoard(){
+    // frame
+    ctx.fillStyle='rgba(15,23,42,0.7)'; roundRect(BX-12,BY-12,BW+24,BH+24,12); ctx.fill();
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const v = tileAt(r,c);
+        const x = BX + c*TILE; const y = BY + r*TILE;
+        // grid cell bg
+        ctx.fillStyle='rgba(2,6,23,0.6)'; roundRect(x+3,y+3,TILE-6,TILE-6,8); ctx.fill();
+        if (v>=0){
+          const col = Uc.palette[v % Uc.palette.length];
+          const g = ctx.createLinearGradient(x,y, x+TILE,y+TILE);
+          g.addColorStop(0, col);
+          g.addColorStop(1, 'rgba(255,255,255,0.7)');
+          ctx.fillStyle = g;
+          roundRect(x+6,y+6,TILE-12,TILE-12,10); ctx.fill();
+          // small shine
+          ctx.fillStyle='rgba(255,255,255,0.25)'; roundRect(x+10,y+10,TILE-26,10,6); ctx.fill();
+        }
       }
     }
-  }
-  function exitCheck(){
-    if (!exitDoor.open || done) return;
-    if (rectsIntersect(player.x,player.y,player.w,player.h, exitDoor.x,exitDoor.y,exitDoor.w,exitDoor.h)){
-      done = true;
-      const elapsed = (performance.now() - startT)/1000;
-      showToast('Tebrikler! Süre: ' + bestStr(elapsed));
-      try{
-        const prev = Number(localStorage.getItem('kaira_game_pb')||'');
-        if (!prev || elapsed < prev){ localStorage.setItem('kaira_game_pb', String(elapsed)); }
-        pbEl.textContent = bestStr(Math.min(prev||Infinity, elapsed));
-      }catch(_){ }
+    if (selected){
+      const x = BX + selected.c*TILE; const y = BY + selected.r*TILE;
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fbbf24'; roundRect(x+3,y+3,TILE-6,TILE-6,8); ctx.stroke();
     }
   }
 
+  // Game loop
+  initBoard(); updateHud();
   let last = performance.now();
   function loop(now){
     requestAnimationFrame(loop);
-    const rawDt = (now - last)/1000; last = now;
-    const dt = Math.min(0.033, rawDt) * currentU.timeScale; // clamp
-
-    // Update
-    if (!done){ handleInput(dt); moveAndCollide(dt); collectCheck(); exitCheck(); updateTimer(); }
-    if (switching>0){ switching = Math.max(0, switching - dt*1.8); }
-
-    // Render
-    drawBackground();
-    drawStars(dt);
-    drawPlatforms();
-    drawShards();
-    drawDoor();
-    drawPlayer();
-
-    // Transition overlay
-    if (switching>0){
-      ctx.globalAlpha = switching;
-      const g = ctx.createRadialGradient(C.width*0.5, C.height*0.5, 0, C.width*0.5, C.height*0.5, C.height*0.7);
-      g.addColorStop(0, 'rgba(255,255,255,0.0)');
-      g.addColorStop(1, 'rgba(0,0,0,0.6)');
-      ctx.fillStyle = g; ctx.fillRect(0,0,C.width,C.height);
-      ctx.globalAlpha = 1;
-    }
+    const dt = Math.min(0.033,(now-last)/1000) * Uc.timeScale; last = now;
+    handleKeys(); updateTimer();
+    if (animTimer>0) animTimer = Math.max(0, animTimer - dt);
+    drawBackground(); drawBoard();
+    if (switching>0){ switching=Math.max(0,switching - dt*1.8); ctx.globalAlpha=switching; const g=ctx.createRadialGradient(C.width*0.5,C.height*0.5,0,C.width*0.5,C.height*0.5,C.height*0.7); g.addColorStop(0,'rgba(255,255,255,0.0)'); g.addColorStop(1,'rgba(0,0,0,0.6)'); ctx.fillStyle=g; ctx.fillRect(0,0,C.width,C.height); ctx.globalAlpha=1; }
   }
   requestAnimationFrame(loop);
 })();
-
