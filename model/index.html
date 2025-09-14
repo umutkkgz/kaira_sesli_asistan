@@ -112,6 +112,58 @@
       </div>
     </section>
 
+    <!-- Knowledge Base (RAG) -->
+    <section id="kb" class="mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Knowledge Base (RAG)</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <!-- Chat with Knowledge -->
+          <div class="md:col-span-2 shell rounded-2xl p-6">
+            <div class="mb-3 grid md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Workspace</label>
+                <select id="kb-ws" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"></select>
+              </div>
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Top‑K</label>
+                <input id="kb-topk" type="number" min="1" max="10" value="5" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+              </div>
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Temperature</label>
+                <input id="kb-temp" type="number" step="0.05" min="0" max="1" value="0.35" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+              </div>
+            </div>
+            <div id="kb-chat" class="h-[320px] overflow-y-auto bg-black/30 border border-gray-800 rounded p-3 space-y-2"></div>
+            <div class="mt-3 flex gap-2">
+              <input id="kb-input" class="allow-select flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="Bilginle konuş..." />
+              <button id="kb-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
+            </div>
+            <div id="kb-msg" class="text-sm mt-2 text-slate-400"></div>
+          </div>
+          <!-- KB Manage -->
+          <div class="shell rounded-2xl p-6">
+            <div class="text-sm text-slate-300 mb-2">Workspace Yönetimi</div>
+            <div class="flex gap-2 mb-3">
+              <input id="kb-ws-name" class="allow-select flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="Yeni workspace adı" />
+              <button id="kb-ws-create" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-2 rounded">Oluştur</button>
+            </div>
+            <div class="text-sm text-slate-300 mb-2">İçerik Ekle</div>
+            <div class="space-y-2">
+              <textarea id="kb-add-text" rows="4" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="Metni buraya yapıştır"></textarea>
+              <button id="kb-add-text-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Metin Ekle</button>
+              <input id="kb-add-url" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="https://..." />
+              <button id="kb-add-url-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">URL Tara</button>
+              <input id="kb-add-file" type="file" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+              <button id="kb-add-file-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Dosya Ekle</button>
+            </div>
+            <div class="mt-4 text-sm">
+              <div id="kb-stats" class="text-slate-400">İstatistik yükleniyor...</div>
+              <div id="kb-last" class="text-slate-400 mt-2 space-y-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     <!-- API Quickstart -->
     <section id="api" class="mt-16">
       <div class="max-w-7xl mx-auto px-4">
@@ -175,7 +227,68 @@
   <script src="/js/status-badge.js"></script>
   <script type="module" src="/js/auth.js"></script>
   <script>
-    // Basit: /index.html?start=chat ile sohbete deep-link
+    (function(){
+      function base(){ try{ return (window.API_PROXY_BASE || localStorage.getItem('kaira_api_base') || '').replace(/\/$/,''); }catch(_){ return ''; } }
+      function el(id){ return document.getElementById(id); }
+      const wsSel = el('kb-ws'); const wsName = el('kb-ws-name');
+      const wsCreate = el('kb-ws-create'); const statsEl = el('kb-stats'); const lastEl = el('kb-last');
+      const addText = el('kb-add-text'); const addTextBtn = el('kb-add-text-btn');
+      const addUrl = el('kb-add-url'); const addUrlBtn = el('kb-add-url-btn');
+      const addFile = el('kb-add-file'); const addFileBtn = el('kb-add-file-btn');
+      const topkEl = el('kb-topk'); const tempEl = el('kb-temp');
+      const chatBox = el('kb-chat'); const input = el('kb-input'); const send = el('kb-send'); const msg = el('kb-msg');
+
+      function msgBox(text, role){
+        const b = document.createElement('div');
+        b.className = 'px-3 py-2 rounded '+(role==='user'?'bg-indigo-700/40 text-indigo-100':'bg-gray-800 text-slate-200');
+        b.textContent = (role==='user'?'👤 ':'🤖 ') + text;
+        chatBox.appendChild(b); chatBox.scrollTop = chatBox.scrollHeight;
+      }
+      async function loadWs(){
+        try{ wsSel.innerHTML=''; const r = await fetch(base()+'/api/rag/workspace/list'); const j = await r.json();
+          (j.workspaces||['default']).forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; wsSel.appendChild(o); });
+          if (!j.workspaces || !j.workspaces.length){ wsSel.value='default'; }
+          refreshStats();
+        }catch(_){ }
+      }
+      async function refreshStats(){
+        try{ const r = await fetch(`${base()}/api/rag/stats?workspace=${encodeURIComponent(wsSel.value||'default')}`); const j = await r.json();
+          statsEl.textContent = `Vectors: ${j.vectors||0} • Records: ${j.records||0} • FAISS: ${j.faiss?'Evet':'Hayır'}`;
+          lastEl.innerHTML = (j.last||[]).map(x=>`<div class=\"text-xs\">• ${String((x.text||'')).slice(0,100)}...</div>`).join('');
+        }catch(_){ statsEl.textContent='İstatistik alınamadı'; }
+      }
+      async function wsCreateFn(){ const n = (wsName.value||'').trim(); if (!n) return; try{ await fetch(base()+'/api/rag/workspace/create',{ method:'POST', body: new URLSearchParams({ name:n })}); wsName.value=''; await loadWs(); wsSel.value=n; refreshStats(); }catch(_){}}
+      async function add(kind){
+        const fd = new FormData(); fd.append('workspace', wsSel.value||'default'); fd.append('source_type', kind);
+        if (kind==='text'){ const t=(addText.value||'').trim(); if (!t) return; fd.append('text',t); }
+        if (kind==='url'){ const u=(addUrl.value||'').trim(); if (!u) return; fd.append('url',u); }
+        if (kind==='file'){ const f=addFile.files&&addFile.files[0]; if (!f) return; fd.append('file',f); }
+        msg.textContent='Ekleniyor...';
+        try{ const r = await fetch(base()+'/api/rag/add', { method:'POST', body: fd }); const j = await r.json(); if (!r.ok){ throw new Error(j.error||'Hata'); }
+          msg.textContent = `Eklendi: ${j.chunks} parça`;
+          if (kind==='text') addText.value=''; if (kind==='url') addUrl.value=''; if (kind==='file') addFile.value='';
+          refreshStats();
+        }catch(e){ msg.textContent='Hata: '+(e&&e.message||e); }
+      }
+      async function sendChat(){
+        const t=(input.value||'').trim(); if(!t) return; input.value=''; msgBox(t,'user'); msg.textContent='';
+        try{
+          const body = JSON.stringify({ prompt:t, workspace: wsSel.value||'default', top_k: Number(topkEl.value||5), temperature: Number(tempEl.value||0.35) });
+          const r = await fetch(base()+'/api/rag/chat', { method:'POST', headers:{ 'Content-Type':'application/json' }, body });
+          const j = await r.json(); if (!r.ok){ throw new Error(j.error||'Hata'); }
+          const ans = j.answer || '';
+          msgBox(ans,'bot');
+        }catch(e){ msg.textContent='Hata: '+(e&&e.message||e); }
+      }
+      if (wsCreate) wsCreate.addEventListener('click', wsCreateFn);
+      if (addTextBtn) addTextBtn.addEventListener('click', ()=>add('text'));
+      if (addUrlBtn) addUrlBtn.addEventListener('click', ()=>add('url'));
+      if (addFileBtn) addFileBtn.addEventListener('click', ()=>add('file'));
+      if (send) send.addEventListener('click', sendChat);
+      if (input) input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
+      if (wsSel) wsSel.addEventListener('change', refreshStats);
+      loadWs();
+    })();
   </script>
 </body>
 </html>
