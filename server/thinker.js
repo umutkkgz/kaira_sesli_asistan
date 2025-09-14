@@ -36,6 +36,8 @@ const hasGroq = !!process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 const hasGoogle = !!process.env.GOOGLE_API_KEY;
 const GOOGLE_MODEL = process.env.GOOGLE_MODEL || 'gemini-1.5-flash';
+// RAG backend (Python) base URL
+const RAG_BASE = (process.env.RAG_BASE_URL || 'http://127.0.0.1:5005').replace(/\/$/, '');
 
 function redact(s){ if (!s) return ''; return s.length <= 6 ? '*'.repeat(s.length) : s.slice(0,3) + '*'.repeat(Math.max(1,s.length-6)) + s.slice(-3); }
 
@@ -55,6 +57,46 @@ function adminOk(req){
 
 app.get('/api/status', (_req, res) => {
   res.json({ ok:true, maintenance: MAINTENANCE, note: MAINT_NOTE });
+});
+
+// --- Lightweight streaming proxy for /api/rag/* to Python backend ---
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
+function pipeProxy(target, req, res){
+  try{
+    const u = new URL(target);
+    const client = (u.protocol === 'https:') ? https : http;
+    // Preserve headers; override host to target
+    const headers = Object.assign({}, req.headers, { host: u.host });
+    const pr = client.request({
+      protocol: u.protocol,
+      hostname: u.hostname,
+      port: u.port || (u.protocol==='https:'?443:80),
+      method: req.method,
+      path: u.pathname + u.search,
+      headers
+    }, (pres) => {
+      res.statusCode = pres.statusCode || 502;
+      Object.entries(pres.headers||{}).forEach(([k,v]) => { try{ if (v!=null) res.setHeader(k, v); }catch(_){ } });
+      pres.pipe(res);
+    });
+    pr.on('error', (err)=>{
+      try{ res.status(502).json({ error: 'RAG proxy error', detail: String(err && err.message || err) }); }catch(_){ try{ res.end('RAG proxy error'); }catch(__){} }
+    });
+    req.pipe(pr);
+  } catch(err){
+    try{ res.status(500).json({ error: 'RAG proxy failed', detail: String(err && err.message || err) }); }catch(_){ try{ res.end('RAG proxy failed'); }catch(__){} }
+  }
+}
+
+app.all('/api/rag/*', (req, res) => {
+  try{
+    const target = RAG_BASE + req.originalUrl; // same path/query
+    return pipeProxy(target, req, res);
+  }catch(err){
+    return res.status(500).json({ error: 'proxy setup failed', detail: String(err && err.message || err) });
+  }
 });
 app.get('/api/maintenance', (_req, res) => {
   res.json({ ok:true, maintenance: MAINTENANCE, note: MAINT_NOTE });
