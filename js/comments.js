@@ -59,8 +59,11 @@ async function sendComment(){
   const base = apiBase(); if (!base){ msgEl.textContent='Sunucu ayarlı değil'; msgEl.className='text-sm text-rose-400'; return; }
   const text = (txtEl.value||'').trim(); if (!text){ return; }
   try{
+    const headers = { 'Content-Type':'application/json', 'X-Auth-Token': t };
+    // Fallback Bearer for compatibility
+    headers['Authorization'] = `Bearer ${t}`;
     const r = await fetch(`${base}/api/comments`, {
-      method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${t}` }, body: JSON.stringify({ text })
+      method:'POST', headers, body: JSON.stringify({ text })
     });
     if (!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error||'Gönderim başarısız'); }
     txtEl.value=''; msgEl.textContent='Gönderildi'; msgEl.className='text-sm text-emerald-400';
@@ -75,8 +78,10 @@ function onListClick(e){
   const t = token(); if (!t){ alert('Giriş gerekli'); return; }
   const id = (upBtn||downBtn).dataset.id; const val = upBtn ? 'up' : 'down';
   const base = apiBase(); if (!base) return;
+  const headers = { 'Content-Type':'application/json', 'X-Auth-Token': t };
+  headers['Authorization'] = `Bearer ${t}`;
   fetch(`${base}/api/comments/rate`, {
-    method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${t}` }, body: JSON.stringify({ id, value: val })
+    method:'POST', headers, body: JSON.stringify({ id, value: val })
   }).then(()=> loadComments()).catch(()=>{});
 }
 
