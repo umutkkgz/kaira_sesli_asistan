@@ -272,12 +272,42 @@
       }
       async function sendChat(){
         const t=(input.value||'').trim(); if(!t) return; input.value=''; msgBox(t,'user'); msg.textContent='';
+        const body = JSON.stringify({ prompt:t, workspace: wsSel.value||'default', top_k: Number(topkEl.value||5), temperature: Number(tempEl.value||0.35) });
+        // Try streaming first
         try{
-          const body = JSON.stringify({ prompt:t, workspace: wsSel.value||'default', top_k: Number(topkEl.value||5), temperature: Number(tempEl.value||0.35) });
-          const r = await fetch(base()+'/api/rag/chat', { method:'POST', headers:{ 'Content-Type':'application/json' }, body });
-          const j = await r.json(); if (!r.ok){ throw new Error(j.error||'Hata'); }
-          const ans = j.answer || '';
-          msgBox(ans,'bot');
+          const r = await fetch(base()+'/api/rag/chat/stream', { method:'POST', headers:{ 'Content-Type':'application/json' }, body });
+          if (!r.ok || !r.body){ throw new Error('stream not ok'); }
+          const reader = r.body.getReader();
+          const dec = new TextDecoder();
+          let acc = '';
+          while(true){
+            const {value, done} = await reader.read(); if (done) break;
+            const chunk = dec.decode(value, {stream:true});
+            const lines = chunk.split('\n');
+            for (const line of lines){
+              const s=line.trim(); if (!s) continue;
+              try{
+                const j = JSON.parse(s);
+                if (j.response){ acc += j.response; }
+                if (j.error){ msg.textContent = 'Hata: '+j.error; }
+              }catch(_){ }
+            }
+            if (acc){
+              // update last bot bubble or add if missing
+              if (!chatBox.lastChild || chatBox.lastChild && chatBox.lastChild.textContent.startsWith('👤 ')){
+                msgBox('', 'bot');
+              }
+              chatBox.lastChild.textContent = '🤖 ' + acc;
+              chatBox.scrollTop = chatBox.scrollHeight;
+            }
+          }
+          if (!acc){ throw new Error('empty'); }
+          return;
+        }catch(_){ /* fallback below */ }
+        try{
+          const r2 = await fetch(base()+'/api/rag/chat', { method:'POST', headers:{ 'Content-Type':'application/json' }, body });
+          const j2 = await r2.json(); if (!r2.ok){ throw new Error(j2.error||'Hata'); }
+          msgBox(j2.answer||'', 'bot');
         }catch(e){ msg.textContent='Hata: '+(e&&e.message||e); }
       }
       if (wsCreate) wsCreate.addEventListener('click', wsCreateFn);
