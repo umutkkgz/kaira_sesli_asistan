@@ -72,7 +72,7 @@
         <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Paketler ve Hizmetler</h2>
         <div class="grid md:grid-cols-3 gap-6">
           <!-- Başlangıç -->
-          <div class="shell rounded-2xl p-6 flex flex-col">
+          <div class="shell rounded-2xl p-6 flex flex-col" data-plan="start">
             <div class="text-sm text-slate-300">Başlangıç</div>
             <div class="text-2xl font-semibold text-white mt-1">Web + API</div>
             <div class="text-slate-400 mt-2">Küçük projeler için uygun temel kurulum.</div>
@@ -80,12 +80,14 @@
               <li>Tek sayfa site ve iletişim formu</li>
               <li>Basit AI API proxy (anahtar yönetimi)</li>
               <li>Temel izleme (log/health)</li>
+              <li>Başlangıç fiyatı: <span class="text-white font-semibold">$100+</span></li>
+              <li>SLA (opsiyonel): 7x12 <span class="text-white">$50/ay</span>, 7x24 <span class="text-white">$150/ay</span></li>
+              <li>Teslim süresi: 3–5 iş günü (Hızlı: 1–3 gün)</li>
             </ul>
-            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
-            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+            <a href="#teklif" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif Hesapla</a>
           </div>
           <!-- Profesyonel -->
-          <div class="shell rounded-2xl p-6 flex flex-col border border-indigo-500/30">
+          <div class="shell rounded-2xl p-6 flex flex-col border border-indigo-500/30" data-plan="pro">
             <div class="text-sm text-slate-300">Profesyonel</div>
             <div class="text-2xl font-semibold text-white mt-1">Fine‑Tune + API</div>
             <div class="text-slate-400 mt-2">Özel veriyle model özelleştirme ve entegrasyon.</div>
@@ -94,12 +96,14 @@
               <li>Özel API katmanı (oran sınırı, kimlik)</li>
               <li>Veritabanı şeması ve yedekleme</li>
               <li>Staging/Prod ortamları</li>
+              <li>Başlangıç fiyatı: <span class="text-white font-semibold">$100+</span></li>
+              <li>SLA (opsiyonel): 7x12 <span class="text-white">$100/ay</span>, 7x24 <span class="text-white">$250/ay</span></li>
+              <li>Teslim süresi: 5–10 iş günü (Hızlı: 3–6 gün)</li>
             </ul>
-            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
-            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+            <a href="#teklif" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif Hesapla</a>
           </div>
           <!-- Kurumsal -->
-          <div class="shell rounded-2xl p-6 flex flex-col">
+          <div class="shell rounded-2xl p-6 flex flex-col" data-plan="ent">
             <div class="text-sm text-slate-300">Kurumsal</div>
             <div class="text-2xl font-semibold text-white mt-1">Özel Çözümler</div>
             <div class="text-slate-400 mt-2">Güvenlik, uyumluluk ve SLA’li hizmetler.</div>
@@ -108,9 +112,65 @@
               <li>Yük dengeleme, ölçeklendirme</li>
               <li>24/7 kritik destek seçeneği</li>
               <li>Yerinde/saha kurulumu opsiyonu</li>
+              <li>Başlangıç fiyatı: <span class="text-white font-semibold">$100+</span></li>
+              <li>SLA (opsiyonel): 7x12 <span class="text-white">$200/ay</span>, 7x24 <span class="text-white">$500/ay</span></li>
+              <li>Teslim süresi: Proje kapsamına göre</li>
             </ul>
-            <div class="mt-6 text-slate-300"><span class="text-3xl text-white">₺</span> Teklif Al</div>
-            <a href="/contact.html" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif İste</a>
+            <a href="#teklif" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-center">Teklif Hesapla</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Teklif Hesaplayıcı + Form -->
+    <section id="teklif" class="mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-semibold text-white mb-6">Teklif Hesaplayıcı</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 shell rounded-2xl p-6">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Paket</label>
+                <select id="q-plan" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+                  <option value="start">Başlangıç (Web + API)</option>
+                  <option value="pro">Profesyonel (Fine‑Tune + API)</option>
+                  <option value="ent">Kurumsal (Özel)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Model Parametresi (Milyar)</label>
+                <input id="q-billions" type="number" step="0.1" min="0.1" value="1" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="örn. 7 (7B)" />
+              </div>
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">SLA (Aylık)</label>
+                <select id="q-sla" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+                  <option value="none">Yok</option>
+                  <option value="7x12">7x12</option>
+                  <option value="7x24">7x24</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-slate-300 mb-1">Teslim Hızı</label>
+                <select id="q-speed" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+                  <option value="normal">Normal</option>
+                  <option value="fast">Hızlı (+%20)</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-4 p-3 bg-black/30 rounded border border-gray-700">
+              <div class="text-sm text-slate-300 mb-2">Hesaplanan Teklif</div>
+              <div id="q-out" class="text-white text-lg">$100</div>
+              <div id="q-break" class="text-slate-400 text-sm"></div>
+            </div>
+          </div>
+          <div class="shell rounded-2xl p-6">
+            <div class="text-sm text-slate-300 mb-2">Teklif Gönder</div>
+            <div class="space-y-2">
+              <input id="q-name" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="Ad Soyad" />
+              <input id="q-email" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" placeholder="E-posta (opsiyonel)" />
+              <button id="q-send" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Teklif İste</button>
+              <div id="q-msg" class="text-sm"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -180,6 +240,66 @@
   <canvas id="starfield-canvas" aria-hidden="true"></canvas>
   <script src="/js/starfield.js"></script>
   <script src="/js/status-badge.js"></script>
+  <script>
+    // Basit fiyatlandırma modeli (USD)
+    const BASE = { start: 100, pro: 100, ent: 100 };
+    const PER_B = { start: 100, pro: 150, ent: 200 }; // milyar parametre başına ek
+    const SLA = {
+      start: { none: 0, '7x12': 50, '7x24': 150 },
+      pro:   { none: 0, '7x12': 100, '7x24': 250 },
+      ent:   { none: 0, '7x12': 200, '7x24': 500 },
+    };
+    const SPEED = { normal: 1.0, fast: 1.2 };
+
+    const elPlan = document.getElementById('q-plan');
+    const elB = document.getElementById('q-billions');
+    const elSla = document.getElementById('q-sla');
+    const elSpeed = document.getElementById('q-speed');
+    const elOut = document.getElementById('q-out');
+    const elBreak = document.getElementById('q-break');
+    const elName = document.getElementById('q-name');
+    const elEmail = document.getElementById('q-email');
+    const elSend = document.getElementById('q-send');
+    const elMsg = document.getElementById('q-msg');
+
+    function calc(){
+      const plan = elPlan.value; const B = Math.max(0.1, parseFloat(elB.value||'1')) || 1;
+      const speed = elSpeed.value; const slaKey = elSla.value;
+      const base = BASE[plan] || 100; const per = PER_B[plan] || 100;
+      const oneTimeRaw = base + per * B;
+      const oneTime = Math.round(oneTimeRaw * (SPEED[speed]||1));
+      const monthly = SLA[plan]?.[slaKey] || 0;
+      elOut.textContent = `$${oneTime} + $${monthly}/ay (SLA)`;
+      elBreak.textContent = `Ayrıntı: Baz $${base} + Parametre (${B}B x $${per}) ${speed==='fast'?'+ Hızlı (%20)':''}`;
+      return { oneTime, monthly, plan, B, speed, slaKey };
+    }
+    ['input','change'].forEach(evt=>{ elPlan.addEventListener(evt, calc); elB.addEventListener(evt, calc); elSla.addEventListener(evt, calc); elSpeed.addEventListener(evt, calc); });
+    calc();
+
+    async function sendQuote(){
+      elMsg.textContent=''; elMsg.className='text-sm text-gray-300';
+      const name = (elName.value||'').trim(); const email=(elEmail.value||'').trim();
+      if (!name){ elMsg.textContent='Lütfen adınızı yazın.'; elMsg.className='text-sm text-rose-400'; return; }
+      const q = calc();
+      const subject = `Teklif İsteği • ${q.plan.toUpperCase()} • ${q.B}B`;
+      const lines = [
+        `Paket: ${q.plan}`,
+        `Model Parametresi: ${q.B}B`,
+        `Teslim: ${q.speed==='fast'?'Hızlı':'Normal'}`,
+        `SLA: ${q.slaKey}`,
+        `Hesaplanan: $${q.oneTime} + $${q.monthly}/ay (SLA)`,
+        email?`E-posta: ${email}`:''
+      ].filter(Boolean).join('\n');
+      try{
+        const base = (window.API_PROXY_BASE || localStorage.getItem('kaira_api_base') || '').replace(/\/$/,'');
+        if (!base){ throw new Error('Sunucu ayarlı değil'); }
+        const res = await fetch(`${base}/api/contact`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ name, email, subject, message: lines }) });
+        if (!res.ok){ const t=await res.text().catch(()=> ''); throw new Error(t||'Gönderim başarısız'); }
+        elMsg.textContent='Talebiniz alındı. En kısa sürede dönüş yapılacaktır.'; elMsg.className='text-sm text-emerald-400';
+        elName.value=''; elEmail.value='';
+      }catch(e){ elMsg.textContent='Hata: '+(e&&e.message||e); elMsg.className='text-sm text-rose-400'; }
+    }
+    elSend.addEventListener('click', sendQuote);
+  </script>
 </body>
 </html>
-
