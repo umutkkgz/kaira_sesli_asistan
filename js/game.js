@@ -44,9 +44,34 @@
 
   // Universes
   const U = {
-    PASTEL: { name:'Pastel', timeScale:0.9, mult:1.1, gravity:'down', bg:['#1b1f2a','#42526e','#9ad5ca'], tint:'rgba(154,213,202,0.22)', palette:['#f8c8dc','#b8e0d2','#ffd6a5','#c9c9ff','#bde0fe','#f1f7b5'] },
-    NEON:   { name:'Neon',   timeScale:1.3, mult:1.2, gravity:'down', bg:['#0a0b11','#0f162e','#08f7fe'], tint:'rgba(8,247,254,0.15)', palette:['#08f7fe','#f706cf','#f9f871','#05ffa1','#ff9933','#ff2079'] },
-    NOIR:   { name:'Noir',   timeScale:1.0, mult:1.0, gravity:'up',   bg:['#050507','#171923','#7c7d84'], tint:'rgba(124,125,132,0.16)', palette:['#cbd5e1','#94a3b8','#e2e8f0','#9aa0a6','#6b7280','#f5f5f5'] },
+    // Daha görünür, yüksek kontrastlı renkler
+    PASTEL: { name:'Pastel', timeScale:0.9, mult:1.1, gravity:'down',
+      bg:['#121623','#2a375a','#9ad5ca'], tint:'rgba(154,213,202,0.18)',
+      palette:[
+        '#ff6b6b', // canlı pembe-kırmızı
+        '#ffd166', // amber
+        '#06d6a0', // yeşil
+        '#4dabf7', // mavi
+        '#b794f4', // mor
+        '#f97316'  // turuncu
+      ]
+    },
+    NEON:   { name:'Neon',   timeScale:1.3, mult:1.2, gravity:'down',
+      bg:['#0a0b11','#0f162e','#08f7fe'], tint:'rgba(8,247,254,0.15)',
+      palette:['#08f7fe','#f706cf','#f9f871','#05ffa1','#ff9933','#ff2079']
+    },
+    NOIR:   { name:'Noir',   timeScale:1.0, mult:1.0, gravity:'up',
+      bg:['#050507','#171923','#0b1220'], tint:'rgba(124,125,132,0.10)',
+      // Noir için daha belirgin vurgu renkleri (griden ziyade accent tonları)
+      palette:[
+        '#e5e7eb', // açık gri (yüksek kontrast)
+        '#60a5fa', // mavi
+        '#22c55e', // yeşil
+        '#f59e0b', // amber
+        '#a78bfa', // mor
+        '#f43f5e'  // rose
+      ]
+    },
   };
   const UNAMES = ['PASTEL','NEON','NOIR'];
   let curIdx = 0;
@@ -325,11 +350,23 @@
           const col = Uc.palette[v % Uc.palette.length];
           const g = ctx.createLinearGradient(x,y, x+TILE,y+TILE);
           g.addColorStop(0, col);
-          g.addColorStop(1, 'rgba(255,255,255,0.7)');
+          g.addColorStop(1, 'rgba(255,255,255,0.75)');
+          ctx.save();
+          // hafif gölge ile kutuları arka plandan ayır
+          ctx.shadowColor = 'rgba(0,0,0,0.35)';
+          ctx.shadowBlur = 6;
           ctx.fillStyle = g;
           roundRect(x+6,y+6,TILE-12,TILE-12,10); ctx.fill();
-          // small shine
-          ctx.fillStyle='rgba(255,255,255,0.25)'; roundRect(x+10,y+10,TILE-26,10,6); ctx.fill();
+          ctx.restore();
+          // kenarlık: önce açık, sonra hafif koyu
+          ctx.lineWidth = 2.2;
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+          roundRect(x+6,y+6,TILE-12,TILE-12,10); ctx.stroke();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+          roundRect(x+7,y+7,TILE-14,TILE-14,10); ctx.stroke();
+          // parıltı
+          ctx.fillStyle='rgba(255,255,255,0.28)'; roundRect(x+10,y+10,TILE-26,10,6); ctx.fill();
         }
       }
     }
