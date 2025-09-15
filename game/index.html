@@ -46,6 +46,7 @@
       <div class="hud">
         <div class="badge"><span id="u-name">Evren: —</span><span id="u-meta" class="text-slate-400"></span></div>
         <div class="flex items-center gap-2">
+          <div class="badge">Seviye <span id="level">1</span> • Hamle <span id="moves">—</span></div>
           <div class="badge">⏱ <span id="timer">00:00</span> • ✦ <span id="shards">0/3</span> • PB <span id="pb">—</span> • Skor <span id="score">0</span></div>
           <button id="btn-hint" class="btn">İpucu</button>
           <button id="btn-shuffle" class="btn">Karıştır</button>
@@ -68,10 +69,48 @@
           </div>
           <div class="mt-3 space-y-2 text-sm">
             <p>• Amaç: Aynı renkten en az 3 taşı yatay/dikey hizalayarak temizle. 4+’lü eşleşmeler <b>Shard</b> kazandırır. 3 Shard = Zafer.</p>
+            <p>• Özel Eşleşmeler: 4’lü yatay → satır patlatma; 4’lü dikey → sütun patlatma; T/L şekli → <b>bomba</b> (3×3); 5’li → <b>renk bombası</b> (aynı renkte hepsi).</p>
             <p>• Evrenler: <b>Pastel</b> (yavaş zaman), <b>Neon</b> (hızlı zaman), <b>Noir</b> (yerçekimi yukarı). 1/2/3 ile veya Q/E ile evren değiştir.</p>
             <p>• Hamle: Yan yana iki taşı tıkla. Geçerli bir eşleşme üretmiyorsa hamle iptal olur.</p>
             <p>• İpucu/Karıştır: Takıldığında üstteki butonları kullan. Hamle yoksa otomatik karıştırılır.</p>
             <p>• PB: Kişisel en iyi süren kaydedilir. R ile sıfırdan başlatabilirsin.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Level Start overlay -->
+      <div id="level-start" class="fixed inset-0 z-30 bg-black/70 hidden">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[820px] max-w-[95vw] bg-gray-900/90 border border-gray-700 rounded-2xl p-5 text-slate-200">
+          <div class="flex items-center justify-between pb-2 border-b border-gray-700">
+            <div class="text-lg font-semibold">Seviye <span id="ls-num">1</span></div>
+            <button id="ls-close" class="btn">Kapat</button>
+          </div>
+          <div class="mt-3 grid md:grid-cols-2 gap-4 items-start">
+            <div>
+              <div class="text-slate-300 mb-2">Hedefler</div>
+              <ul id="ls-goals" class="text-sm text-slate-300 space-y-1"></ul>
+            </div>
+            <div>
+              <div class="text-slate-300 mb-2">Kurallar</div>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>Hamle sınırı: <b id="ls-moves">—</b></li>
+                <li>4+ eşleşme: Shard kazandırır.</li>
+                <li>Noir evreninde taşlar <b>yukarı</b> akar.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <button id="ls-play" class="btn">Başla</button>
+          </div>
+        </div>
+      </div>
+      <!-- Level End overlay -->
+      <div id="level-end" class="fixed inset-0 z-30 bg-black/70 hidden">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[820px] max-w-[95vw] bg-gray-900/90 border border-gray-700 rounded-2xl p-5 text-slate-200">
+          <div class="text-lg font-semibold" id="le-title">Seviye Bitti</div>
+          <div class="mt-2 text-slate-300" id="le-msg"></div>
+          <div class="mt-4 flex gap-3">
+            <button id="le-retry" class="btn">Tekrar</button>
+            <button id="le-next" class="btn">Sonraki</button>
           </div>
         </div>
       </div>
