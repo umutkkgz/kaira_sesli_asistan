@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>KΔIRA | Yapay Zekâ Haberleri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="theme-color" content="#0b0b0f" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    body{ background: radial-gradient(1200px 800px at 70% -10%, rgba(99,102,241,.12), transparent 60%), #000; }
+    .shell { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(17,24,39,0.65); border: 1px solid rgba(255,255,255,0.08); }
+    .pill { border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.7); }
+  </style>
+</head>
+<body class="antialiased text-slate-200">
+  <header class="fixed top-0 inset-x-0 z-20">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="h-14 flex items-center justify-between bg-gray-900/60 border border-gray-800 rounded-b-2xl px-4">
+        <a href="/index.html?skipIntro=1" class="flex items-center gap-2 text-white font-semibold">
+          <span class="text-cyan-300">KΔIRA</span><span class="text-slate-300">AI Haberleri</span>
+        </a>
+        <nav class="flex items-center gap-2">
+          <a href="/index.html?skipIntro=1" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">Anasayfa</a>
+          <a href="/profile.html" class="pill px-3 py-1.5 rounded-full text-sm text-gray-300 hover:text-white">Üyelik</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-20 pb-10">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl md:text-3xl font-semibold text-white">Türkiye’den/yapay zekâ odaklı haberler</h1>
+        <div class="flex gap-2 items-center text-sm">
+          <input id="news-q" class="allow-select bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white w-[220px]" placeholder="Anahtar kelime (örn. LLM)" />
+          <select id="news-days" class="allow-select bg-gray-800 border border-gray-700 rounded px-2 py-2 text-white">
+            <option value="3">Son 3 gün</option>
+            <option value="7" selected>Son 7 gün</option>
+            <option value="30">Son 30 gün</option>
+          </select>
+          <button id="news-refresh" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded">Güncelle</button>
+        </div>
+      </div>
+
+      <div id="news-status" class="text-sm text-slate-400 mb-2">Kaynak: newsapi.org</div>
+      <div id="news-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+  </main>
+
+  <script src="/js/status-badge.js"></script>
+  <script src="/js/copy-policy.js"></script>
+  <script type="module" src="/js/news.js"></script>
+</body>
+</html>
+
