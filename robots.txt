@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Güncelleyin: alan adınızı doğru yazın
+Sitemap: https://kairaaiv2.netlify.app/sitemap.xml
