@@ -1,59 +1,226 @@
 <!DOCTYPE html>
-<html lang="tr" class="scroll-smooth">
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KΔIRA Platformu Kullanıcı Muvafakatnamesi</title>
-    <link rel="stylesheet" href="/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KΔIRA Platformu Kullanıcı Muvafakatnamesi</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(59,130,246,0.18), transparent 60%),
+                  radial-gradient(circle at 80% 80%, rgba(236,72,153,0.18), transparent 65%),
+                  #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: clamp(24px, 6vw, 64px);
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      backdrop-filter: blur(18px);
+      background: rgba(15,23,42,0.85);
+      border: 1px solid rgba(148,163,184,0.25);
+      border-radius: 32px;
+      box-shadow: 0 35px 80px rgba(2,6,23,0.55);
+      padding: clamp(24px, 5vw, 48px);
+      position: relative;
+      overflow: hidden;
+    }
+    main::before {
+      content: '';
+      position: absolute;
+      inset: -20%;
+      background: conic-gradient(from 140deg, rgba(59,130,246,0.35), transparent 60%, rgba(236,72,153,0.35));
+      opacity: 0.3;
+      filter: blur(80px);
+      z-index: 0;
+    }
+    header, section, footer { position: relative; z-index: 1; }
+    h1, h2, h3 { margin-top: 0; }
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 3rem);
+      font-weight: 600;
+      background: linear-gradient(120deg, #f472b6, #60a5fa);
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      margin-top: 2.5rem;
+      color: #cbd5f5;
+    }
+    p, li {
+      line-height: 1.7;
+      color: #d1d5db;
+    }
+    ul { padding-left: 1.2rem; }
+    .consent-box {
+      margin-top: 2.5rem;
+      padding: 1.25rem 1.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(96,165,250,0.35);
+      background: rgba(15,23,42,0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .consent-box label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+    .consent-box input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #38bdf8;
+      margin-top: 4px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    button, .secondary {
+      border: none;
+      border-radius: 999px;
+      padding: 0.75rem 1.6rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    #acceptBtn {
+      background: linear-gradient(120deg, #38bdf8, #6366f1);
+      color: #0f172a;
+      box-shadow: 0 20px 40px rgba(56,189,248,0.25);
+    }
+    #acceptBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    #acceptBtn:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 25px 45px rgba(59,130,246,0.35);
+    }
+    .secondary {
+      background: rgba(15,23,42,0.8);
+      color: #e2e8f0;
+      border: 1px solid rgba(148,163,184,0.35);
+    }
+    .secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 35px rgba(2,6,23,0.45);
+    }
+    .meta { font-size: 0.9rem; color: #94a3b8; }
+    @media (max-width: 640px) {
+      body { padding: 16px; }
+      main { border-radius: 20px; padding: 20px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      button, .secondary { width: 100%; justify-content: center; }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-    <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold mb-4">KΔIRA Platformu Kullanıcı Muvafakatnamesi ve Veri İşleme İzin Belgesi</h1>
-        <p class="mb-4">Son Güncelleme: 1 Eylül 2025</p>
-        <p class="mb-4">KΔIRA Birleşik Yapay Zeka Platformu'na ("Platform") hoş geldiniz. Bu platform, Umut Kökgöz ("Geliştirici") tarafından geliştirilen deneysel bir projedir. Platformu kullanarak aşağıdaki şartları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.</p>
-        <h2 class="text-2xl font-semibold mb-2">1. Verilerin İşlenmesi ve Paylaşılması</h2>
-        <p class="mb-2">Platform, yapay zeka modelleriyle etkileşim kurmanızı sağlamak amacıyla çeşitli verilerinizi işlemektedir.</p>
-        <ul class="list-disc list-inside mb-4">
-            <li><strong>Ses Verileri:</strong> "KΔIRA Sesli Asistan" modülünü kullandığınızda, sesli komutlarınız kaydedilir, metne dönüştürülür ve yanıt üretmek amacıyla üçüncü taraf yapay zeka modellerine gönderilir. Bu veriler, hizmet kalitesini artırmak amacıyla anonim olarak analiz edilebilir.</li>
-            <li><strong>Metin Verileri:</strong> "Evrensel Sohbet Arayüzü", "Yapay Zeka Editör" ve "Code Lab" modüllerine girdiğiniz metinler (prompt'lar, kodlar, mesajlar), talimatlarınızı işlemek ve size bir çıktı sunmak üzere Google (Gemini) ve Groq (Llama, vb.) gibi üçüncü taraf API'lere gönderilir.</li>
-            <li><strong>Görsel Veriler:</strong> "Yapay Zeka Editör" modülüne yüklediğiniz fotoğraflar, düzenleme talimatlarınızla birlikte Google Gemini API'sine gönderilir. Yüklenen görseller, işlem tamamlandıktan sonra sunucularımızda kalıcı olarak saklanmaz.</li>
-            <li><strong>Kullanıcı Tarafında Saklanan Veriler:</strong> İsteğe bağlı olarak girdiğiniz API anahtarları, sohbet geçmişleriniz veya Code Lab dosyalarınız, güvenliğiniz için sadece sizin tarayıcınızın yerel depolama alanında (localStorage) saklanır ve Geliştirici tarafından erişilemez.</li>
-        </ul>
-    </div>
-</body>
-</html>
-        <h2 class="text-2xl font-semibold mb-2">2. Hizmetin Amacı ve Sınırları</h2>
-        <p class="mb-4">Deneysel Nitelik: KΔIRA, araştırma ve geliştirme amacıyla oluşturulmuş, kar amacı gütmeyen deneysel bir platformdur. Hizmetin kesintisiz veya hatasız olacağı garanti edilmez.</p>
-        <p class="mb-4">Yapay Zeka Yanıtları: Platform tarafından üretilen metin, görsel, ses veya kod içerikleri yapay zeka tarafından oluşturulmuştur. Bu içeriklerin doğruluğu, eksiksizliği veya uygunluğu garanti edilmez. Üretilen içerikler tıbbi, hukuki, finansal veya diğer profesyonel tavsiye niteliği taşımaz.</p>
-        <p class="mb-4">Sorumluluk Reddi: Geliştirici, yapay zeka tarafından üretilen içeriklerden veya bu içeriklerin kullanımından doğabilecek herhangi bir zarardan sorumlu tutulamaz.</p>
-        <h2 class="text-2xl font-semibold mb-2">3. Kullanıcı Yükümlülükleri</h2>
-        <ul class="list-disc list-inside mb-4">
-            <li>Platformu yasa dışı, zararlı, taciz edici veya başkalarının haklarını ihlal eden amaçlarla kullanmayacağınızı kabul edersiniz.</li>
-            <li>Hassas kişisel bilgilerinizi (TC Kimlik No, adres, finansal bilgiler vb.) platforma girmemelisiniz.</li>
-            <li>Oluşturduğunuz ve paylaştığınız tüm içeriklerin sorumluluğu size aittir.</li>
-        </ul>
-        <h2 class="text-2xl font-semibold mb-2">4. Onay Beyanı</h2>
-        <p class="mb-4">Bu metnin altındaki onay kutusunu işaretleyip "Kabul Et ve Devam Et" butonuna tıklayarak; yukarıdaki tüm maddeleri okuduğunuzu, anladığınızı ve KΔIRA platformunu bu koşullar altında kullanmayı, verilerinizin belirtilen şekilde işlenmesini ve üçüncü taraf API'lerle paylaşılmasını açıkça kabul ettiğinizi beyan edersiniz.</p>
-        <div class="mb-4">
-            <input type="checkbox" id="consent" class="mr-2">
-            <label for="consent">Yukarıdaki şartları okudum, anladım ve kabul ediyorum.</label>
-        </div>
-        <button id="acceptBtn" class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50" disabled>Kabul Et ve Devam Et</button>
-    </div>
-    <script>
-        const consentCheckbox = document.getElementById('consent');
-        const acceptBtn = document.getElementById('acceptBtn');
-        consentCheckbox.addEventListener('change', () => {
-            acceptBtn.disabled = !consentCheckbox.checked;
-        });
-        acceptBtn.addEventListener('click', () => {
-            if (consentCheckbox.checked) {
-                // Kullanıcı onayını localStorage'a kaydet
-                localStorage.setItem('kairaConsent', 'true');
-                // Ana sayfaya yönlendir
-                window.location.href = '/';
-            }
-        });
-    </script>
+<body>
+  <main>
+    <header>
+      <h1>KΔIRA Platformu Kullanıcı Muvafakatnamesi ve Veri İşleme İzin Belgesi</h1>
+      <p class="meta">Son Güncelleme: 1 Eylül 2025</p>
+      <p>KΔIRA Birleşik Yapay Zekâ Platformu'na ("Platform") hoş geldiniz. Platform, Umut Kökgöz ("Geliştirici") tarafından geliştirilen deneysel bir projedir. Platformu kullanarak aşağıdaki şartları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.</p>
+    </header>
+
+    <section>
+      <h2>1. Verilerin İşlenmesi ve Paylaşılması</h2>
+      <p>Platform, yapay zekâ modelleriyle etkileşim kurmanızı sağlamak amacıyla çeşitli verilerinizi işler:</p>
+      <ul>
+        <li><strong>Ses Verileri:</strong> "KΔIRA Sesli Asistan" modülünü kullandığınızda, sesli komutlarınız kaydedilir, metne dönüştürülür ve yanıt üretmek amacıyla üçüncü taraf yapay zekâ servislerine gönderilir. Bu veriler hizmet kalitesini artırmak için anonim analizlerde kullanılabilir.</li>
+        <li><strong>Metin Verileri:</strong> "Evrensel Sohbet Arayüzü", "Yapay Zeka Editör" ve "Code Lab" modüllerine girdiğiniz metinler (prompt'lar, kodlar, mesajlar) Google (Gemini) ve Groq (Llama vb.) gibi üçüncü taraf API'lere iletilir.</li>
+        <li><strong>Görsel Veriler:</strong> "Yapay Zeka Editör" modülüne yüklediğiniz görseller düzenleme talimatlarınızla birlikte işlenir; işlem tamamlandığında sunucularda kalıcı olarak saklanmaz.</li>
+        <li><strong>Yerel Saklama:</strong> İsteğe bağlı olarak girdiğiniz API anahtarları, sohbet geçmişleriniz veya Code Lab dosyalarınız yalnızca sizin tarayıcınızda saklanır, geliştirici tarafından erişilemez.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Hizmetin Amacı ve Sınırları</h2>
+      <p>KΔIRA araştırma ve geliştirme amaçlı deneysel bir platformdur. Kesintisiz veya hatasız çalışma taahhüt edilmez.</p>
+      <p>Yapay zekâ tarafından üretilen içerikler profesyonel tavsiye niteliği taşımaz; doğrulukları garanti edilmez.</p>
+      <p>Geliştirici, yapay zekâ çıktılarından kaynaklanabilecek zararlardan sorumlu tutulamaz.</p>
+    </section>
+
+    <section>
+      <h2>3. Kullanıcı Yükümlülükleri</h2>
+      <ul>
+        <li>Platformu yasa dışı, zararlı, taciz edici veya hak ihlali yaratacak şekilde kullanmayacağınızı kabul edersiniz.</li>
+        <li>Hassas kişisel veriler (TC kimlik numarası, adres, finansal bilgiler vb.) girmemelisiniz.</li>
+        <li>Oluşturduğunuz ve paylaştığınız tüm içeriklerin sorumluluğu size aittir.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Onay Beyanı</h2>
+      <p>Bu belgenin altındaki onay kutusunu işaretleyip "Kabul Et ve Devam Et" butonuna tıklayarak; metindeki tüm maddeleri okuduğunuzu, anladığınızı ve verilerinizin belirtilen şekilde işlenmesini açıkça kabul ettiğinizi beyan etmiş olursunuz.</p>
+    </section>
+
+    <section class="consent-box">
+      <label>
+        <input type="checkbox" id="consentAck">
+        <span>Muvafakatnameyi okudum, anladım ve şartları kabul ediyorum.</span>
+      </label>
+      <div class="actions">
+        <button id="acceptBtn" disabled>Kabul Et ve Devam Et</button>
+        <button type="button" class="secondary" id="declineBtn">Reddet ve Geri Dön</button>
+      </div>
+    </section>
+
+    <footer class="meta">
+      Geliştirici: Umut Kökgöz • İletişim: <a href="mailto:a20224402051@icloud.com">a20224402051@icloud.com</a>
+    </footer>
+  </main>
+
+  <script>
+    (function(){
+      const consentKey = 'kairaConsentAcknowledged';
+      const cb = document.getElementById('consentAck');
+      const acceptBtn = document.getElementById('acceptBtn');
+      const declineBtn = document.getElementById('declineBtn');
+
+      function focusOpener(){
+        if (window.opener && typeof window.opener.focus === 'function') {
+          try { window.opener.focus(); } catch(_){}
+        }
+      }
+
+      cb.addEventListener('change', () => {
+        acceptBtn.disabled = !cb.checked;
+      });
+
+      acceptBtn.addEventListener('click', () => {
+        if (!cb.checked) return;
+        try { localStorage.setItem(consentKey, '1'); } catch(_){}
+        focusOpener();
+        window.close();
+      });
+
+      declineBtn.addEventListener('click', () => {
+        focusOpener();
+        window.close();
+      });
+
+      // Eğer popup engellendiyse veya close başarısızsa, bir uyarı göster.
+      window.addEventListener('beforeunload', () => {
+        if (cb.checked) {
+          try { localStorage.setItem(consentKey, '1'); } catch(_){}
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

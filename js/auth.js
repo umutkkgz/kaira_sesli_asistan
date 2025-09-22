@@ -50,6 +50,7 @@
   document.body.appendChild(modal);
 
   const consentCheckbox = modal.querySelector('#reg-consent');
+  const CONSENT_KEY = 'kairaConsentAcknowledged';
   let consentOpened = false;
 
   function resetConsentState(){
@@ -77,6 +78,14 @@
       const tok = localStorage.getItem('kaira_auth_token');
       logged = !!(tok && u && u.username);
     }catch(_){ }
+    try{
+      if (localStorage.getItem(CONSENT_KEY) === '1'){
+        consentOpened = true;
+        if (consentCheckbox) consentCheckbox.disabled = false;
+      } else {
+        resetConsentState();
+      }
+    }catch(_){ resetConsentState(); }
     if (logged) {
       try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
       try{ window.location.href = 'profile.html'; }catch(_){ }
@@ -165,17 +174,18 @@
   // Register
   modal.querySelector('#reg-submit').addEventListener('click', async ()=>{
     const msg = modal.querySelector('#reg-msg'); msg.textContent = '';
-    const payload = {
-      username: modal.querySelector('#reg-username').value.trim(),
-      email: modal.querySelector('#reg-email').value.trim(),
-      password: modal.querySelector('#reg-password').value,
-      first_name: modal.querySelector('#reg-first').value.trim(),
-      last_name: modal.querySelector('#reg-last').value.trim(),
-      consent: modal.querySelector('#reg-consent').checked
-    };
+      const payload = {
+        username: modal.querySelector('#reg-username').value.trim(),
+        email: modal.querySelector('#reg-email').value.trim(),
+        password: modal.querySelector('#reg-password').value,
+        first_name: modal.querySelector('#reg-first').value.trim(),
+        last_name: modal.querySelector('#reg-last').value.trim(),
+        consent: modal.querySelector('#reg-consent').checked
+      };
     if (!payload.username || !payload.password || !payload.first_name || !payload.last_name){ msg.textContent = 'Zorunlu alanları doldurun.'; return; }
     if (!consentOpened){ msg.textContent = 'Kayıt için Muvafakatnameyi görüntüleyip onaylayın.'; return; }
     if (!payload.consent){ msg.textContent = 'Muvafakatnameyi onaylamadan kayıt olamazsınız.'; return; }
+    try{ localStorage.setItem(CONSENT_KEY, '1'); }catch(_){ }
     try{
       const base = API(); if (!base){ msg.textContent = 'Sunucu tanımlı değil.'; return; }
       const res = await fetch(`${base}/api/auth/register`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
