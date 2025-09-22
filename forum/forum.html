@@ -179,307 +179,344 @@
     </div>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+    
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = ((window.API_PROXY_BASE || '').trim()).replace(/\/$/, '');
 
-            // ===================================
-            // ===== STATE & MOCK DATA (VERİ) =====
-            // ===================================
+    const elements = {
+      categoriesList: document.getElementById('categories-list'),
+      forumListView: document.getElementById('forum-list-view'),
+      threadDetailView: document.getElementById('thread-detail-view'),
+      threadsContainer: document.getElementById('threads-container'),
+      threadDetailContent: document.getElementById('thread-detail-content'),
+      backToListBtn: document.getElementById('back-to-list-btn'),
+      backToListText: document.getElementById('back-to-list-text'),
+      listTitle: document.getElementById('list-title'),
+      searchInput: document.querySelector('#forum-list-view input[type="text"]'),
+      sortSelect: document.querySelector('#forum-list-view select'),
+      newThreadModal: document.getElementById('new-thread-modal'),
+      openModalBtn: document.getElementById('open-new-thread-modal-btn'),
+      closeModalBtn: document.getElementById('close-modal-btn'),
+      newThreadForm: document.getElementById('new-thread-form'),
+      threadCategorySelect: document.getElementById('thread-category'),
+    };
 
-            const mockData = {
-                users: {
-                    'user-1': { name: 'Ali Veli', avatar: 'https://placehold.co/48x48/f87171/ffffff?text=A' },
-                    'user-2': { name: 'Merve Yılmaz', avatar: 'https://placehold.co/48x48/34d399/ffffff?text=M' },
-                    'user-3': { name: 'Selin Kaya', avatar: 'https://placehold.co/48x48/60a5fa/ffffff?text=S' },
-                    'user-4': { name: 'Umut Kökgöz', avatar: 'https://placehold.co/48x48/7c3aed/ffffff?text=U', isDeveloper: true },
-                    'user-5': { name: 'Can Boz', avatar: 'https://placehold.co/48x48/f59e0b/ffffff?text=C' },
-                },
-                categories: [
-                    { id: 'all', name: 'Tüm Konular' },
-                    { id: 'general', name: 'Genel Tartışma' },
-                    { id: 'ai-editor', name: 'AI Editör' },
-                    { id: 'code-lab', name: 'Kod Laboratuvarı' },
-                    { id: 'assistant', name: 'Sesli Asistan' },
-                    { id: 'bug-reports', name: 'Hata Bildirimleri' },
-                ],
-                threads: [
-                    {
-                        id: 1,
-                        categoryId: 'ai-editor',
-                        title: 'AI Editör için yeni özellik önerileri',
-                        authorId: 'user-1',
-                        timestamp: '2 saat önce',
-                        views: 256,
-                        content: `<p>Herkese selamlar,</p>
-                            <p>Öncelikle bu harika proje için Umut'a teşekkürler. AI Editör'ü keyifle kullanıyorum ve aklıma birkaç fikir geldi. Bunları tartışmaya açmak istedim:</p>
-                            <ul>
-                                <li><strong>Katman Sistemi:</strong> Photoshop'taki gibi katmanlar ekleyebilsek ve her katmanda farklı bir yapay zeka işlemi yapabilsek harika olmaz mı?</li>
-                                <li><strong>Maskeleme Aracı:</strong> Yapay zekanın sadece fotoğrafın belirli bir bölümünü (örneğin sadece gökyüzünü) değiştirmesini sağlamak için bir maskeleme aracı eklenebilir.</li>
-                                <li><strong>Toplu İşlem:</strong> Birden fazla fotoğrafa aynı komutu uygulama özelliği çok zaman kazandırır.</li>
-                            </ul>
-                            <p>Siz ne düşüniyorsunuz? Başka ne gibi özellikler eklenebilir?</p>`,
-                        replies: [
-                            { authorId: 'user-2', timestamp: '1 saat önce', content: '<p>Katman sistemi fikri harika! Bu, aracı çok daha profesyonel bir seviyeye taşıyacaktır. Maskeleme de kesinlikle olmalı.</p>', likes: 15 },
-                            { authorId: 'user-4', timestamp: '45 dakika önce', content: '<p>Harika öneriler için teşekkürler Ali! Bu fikirleri kesinlikle not aldım. Katman sistemi teknik olarak biraz zorlayıcı olabilir ama maskeleme aracı üzerinde çalışmaya başlayabilirim. Toplu işlem de yol haritasına eklendi!</p>', likes: 28 },
-                            { authorId: 'user-5', timestamp: '10 dakika önce', content: '<p>Maskeleme aracını sabırsızlıkla bekliyorum. Bu özellik gelirse projelerimde sıkça kullanırım.</p>', likes: 7 },
-                        ]
-                    },
-                    {
-                        id: 2,
-                        categoryId: 'code-lab',
-                        title: 'Kod Laboratuvarı\'nda JavaScript projesi paylaştım',
-                        authorId: 'user-2',
-                        timestamp: '5 saat önce',
-                        views: 102,
-                        content: `<p>Basit bir oyun yazdım, kodlarını ve demosunu Kod Laboratuvarı üzerinden paylaşıyorum. Geri bildirimlerinizi bekliyorum.</p>
-                                   <p>Oyunun amacı, ekranda rastgele beliren hedefleri vurmak. İşte kod bloğu:</p>
-                                   <pre><code>function setup() {\n  createCanvas(400, 400);\n}\n\nfunction draw() {\n  background(220);\n  ellipse(50,50,80,80);\n}</code></pre>
-                                   <p>Geliştirmeler için önerilere açığım!</p>`,
-                        replies: [
-                            { authorId: 'user-5', timestamp: '4 saat önce', content: '<p>Çok güzel bir başlangıç olmuş! Skor sistemi eklenebilir.</p>', likes: 5 },
-                        ]
-                    },
-                    {
-                        id: 3,
-                        categoryId: 'assistant',
-                        title: 'Sesli asistana nasıl yeni komutlar ekleyebiliriz?',
-                        authorId: 'user-3',
-                        timestamp: '1 gün önce',
-                        views: 188,
-                        content: `<p>Kaira'nın sesli asistanını kendi projeme entegre etmek istiyorum. Yeni komutlar tanımlamak için bir döküman veya örnek var mı acaba?</p>
-                                   <blockquote>Bu konuda yardıma ihtiyacım var, şimdiden teşekkürler.</blockquote>`,
-                        replies: [
-                            { authorId: 'user-4', timestamp: '20 saat önce', content: '<p>Merhaba Selin, şu an için bu özellik dökümante edilmedi ama yakın zamanda bir rehber hazırlayacağım. Temel olarak `commands.js` dosyasını genişletmen gerekiyor.</p>', likes: 12 },
-                            { authorId: 'user-3', timestamp: '19 saat önce', content: '<p>Teşekkürler Umut, rehberi bekliyor olacağım!</p>', likes: 2 },
-                        ]
-                    },
-                ]
-            };
+    const state = {
+      categories: [],
+      currentCategory: 'all',
+      threads: [],
+      search: '',
+      activeThread: null,
+    };
 
-            let currentCategory = 'all';
+    const escapeHtml = (str = '') => str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
 
-            // ===================================
-            // ===== SELECTORS (ELEMENTLER) =====
-            // ===================================
-            
-            const forumListView = document.getElementById('forum-list-view');
-            const threadDetailView = document.getElementById('thread-detail-view');
-            const newThreadModal = document.getElementById('new-thread-modal');
-            const openModalBtn = document.getElementById('open-new-thread-modal-btn');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-            const backToListBtn = document.getElementById('back-to-list-btn');
-            const categoriesList = document.getElementById('categories-list');
-            const threadsContainer = document.getElementById('threads-container');
-            const threadDetailContent = document.getElementById('thread-detail-content');
-            const listTitle = document.getElementById('list-title');
-            const backToListText = document.getElementById('back-to-list-text');
-            const newThreadForm = document.getElementById('new-thread-form');
-            const threadCategorySelect = document.getElementById('thread-category');
-            
+    const textToHtml = (text = '') => {
+      const safe = escapeHtml(text.trim());
+      if (!safe) return '';
+      return `<p>${safe.replace(/
+{2,}/g, '</p><p>').replace(/
+/g, '<br>')}</p>`;
+    };
 
-            // ===================================
-            // ===== RENDER FUNCTIONS (ÇİZİM) =====
-            // ===================================
+    const formatDate = (iso) => {
+      if (!iso) return '';
+      const dt = new Date(iso);
+      if (Number.isNaN(dt.getTime())) return iso;
+      return dt.toLocaleString('tr-TR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    };
 
-            const renderCategories = () => {
-                categoriesList.innerHTML = '';
-                threadCategorySelect.innerHTML = '';
-                mockData.categories.forEach(category => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<a href="#" class="block p-2 rounded-md hover:bg-gray-100 category-item ${category.id === currentCategory ? 'active' : ''}" data-category-id="${category.id}">${category.name}</a>`;
-                    categoriesList.appendChild(li);
+    const currentUser = () => {
+      try {
+        return JSON.parse(localStorage.getItem('kaira_user') || 'null') || {};
+      } catch (_) {
+        return {};
+      }
+    };
 
-                    if (category.id !== 'all') {
-                        const option = document.createElement('option');
-                        option.value = category.id;
-                        option.textContent = category.name;
-                        threadCategorySelect.appendChild(option);
-                    }
-                });
-            };
+    const generateAvatar = (name = '') => {
+      const letter = (name || '?').trim().charAt(0).toUpperCase() || 'K';
+      return `https://placehold.co/48x48/6366f1/ffffff?text=${encodeURIComponent(letter)}`;
+    };
 
-            const renderThreadList = () => {
-                threadsContainer.innerHTML = '';
-                const filteredThreads = currentCategory === 'all' 
-                    ? mockData.threads 
-                    : mockData.threads.filter(t => t.categoryId === currentCategory);
+    const apiGet = async (path, params = {}) => {
+      const url = new URL(`${API_BASE}${path}` || path, window.location.origin);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          url.searchParams.append(key, value);
+        }
+      });
+      const res = await fetch(url.toString(), { credentials: 'include' });
+      if (!res.ok) {
+        const detail = await res.text();
+        throw new Error(detail || 'İstek başarısız oldu');
+      }
+      return res.json();
+    };
 
-                if (filteredThreads.length === 0) {
-                    threadsContainer.innerHTML = '<p class="p-4 text-center text-gray-500">Bu kategoride henüz konu yok.</p>';
-                    return;
-                }
+    const apiPost = async (path, payload) => {
+      const res = await fetch(`${API_BASE}${path}` || path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'İşlem başarısız oldu');
+      }
+      return res.json();
+    };
 
-                filteredThreads.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Placeholder sort
+    const renderCategories = () => {
+      elements.categoriesList.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      state.categories.forEach((category) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <a href="#" class="block p-2 rounded-md hover:bg-gray-100 category-item ${category.slug === state.currentCategory ? 'active' : ''}" data-category-id="${category.slug}">
+            ${escapeHtml(category.name)}
+          </a>`;
+        frag.appendChild(li);
+      });
+      elements.categoriesList.appendChild(frag);
 
-                filteredThreads.forEach(thread => {
-                    const author = mockData.users[thread.authorId];
-                    const threadHtml = `
-                        <div class="thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer" data-thread-id="${thread.id}">
-                            <img src="${author.avatar}" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
-                            <div class="flex-grow">
-                                <h3 class="font-semibold text-gray-900">${thread.title}</h3>
-                                <div class="text-xs text-gray-400 mt-2">
-                                    <span>${author.name} tarafından</span> · <span class="font-medium">${thread.timestamp}</span>
-                                </div>
-                            </div>
-                            <div class="text-right flex-shrink-0 w-24">
-                                <div class="text-sm font-semibold">${thread.replies.length} Yanıt</div>
-                                <div class="text-xs text-gray-500">${thread.views} Görüntülenme</div>
-                            </div>
-                        </div>`;
-                    threadsContainer.innerHTML += threadHtml;
-                });
-            };
-            
-            const renderThreadDetail = (threadId) => {
-                const thread = mockData.threads.find(t => t.id == threadId);
-                if (!thread) return;
+      // Yeni konu formu için seçenekler
+      elements.threadCategorySelect.innerHTML = '';
+      state.categories.filter((c) => c.slug !== 'all').forEach((category) => {
+        const opt = document.createElement('option');
+        opt.value = category.slug;
+        opt.textContent = category.name;
+        elements.threadCategorySelect.appendChild(opt);
+      });
+    };
 
-                const author = mockData.users[thread.authorId];
-                
-                let repliesHtml = thread.replies.map(reply => {
-                    const replyAuthor = mockData.users[reply.authorId];
-                    return `
-                        <div class="bg-white rounded-xl shadow-sm p-5 flex space-x-4">
-                            <img src="${replyAuthor.avatar}" alt="Avatar" class="w-10 h-10 rounded-full flex-shrink-0 mt-1">
-                            <div class="flex-grow">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <span class="font-semibold ${replyAuthor.isDeveloper ? 'text-indigo-600' : ''}">${replyAuthor.name} ${replyAuthor.isDeveloper ? '(Geliştirici)' : ''}</span>
-                                        <span class="text-sm text-gray-500">· ${reply.timestamp}</span>
-                                    </div>
-                                </div>
-                                <div class="prose max-w-none mt-2 text-gray-700">${reply.content}</div>
-                                <div class="mt-4 flex items-center space-x-4 text-sm text-gray-500">
-                                    <button class="flex items-center space-x-1 hover:text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 18.331V10h5M14 10V3a2 2 0 00-2-2l-1 5z"></path></svg> <span>${reply.likes} Beğen</span></button>
-                                    <button class="flex items-center space-x-1 hover:text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> <span>Yanıtla</span></button>
-                                </div>
-                            </div>
-                        </div>`;
-                }).join('');
+    const renderThreadList = () => {
+      const container = elements.threadsContainer;
+      container.innerHTML = '';
+      if (!state.threads.length) {
+        container.innerHTML = '<p class="p-4 text-center text-gray-500">Bu kategoride henüz konu yok.</p>';
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      state.threads.forEach((thread) => {
+        const div = document.createElement('div');
+        div.className = 'thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer';
+        div.dataset.threadId = thread.id;
+        div.innerHTML = `
+          <img src="${thread.author_avatar || generateAvatar(thread.author_name)}" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
+          <div class="flex-grow">
+            <h3 class="font-semibold text-gray-900">${escapeHtml(thread.title)}</h3>
+            <div class="text-xs text-gray-500 mt-2">
+              <span>${escapeHtml(thread.author_name || 'Anonim')}</span> · <span>${formatDate(thread.created_at)}</span>
+            </div>
+            <div class="text-xs text-gray-400 mt-1">${escapeHtml(thread.category_name || '')}</div>
+          </div>`;
+        frag.appendChild(div);
+      });
+      container.appendChild(frag);
+    };
 
-                const detailHtml = `
-                    <div class="bg-white rounded-xl shadow-md p-5">
-                        <h2 class="text-2xl font-bold text-gray-900">${thread.title}</h2>
-                        <div class="flex items-center space-x-3 mt-4 pb-4 border-b border-gray-200">
-                            <img src="${author.avatar}" alt="Avatar" class="w-12 h-12 rounded-full">
-                            <div>
-                                <div class="font-semibold">${author.name}</div>
-                                <div class="text-sm text-gray-500">${thread.timestamp} · Konu Sahibi</div>
-                            </div>
-                        </div>
-                        <div class="prose max-w-none mt-4 text-gray-700">${thread.content}</div>
-                    </div>
+    const renderThreadDetail = ({ thread, replies }) => {
+      state.activeThread = thread;
+      const repliesHtml = replies.map((reply) => `
+        <div class="bg-white rounded-xl shadow-sm p-5 flex space-x-4">
+          <img src="${reply.author_avatar || generateAvatar(reply.author_name)}" alt="Avatar" class="w-10 h-10 rounded-full flex-shrink-0 mt-1">
+          <div class="flex-grow">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="font-semibold">${escapeHtml(reply.author_name || 'Anonim')}</span>
+                <span class="text-sm text-gray-500">· ${formatDate(reply.created_at)}</span>
+              </div>
+            </div>
+            <div class="prose max-w-none mt-2 text-gray-700">${reply.body || ''}</div>
+          </div>
+        </div>`).join('');
 
-                    <div id="replies-container" class="mt-6 space-y-6">
-                        <h3 class="text-xl font-semibold border-b pb-2">Yanıtlar (${thread.replies.length})</h3>
-                        ${repliesHtml}
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-md p-5 mt-6">
-                        <h3 class="font-semibold mb-3">Yanıtınızı Yazın</h3>
-                        <textarea id="reply-textarea" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" rows="5" placeholder="Düşüncelerinizi paylaşın..."></textarea>
-                        <div class="text-right mt-3">
-                            <button class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition">Yanıt Gönder</button>
-                        </div>
-                    </div>`;
+      elements.threadDetailContent.innerHTML = `
+        <div class="bg-white rounded-xl shadow-md p-5">
+          <h2 class="text-2xl font-bold text-gray-900">${escapeHtml(thread.title)}</h2>
+          <div class="flex items-center space-x-3 mt-4 pb-4 border-b border-gray-200">
+            <img src="${thread.author_avatar || generateAvatar(thread.author_name)}" alt="Avatar" class="w-12 h-12 rounded-full">
+            <div>
+              <div class="font-semibold">${escapeHtml(thread.author_name || 'Anonim')}</div>
+              <div class="text-sm text-gray-500">${formatDate(thread.created_at)}</div>
+            </div>
+          </div>
+          <div class="prose max-w-none mt-4 text-gray-700">${thread.body || ''}</div>
+        </div>
+        <div id="replies-container" class="mt-6 space-y-6">
+          <h3 class="text-xl font-semibold border-b pb-2">Yanıtlar (${replies.length})</h3>
+          ${repliesHtml || '<p class="text-sm text-gray-500">Henüz yanıt yok.</p>'}
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-5 mt-6">
+          <h3 class="font-semibold mb-3">Yanıtınızı Yazın</h3>
+          <form id="reply-form" class="space-y-3">
+            <textarea id="reply-text" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" rows="4" placeholder="Düşüncelerinizi paylaşın..." required></textarea>
+            <div class="text-right">
+              <button type="submit" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition">Yanıt Gönder</button>
+            </div>
+          </form>
+        </div>`;
 
-                threadDetailContent.innerHTML = detailHtml;
-            };
+      const replyForm = document.getElementById('reply-form');
+      replyForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const textArea = document.getElementById('reply-text');
+        const message = textArea.value.trim();
+        if (!message) return;
+        try {
+          const user = currentUser();
+          const payload = {
+            body: textToHtml(message),
+            author_name: user.username || user.name || 'Misafir Kullanıcı',
+            author_avatar: user.avatar || generateAvatar(user.username || user.name || message),
+          };
+          const data = await apiPost(`/api/forum/threads/${thread.id}/replies`, payload);
+          textArea.value = '';
+          renderThreadDetail(data);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    };
 
-            // ===================================
-            // ===== EVENT LISTENERS (OLAYLAR) =====
-            // ===================================
+    const showView = (view) => {
+      elements.forumListView.classList.add('hidden');
+      elements.threadDetailView.classList.add('hidden');
+      view.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-            const showView = (viewToShow) => {
-                forumListView.classList.add('hidden', 'opacity-0');
-                threadDetailView.classList.add('hidden', 'opacity-0');
-                
-                viewToShow.classList.remove('hidden');
-                setTimeout(() => viewToShow.classList.remove('opacity-0'), 10);
-            };
+    const loadCategories = async () => {
+      const data = await apiGet('/api/forum/categories');
+      state.categories = [
+        { id: 'all', slug: 'all', name: 'Tüm Konular' },
+        ...(data.categories || []).map((c) => ({ id: c.id, slug: c.slug, name: c.name })),
+      ];
+      renderCategories();
+    };
 
-            threadsContainer.addEventListener('click', (e) => {
-                const threadItem = e.target.closest('.thread-item');
-                if (threadItem) {
-                    const threadId = threadItem.dataset.threadId;
-                    const categoryName = mockData.categories.find(c => c.id === currentCategory).name;
-                    backToListText.textContent = `${categoryName} Kategorisine Geri Dön`;
-                    renderThreadDetail(threadId);
-                    showView(threadDetailView);
-                    window.scrollTo(0, 0);
-                }
-            });
+    const loadThreads = async () => {
+      const params = {};
+      if (state.currentCategory && state.currentCategory !== 'all') params.category_id = state.currentCategory;
+      if (state.search) params.search = state.search;
+      const data = await apiGet('/api/forum/threads', params);
+      state.threads = data.threads || [];
+      renderThreadList();
+    };
 
-            backToListBtn.addEventListener('click', () => {
-                showView(forumListView);
-            });
+    const loadThreadDetail = async (threadId) => {
+      const data = await apiGet(`/api/forum/threads/${threadId}`);
+      renderThreadDetail(data);
+      const category = state.categories.find((c) => c.slug === data.thread.category_slug) || state.categories[0];
+      elements.backToListText.textContent = `${category ? category.name : 'Tüm Konular'} listesine geri dön`;
+      showView(elements.threadDetailView);
+    };
 
-            categoriesList.addEventListener('click', (e) => {
-                e.preventDefault();
-                const categoryItem = e.target.closest('.category-item');
-                if (categoryItem) {
-                    currentCategory = categoryItem.dataset.categoryId;
-                    const categoryName = mockData.categories.find(c => c.id === currentCategory).name;
-                    listTitle.textContent = categoryName;
-                    renderCategories();
-                    renderThreadList();
-                    showView(forumListView);
-                }
-            });
+    const handleThreadCreation = async (event) => {
+      event.preventDefault();
+      const title = elements.newThreadForm['thread-title'].value.trim();
+      const categorySlug = elements.newThreadForm['thread-category'].value;
+      const message = elements.newThreadForm['thread-message'].value;
+      if (!title || !categorySlug || !message.trim()) {
+        alert('Lütfen tüm alanları doldurun.');
+        return;
+      }
+      try {
+        const user = currentUser();
+        const payload = {
+          title,
+          category_id: categorySlug,
+          body: textToHtml(message),
+          author_name: user.username || user.name || 'Misafir Kullanıcı',
+          author_avatar: user.avatar || generateAvatar(user.username || user.name || title),
+        };
+        const data = await apiPost('/api/forum/threads', payload);
+        elements.newThreadForm.reset();
+        closeModal();
+        state.currentCategory = data.thread.category_slug || 'all';
+        await loadThreads();
+        renderCategories();
+        await loadThreadDetail(data.thread.id);
+      } catch (err) {
+        alert(err.message);
+      }
+    };
 
-            const openModal = () => {
-                newThreadModal.classList.remove('hidden');
-                setTimeout(() => {
-                    newThreadModal.classList.remove('opacity-0');
-                    newThreadModal.querySelector('.modal-content').classList.remove('scale-95');
-                }, 10);
-            };
+    const openModal = () => {
+      elements.newThreadModal.classList.remove('hidden');
+      setTimeout(() => {
+        elements.newThreadModal.classList.remove('opacity-0');
+        elements.newThreadModal.querySelector('.modal-content').classList.remove('scale-95');
+      }, 10);
+    };
 
-            const closeModal = () => {
-                newThreadModal.classList.add('opacity-0');
-                newThreadModal.querySelector('.modal-content').classList.add('scale-95');
-                setTimeout(() => newThreadModal.classList.add('hidden'), 300);
-            };
+    const closeModal = () => {
+      elements.newThreadModal.classList.add('opacity-0');
+      elements.newThreadModal.querySelector('.modal-content').classList.add('scale-95');
+      setTimeout(() => elements.newThreadModal.classList.add('hidden'), 250);
+    };
 
-            openModalBtn.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-            newThreadModal.addEventListener('click', (e) => { if (e.target === newThreadModal) closeModal(); });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !newThreadModal.classList.contains('hidden')) closeModal(); });
-            
-            newThreadForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const newThread = {
-                    id: mockData.threads.length + 1,
-                    categoryId: newThreadForm['thread-category'].value,
-                    title: newThreadForm['thread-title'].value,
-                    authorId: 'user-4', // Simulating logged in user
-                    timestamp: 'şimdi',
-                    views: 0,
-                    content: `<p>${newThreadForm['thread-message'].value.replace(/\n/g, '</p><p>')}</p>`,
-                    replies: []
-                };
-                mockData.threads.unshift(newThread); // Add to the beginning
-                currentCategory = newThread.categoryId;
-                renderCategories();
-                renderThreadList();
-                showView(forumListView);
-                closeModal();
-                newThreadForm.reset();
-            });
+    // Event bindings
+    elements.categoriesList.addEventListener('click', (event) => {
+      const target = event.target.closest('.category-item');
+      if (!target) return;
+      event.preventDefault();
+      state.currentCategory = target.dataset.categoryId;
+      const category = state.categories.find((c) => c.slug === state.currentCategory);
+      elements.listTitle.textContent = category ? category.name : 'Konular';
+      renderCategories();
+      loadThreads();
+      showView(elements.forumListView);
+    });
 
-            // ===================================
-            // ===== INITIALIZATION (BAŞLATMA) =====
-            // ===================================
-            
-            const init = () => {
-                renderCategories();
-                renderThreadList();
-            };
+    elements.threadsContainer.addEventListener('click', (event) => {
+      const item = event.target.closest('.thread-item');
+      if (!item) return;
+      loadThreadDetail(item.dataset.threadId);
+    });
 
-            init();
-        });
-    </script>
+    elements.backToListBtn.addEventListener('click', () => {
+      showView(elements.forumListView);
+    });
+
+    elements.openModalBtn.addEventListener('click', openModal);
+    elements.closeModalBtn.addEventListener('click', closeModal);
+    elements.newThreadModal.addEventListener('click', (event) => {
+      if (event.target === elements.newThreadModal) closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !elements.newThreadModal.classList.contains('hidden')) closeModal();
+    });
+
+    elements.newThreadForm.addEventListener('submit', handleThreadCreation);
+
+    elements.searchInput.addEventListener('input', (event) => {
+      state.search = event.target.value.trim();
+      clearTimeout(elements.searchInput._debounce);
+      elements.searchInput._debounce = setTimeout(loadThreads, 300);
+    });
+
+    (async () => {
+      try {
+        await loadCategories();
+        await loadThreads();
+      } catch (err) {
+        alert(err.message);
+      }
+    })();
+  });
+</script>
+
 </body>
 </html>
-
