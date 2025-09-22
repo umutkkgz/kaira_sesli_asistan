@@ -212,10 +212,19 @@
                  onerror="try{this.parentNode.innerHTML='🤗'}catch(_){}" />
           </div>
         </a>
-        <div class="min-h-screen flex flex-col items-center justify-center text-center p-4">
-            <h1 class="text-5xl md:text-7xl font-serif font-light text-slate-200 mb-4">KΔIRA'ya Hoş Geldin</h1>
-            <p class="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl">Lütfen deneyimlemek istediğin projeyi seç.</p>
-            <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl">
+        <div class="selection-stage min-h-screen flex flex-col items-center justify-center text-center p-4">
+            <div class="selection-effects" aria-hidden="true">
+              <div class="selection-aurora selection-aurora--left"></div>
+              <div class="selection-aurora selection-aurora--right"></div>
+              <div class="selection-orb selection-orb--cyan"></div>
+              <div class="selection-orb selection-orb--violet"></div>
+              <div class="selection-grid-layer"></div>
+            </div>
+            <h1 class="selection-title text-5xl md:text-7xl font-serif font-light text-slate-200 mb-4">
+              <span data-tilt="">KΔIRA'ya Hoş Geldin</span>
+            </h1>
+            <p class="selection-subtitle text-lg md:text-xl text-slate-400 mb-12 max-w-2xl">Lütfen deneyimlemek istediğin projeyi seç.</p>
+            <div class="selection-grid-content grid md:grid-cols-2 gap-8 w-full max-w-5xl">
                 <div class="absolute top-6 right-6 flex gap-2">
                   <a href="/model" class="bg-slate-800/70 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Model</a>
                   <a href="/fiyatlandırma" class="bg-slate-800/70 hover:bg-slate-700 text-slate-200 border border-slate-600 px-4 py-2 rounded-lg shadow">Fiyatlandırma</a>
@@ -735,6 +744,7 @@
       <div id="comments-list" class="space-y-3"></div>
     </section>
 <script type="module" src="js/system-prompt-helpers.js"></script>
+<script type="module" src="js/selection-effects.js"></script>
     <!-- Tanılama / Ağ Hatası Yüzeyleme -->
 <script id="diagnostics">
 (function(){

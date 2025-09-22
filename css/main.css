@@ -18,6 +18,173 @@
         .view { display: none; }
         .view.active { display: block; }
 
+        /* Selection (Landing) visual polish */
+        #selection-view { position: relative; overflow: hidden; }
+        .selection-stage { position: relative; width: 100%; z-index: 1; }
+        .selection-stage::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 50% -10%, rgba(56,189,248,0.18), rgba(15,23,42,0) 55%),
+                      radial-gradient(circle at 10% 90%, rgba(236,72,153,0.12), rgba(15,23,42,0) 55%);
+          opacity: 0.7;
+          z-index: -2;
+        }
+        .selection-effects {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: hidden;
+          z-index: -1;
+        }
+        .selection-grid-content { position: relative; z-index: 2; }
+        .selection-aurora {
+          position: absolute;
+          width: 120vw;
+          height: 120vh;
+          filter: blur(50px);
+          opacity: 0.45;
+          transform: translate3d(0,0,0);
+          animation: selectionAuroraDrift 24s ease-in-out infinite;
+          mix-blend-mode: screen;
+        }
+        .selection-aurora--left {
+          top: -25vh;
+          left: -30vw;
+          background: radial-gradient(circle at 40% 40%, rgba(59,130,246,0.55), rgba(12,74,110,0) 60%);
+          animation-delay: -6s;
+        }
+        .selection-aurora--right {
+          bottom: -30vh;
+          right: -25vw;
+          background: radial-gradient(circle at 55% 45%, rgba(147,51,234,0.45), rgba(30,58,138,0) 65%);
+        }
+        .selection-orb {
+          position: absolute;
+          width: 420px;
+          height: 420px;
+          border-radius: 50%;
+          filter: blur(2px);
+          opacity: 0.35;
+          transform: translate3d(0,0,0);
+          animation: selectionOrbFloat 18s ease-in-out infinite;
+        }
+        .selection-orb--cyan {
+          top: 12vh;
+          right: 18vw;
+          background: radial-gradient(circle, rgba(45,212,191,0.55) 0%, rgba(45,212,191,0) 65%);
+        }
+        .selection-orb--violet {
+          bottom: 8vh;
+          left: 14vw;
+          background: radial-gradient(circle, rgba(168,85,247,0.5) 0%, rgba(168,85,247,0) 60%);
+          animation-delay: -9s;
+        }
+        .selection-grid-layer {
+          position: absolute;
+          inset: 8% 6%;
+          border-radius: 40px;
+          background:
+            linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(148,163,184,0.08) 1px, transparent 1px);
+          background-size: 120px 120px;
+          opacity: 0.25;
+          transform: rotate(2deg) translate3d(0,0,0);
+          animation: selectionGridShift 12s linear infinite;
+        }
+        .selection-title span {
+          display: inline-block;
+          background: linear-gradient(120deg, rgba(236,72,153,0.9), rgba(59,130,246,0.9));
+          -webkit-background-clip: text;
+          color: transparent;
+          text-shadow: 0 10px 35px rgba(59,130,246,0.35);
+        }
+        .selection-subtitle {
+          position: relative;
+        }
+        .selection-subtitle::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          bottom: -18px;
+          transform: translateX(-50%);
+          width: 160px;
+          height: 2px;
+          background: linear-gradient(90deg, rgba(236,72,153,0), rgba(236,72,153,0.5), rgba(56,189,248,0));
+          opacity: 0.6;
+        }
+        .choice-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 22px;
+          background: linear-gradient(135deg, rgba(15,23,42,0.84), rgba(30,41,59,0.75));
+          border: 1px solid rgba(148,163,184,0.18);
+          box-shadow: 0 25px 40px rgba(2,6,23,0.55);
+          transition: transform 0.45s cubic-bezier(.21,1,.23,1), box-shadow 0.45s cubic-bezier(.21,1,.23,1), border-color 0.35s ease;
+        }
+        .choice-card::before,
+        .choice-card::after {
+          content: '';
+          position: absolute;
+          inset: -40%;
+          opacity: 0;
+          transition: opacity 0.35s ease;
+          pointer-events: none;
+        }
+        .choice-card::before {
+          background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(96,165,250,0.35), rgba(59,130,246,0) 55%);
+        }
+        .choice-card::after {
+          background: conic-gradient(from 120deg, rgba(236,72,153,0.3), rgba(34,211,238,0.35), rgba(236,72,153,0.3));
+          mix-blend-mode: screen;
+          filter: blur(28px);
+        }
+        .choice-card:hover,
+        .choice-card:focus-within {
+          transform: translateY(-8px) scale(1.01);
+          box-shadow: 0 35px 60px rgba(14,51,95,0.45);
+          border-color: rgba(96,165,250,0.4);
+        }
+        .choice-card:hover::before,
+        .choice-card:hover::after,
+        .choice-card:focus-within::before,
+        .choice-card:focus-within::after { opacity: 1; }
+        .choice-card h2 {
+          text-shadow: 0 12px 30px rgba(14,165,233,0.2);
+        }
+        .choice-card:focus-visible {
+          outline: 2px solid rgba(96,165,250,0.7);
+          outline-offset: 4px;
+        }
+        .selection-grid-content .choice-card { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+        @keyframes selectionAuroraDrift {
+          0% { transform: translate3d(0,0,0) scale(1); opacity: 0.45; }
+          50% { transform: translate3d(4%, -2%, 0) scale(1.06); opacity: 0.55; }
+          100% { transform: translate3d(0,0,0) scale(1); opacity: 0.45; }
+        }
+        @keyframes selectionOrbFloat {
+          0% { transform: translate3d(0,0,0) scale(1); }
+          50% { transform: translate3d(0,-18px,0) scale(1.05); }
+          100% { transform: translate3d(0,0,0) scale(1); }
+        }
+        @keyframes selectionGridShift {
+          to { background-position: 120px 120px, 120px 120px; }
+        }
+
+        @media (max-width: 768px) {
+          .selection-grid-layer { inset: 12% 4%; border-radius: 28px; }
+          .choice-card { border-radius: 20px; }
+          .selection-subtitle::after { width: 120px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .selection-aurora,
+          .selection-orb,
+          .selection-grid-layer { animation: none !important; }
+          .choice-card { transition: border-color 0.3s ease; transform: none !important; }
+        }
+
         /* Digital Afterlife Stilleri */
         #afterlife-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.6; }
         .afterlife-section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5rem 1.5rem; position: relative; z-index: 1; }
@@ -74,15 +241,6 @@
 /* Make asistan fixed canvases obey the reveal clip during transition */
 .reveal-mode #asistan-bg-canvas,
 .reveal-mode #asistan-avatar-canvas { position: absolute !important; }
-
-        /* Seçim Ekranı Stilleri */
-        .choice-card {
-            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-        }
-        .choice-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 0 100px rgba(0, 191, 255, 0.3);
-        }
 
         /* Evrensel Sohbet Arayüzü Stilleri */
         .chat-loader {
