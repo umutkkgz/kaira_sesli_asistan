@@ -100,18 +100,20 @@
     // Helper to safely open a new window and render plain text (escaped)
     const renderTextInNewWindow = (text, opts={})=>{
       const isRaw = !!opts.raw;
-      const safe = isRaw ? String(text||'') : (String(text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s])));
       const w = window.open('', '_blank', 'noopener');
-      if (w && w.document) {
-        if (isRaw) {
-          w.document.write(safe);
-        } else {
-          w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${safe}</pre>`);
-        }
-        markConsentOpened();
-      } else {
+      if (!w || !w.document) {
         alert('Belge görüntülenemedi. Açılır pencere engelleyicisini kontrol edin.');
+        return;
       }
+      const doc = w.document;
+      const payload = isRaw
+        ? String(text || '')
+        : `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Muvafakatname</title><style>body{margin:0;background:#0f172a;color:#e2e8f0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial;padding:24px;}pre{white-space:pre-wrap;}</style></head><body><pre>${String(text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</pre></body></html>`;
+      doc.open('text/html','replace');
+      doc.write(payload);
+      doc.close();
+      try { w.focus(); } catch(_){}
+      markConsentOpened();
     };
 
     // 1) Try backend API if configured
