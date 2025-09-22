@@ -34,6 +34,36 @@
                       radial-gradient(circle at 80% 80%, rgba(236,72,153,0.08), rgba(2,6,23,0) 60%),
                       rgba(2,6,23,0.92);
           position: relative;
+          overflow: hidden;
+        }
+        .view-shell > * { position: relative; z-index: 1; }
+        .view-shell::before,
+        .view-shell::after {
+          content: '';
+          position: absolute;
+          inset: -20%;
+          pointer-events: none;
+          opacity: 0.35;
+          z-index: 0;
+        }
+        .view-shell::before {
+          background:
+            linear-gradient(115deg, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0) 55%),
+            linear-gradient(295deg, rgba(236,72,153,0.12) 0%, rgba(236,72,153,0) 60%);
+          filter: blur(32px);
+          transform: translate3d(0,0,0) scale(1.1);
+        }
+        .view-shell::after {
+          background:
+            repeating-linear-gradient(90deg, rgba(148,163,184,0.06) 0 2px, transparent 2px 110px),
+            repeating-linear-gradient(0deg, rgba(148,163,184,0.05) 0 2px, transparent 2px 110px);
+          animation: viewGridDrift 28s linear infinite;
+          mask: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.9) 70%);
+        }
+
+        @keyframes viewGridDrift {
+          from { transform: translate3d(0,0,0) rotate(0deg) scale(1.2); }
+          to { transform: translate3d(-6%, -4%, 0) rotate(2deg) scale(1.2); }
         }
 
         /* Selection (Landing) visual polish */
