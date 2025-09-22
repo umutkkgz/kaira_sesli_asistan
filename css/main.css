@@ -135,6 +135,9 @@
           color: transparent;
           text-shadow: 0 10px 35px rgba(59,130,246,0.35);
         }
+        .selection-title {
+          margin-right: clamp(48px, 11vw, 160px);
+        }
         .selection-subtitle {
           position: relative;
         }
@@ -213,6 +216,7 @@
           .choice-card { border-radius: 20px; }
           .selection-links { position: static; margin-bottom: 1.75rem; justify-content: center; flex-wrap: wrap; }
           .selection-stage { padding-top: 4.5rem; }
+          .selection-title { margin-right: 0; }
           .selection-link { font-size: 0.78rem; padding: 0.5rem 1.1rem; }
           .selection-links + .selection-title { margin-top: 0.5rem; }
           .selection-subtitle::after { width: 120px; }
