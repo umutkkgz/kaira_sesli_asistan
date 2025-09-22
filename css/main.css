@@ -136,7 +136,7 @@
           text-shadow: 0 10px 35px rgba(59,130,246,0.35);
         }
         .selection-title {
-          margin-right: clamp(96px, 15vw, 220px);
+          margin-right: clamp(192px, 22vw, 360px);
         }
         .selection-subtitle {
           position: relative;
