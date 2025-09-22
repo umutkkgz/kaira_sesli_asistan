@@ -451,7 +451,7 @@
     </div>
     
     <!-- EVRENSEL SOHBET GÖRÜNÜMÜ -->
-    <div id="chat-view" class="view bg-gray-900">
+    <div id="chat-view" class="view view-shell">
         <div class="howto-hint">
           <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-chat-pop">Nasıl kullanılır?</button>
           <div class="howto-popover" id="howto-chat-pop" role="dialog" aria-labelledby="howto-chat-title">
@@ -536,7 +536,7 @@
     </div>
 
     <!-- KΔIRA CODE LAB GÖRÜNÜMÜ -->
-    <div id="code-view" class="view bg-gray-900">
+    <div id="code-view" class="view view-shell">
         <div class="howto-hint">
           <button class="howto-label" type="button" aria-expanded="false" aria-controls="howto-code-pop">Nasıl kullanılır?</button>
           <div class="howto-popover" id="howto-code-pop" role="dialog" aria-labelledby="howto-code-title">
@@ -572,7 +572,7 @@
                         <div class="text-gray-300 font-medium"><span id="cl-active-file">(dosya yok)</span></div>
                         <button id="cl-save" class="px-2 py-1 text-xs rounded bg-blue-600 text-white">Kaydet</button>
                     </div>
-                    <textarea id="cl-editor" class="w-full h-[50vh] bg-gray-900 text-gray-100 rounded p-3 font-mono text-sm" spellcheck="false" placeholder="Kodunuzu yazın…"></textarea>
+                    <textarea id="cl-editor" class="w-full h-[50vh] glass-console text-gray-100 p-3 font-mono text-sm" spellcheck="false" placeholder="Kodunuzu yazın…"></textarea>
                 </div>
             </div>
             <div class="space-y-3">
@@ -581,7 +581,7 @@
                         <div class="text-gray-300 font-medium">Çalıştır</div>
                         <div class="space-x-2">
                             <button id="cl-run" class="px-3 py-1 text-xs rounded bg-emerald-600 text-white">Çalıştır</button>
-                            <button id="cl-reset" class="px-3 py-1 text-xs rounded bg-gray-600 text-white">Sıfırla</button>
+                            <button id="cl-reset" class="px-3 py-1 text-xs rounded glass-chip">Sıfırla</button>
                         </div>
                     </div>
                     <div id="cl-runner" class="rounded-lg overflow-hidden border border-gray-700 bg-black" style="height: 360px;">
@@ -595,15 +595,15 @@
                             <div class="text-xs text-gray-400" id="cl-model-info">Model listesi yükleniyor…</div>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            <select id="cl-model" class="bg-gray-900 border border-gray-700 rounded p-2 text-gray-100 text-sm"></select>
+                            <select id="cl-model" class="glass-input rounded p-2 text-gray-100 text-sm"></select>
                             <button id="cl-generate" class="px-3 py-2 text-sm rounded bg-indigo-600 text-white">Öneri Üret</button>
                             <button id="cl-apply" class="px-3 py-2 text-sm rounded bg-emerald-600 text-white">Kodu Uygula</button>
                             <button id="cl-undo" class="px-3 py-2 text-sm rounded bg-amber-600 text-black">Geri Al</button>
                         </div>
-                        <textarea id="cl-prompt" rows="4" class="w-full bg-gray-900 text-gray-100 rounded p-2 text-sm" placeholder="Ne yapmak istiyorsun? Örn: 'Merkezde dönen bir yıldız alanı çiz'">
+                        <textarea id="cl-prompt" rows="4" class="w-full glass-console text-gray-100 p-2 text-sm" placeholder="Ne yapmak istiyorsun? Örn: 'Merkezde dönen bir yıldız alanı çiz'">
 Önce mevcut dosyaları analiz et, gerekirse yeni dosya öner. Yalnızca gerekli kodu üret.
                         </textarea>
-                        <div id="cl-ai-output" class="text-xs text-gray-300 whitespace-pre-wrap bg-gray-900 border border-gray-700 rounded p-2 min-h-[80px]"></div>
+                        <div id="cl-ai-output" class="text-xs text-gray-300 whitespace-pre-wrap glass-console p-2 min-h-[80px]"></div>
                     </div>
                 </div>
             </div>

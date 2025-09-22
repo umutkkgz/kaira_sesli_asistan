@@ -28,6 +28,14 @@
         .view { display: none; }
         .view.active { display: block; }
 
+        .view-shell {
+          min-height: 100vh;
+          background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), rgba(2,6,23,0) 60%),
+                      radial-gradient(circle at 80% 80%, rgba(236,72,153,0.08), rgba(2,6,23,0) 60%),
+                      rgba(2,6,23,0.92);
+          position: relative;
+        }
+
         /* Selection (Landing) visual polish */
         #selection-view { position: relative; overflow: hidden; }
         .selection-stage { position: relative; width: 100%; z-index: 1; }
@@ -217,7 +225,6 @@
         }
 
         .glass-chip-group {
-          display: inline-flex;
           padding: 4px;
           border-radius: 999px;
           background: rgba(15,23,42,0.55);
@@ -225,6 +232,18 @@
           box-shadow: inset 0 0 0 1px rgba(59,130,246,0.1);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glass-chip {
+          background: var(--kaira-chip-bg);
+          border: 1px solid var(--kaira-chip-border);
+          color: #e2e8f0;
+          box-shadow: var(--kaira-chip-shadow);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .glass-chip:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 18px 35px rgba(8,47,73,0.45);
         }
 
         .glass-input {
@@ -235,6 +254,13 @@
         .glass-input:focus {
           border-color: rgba(56,189,248,0.55);
           box-shadow: 0 0 0 1px rgba(56,189,248,0.4);
+        }
+
+        .glass-console {
+          background: rgba(10,19,46,0.85);
+          border: 1px solid rgba(59,130,246,0.35);
+          box-shadow: inset 0 0 0 1px rgba(56,189,248,0.08);
+          border-radius: 18px;
         }
 
         @keyframes selectionAuroraDrift {
