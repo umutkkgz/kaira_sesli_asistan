@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaira Forumları</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Hafif gri bir arka plan */
+        }
+        /* Geçiş animasyonları için */
+        .view {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- ANA KONTEYNER -->
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+
+        <!-- HEADER -->
+        <header class="bg-white rounded-xl shadow-md p-4 mb-6 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V4a2 2 0 012-2h6.172a2 2 0 011.414.586l3.828 3.828A2 2 0 0117 8z"></path></svg>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-900">Kaira Forumları</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="open-new-thread-modal-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105 flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span class="hidden md:block">Yeni Konu Aç</span>
+                </button>
+                <!-- Kullanıcı Avatarı -->
+                <img src="https://placehold.co/40x40/7c3aed/ffffff?text=U" alt="Kullanıcı Avatarı" class="w-10 h-10 rounded-full cursor-pointer">
+            </div>
+        </header>
+
+        <!-- ============================================= -->
+        <!-- ===== FORUM LİSTE GÖRÜNÜMÜ (ANA SAYFA) ===== -->
+        <!-- ============================================= -->
+        <main id="forum-list-view" class="view">
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold">Son Tartışmalar</h2>
+                </div>
+                <div class="divide-y divide-gray-200">
+                    <!-- Örnek Konu 1 -->
+                    <div class="thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer" data-thread-id="1">
+                        <img src="https://placehold.co/48x48/f87171/ffffff?text=A" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
+                        <div class="flex-grow">
+                            <h3 class="font-semibold text-gray-900">AI Editör için yeni özellik önerileri</h3>
+                            <p class="text-sm text-gray-600 mt-1">"Harika bir araç olmuş, aklıma birkaç fikir geldi. Özellikle katman (layer) sistemi eklenebilir mi?"</p>
+                            <div class="text-xs text-gray-400 mt-2">
+                                <span>Ali Veli tarafından</span> · <span class="font-medium">2 saat önce</span>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0 w-24">
+                            <div class="text-sm font-semibold">12 Yanıt</div>
+                            <div class="text-xs text-gray-500">256 Görüntülenme</div>
+                        </div>
+                    </div>
+                    <!-- Örnek Konu 2 -->
+                    <div class="thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer" data-thread-id="2">
+                        <img src="https://placehold.co/48x48/34d399/ffffff?text=M" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
+                        <div class="flex-grow">
+                            <h3 class="font-semibold text-gray-900">Kod Laboratuvarı'nda JavaScript projesi paylaştım</h3>
+                            <p class="text-sm text-gray-600 mt-1">"Basit bir oyun yazdım, kodlarını ve demosunu Kod Laboratuvarı üzerinden paylaşıyorum. Geri bildirimlerinizi bekliyorum."</p>
+                            <div class="text-xs text-gray-400 mt-2">
+                                <span>Merve Yılmaz tarafından</span> · <span class="font-medium">5 saat önce</span>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0 w-24">
+                            <div class="text-sm font-semibold">5 Yanıt</div>
+                            <div class="text-xs text-gray-500">102 Görüntülenme</div>
+                        </div>
+                    </div>
+                     <!-- Örnek Konu 3 -->
+                    <div class="thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer" data-thread-id="3">
+                        <img src="https://placehold.co/48x48/60a5fa/ffffff?text=S" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
+                        <div class="flex-grow">
+                            <h3 class="font-semibold text-gray-900">Sesli asistana nasıl yeni komutlar ekleyebiliriz?</h3>
+                            <p class="text-sm text-gray-600 mt-1">"Kaira'nın sesli asistanını kendi projeme entegre etmek istiyorum. Yeni komutlar tanımlamak için bir döküman var mı?"</p>
+                            <div class="text-xs text-gray-400 mt-2">
+                                <span>Selin Kaya tarafından</span> · <span class="font-medium">1 gün önce</span>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0 w-24">
+                            <div class="text-sm font-semibold">8 Yanıt</div>
+                            <div class="text-xs text-gray-500">188 Görüntülenme</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ======================================= -->
+        <!-- ===== KONU DETAY GÖRÜNÜMÜ (GİZLİ) ===== -->
+        <!-- ======================================= -->
+        <main id="thread-detail-view" class="view hidden">
+            <div class="mb-4">
+                <button id="back-to-list-btn" class="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    <span>Tüm Konulara Geri Dön</span>
+                </button>
+            </div>
+            
+            <!-- ANA KONU MESAJI -->
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-2xl font-bold text-gray-900">AI Editör için yeni özellik önerileri</h2>
+                <div class="flex items-center space-x-3 mt-4 pb-4 border-b border-gray-200">
+                    <img src="https://placehold.co/48x48/f87171/ffffff?text=A" alt="Avatar" class="w-12 h-12 rounded-full">
+                    <div>
+                        <div class="font-semibold">Ali Veli</div>
+                        <div class="text-sm text-gray-500">2 saat önce · Konu Sahibi</div>
+                    </div>
+                </div>
+                <div class="prose max-w-none mt-4 text-gray-700">
+                    <p>Herkese selamlar,</p>
+                    <p>Öncelikle bu harika proje için Umut'a teşekkürler. AI Editör'ü keyifle kullanıyorum ve aklıma birkaç fikir geldi. Bunları tartışmaya açmak istedim:</p>
+                    <ul>
+                        <li><strong>Katman Sistemi:</strong> Photoshop'taki gibi katmanlar ekleyebilsek ve her katmanda farklı bir yapay zeka işlemi yapabilsek harika olmaz mı?</li>
+                        <li><strong>Maskeleme Aracı:</strong> Yapay zekanın sadece fotoğrafın belirli bir bölümünü (örneğin sadece gökyüzünü) değiştirmesini sağlamak için bir maskeleme aracı eklenebilir.</li>
+                        <li><strong>Toplu İşlem:</strong> Birden fazla fotoğrafa aynı komutu uygulama özelliği çok zaman kazandırır.</li>
+                    </ul>
+                    <p>Siz ne düşünüyorsunuz? Başka ne gibi özellikler eklenebilir?</p>
+                </div>
+            </div>
+
+            <!-- YANITLAR BÖLÜMÜ -->
+            <div id="replies-container" class="mt-6 space-y-6">
+                <h3 class="text-xl font-semibold border-b pb-2">Yanıtlar (2)</h3>
+                <!-- Örnek Yanıt 1 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 flex space-x-4">
+                    <img src="https://placehold.co/40x40/34d399/ffffff?text=M" alt="Avatar" class="w-10 h-10 rounded-full flex-shrink-0 mt-1">
+                    <div class="flex-grow">
+                        <div class="flex justify-between">
+                            <div>
+                                <span class="font-semibold">Merve Yılmaz</span>
+                                <span class="text-sm text-gray-500">· 1 saat önce</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-gray-700">
+                           <p>Katman sistemi fikri harika! Bu, aracı çok daha profesyonel bir seviyeye taşıyacaktır. Maskeleme de kesinlikle olmalı.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Örnek Yanıt 2 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 flex space-x-4">
+                    <img src="https://placehold.co/40x40/7c3aed/ffffff?text=U" alt="Avatar" class="w-10 h-10 rounded-full flex-shrink-0 mt-1">
+                    <div class="flex-grow">
+                        <div class="flex justify-between">
+                            <div>
+                                <span class="font-semibold text-indigo-600">Umut Kökgöz (Geliştirici)</span>
+                                <span class="text-sm text-gray-500">· 45 dakika önce</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-gray-700">
+                           <p>Harika öneriler için teşekkürler Ali! Bu fikirleri kesinlikle not aldım. Katman sistemi teknik olarak biraz zorlayıcı olabilir ama maskeleme aracı üzerinde çalışmaya başlayabilirim. Toplu işlem de yol haritasına eklendi!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YANIT YAZMA FORMU -->
+            <div class="bg-white rounded-xl shadow-md p-5 mt-6">
+                <h3 class="font-semibold mb-3">Yanıtınızı Yazın</h3>
+                <textarea id="reply-textarea" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" rows="5" placeholder="Düşüncelerinizi paylaşın..."></textarea>
+                <div class="text-right mt-3">
+                    <button class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition">Yanıt Gönder</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- =================================================== -->
+    <!-- ===== YENİ KONU OLUŞTURMA MODALI (PENCERE) ===== -->
+    <!-- =================================================== -->
+    <div id="new-thread-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 transform scale-95 modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Yeni Bir Konu Başlat</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-700 text-3xl">&times;</button>
+            </div>
+            <form>
+                <div class="mb-4">
+                    <label for="thread-title" class="block text-sm font-medium text-gray-700 mb-1">Konu Başlığı</label>
+                    <input type="text" id="thread-title" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Konunuzu özetleyen bir başlık girin...">
+                </div>
+                <div class="mb-6">
+                    <label for="thread-message" class="block text-sm font-medium text-gray-700 mb-1">Mesajınız</label>
+                    <textarea id="thread-message" rows="8" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Detayları buraya yazın..."></textarea>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="w-full md:w-auto bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition">Konuyu Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // GÖRÜNÜM ELEMENTLERİ
+            const forumListView = document.getElementById('forum-list-view');
+            const threadDetailView = document.getElementById('thread-detail-view');
+            
+            // MODAL ELEMENTLERİ
+            const newThreadModal = document.getElementById('new-thread-modal');
+            const openModalBtn = document.getElementById('open-new-thread-modal-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            // BUTONLAR VE LİNKLER
+            const backToListBtn = document.getElementById('back-to-list-btn');
+            const threadItems = document.querySelectorAll('.thread-item');
+
+            // --- SAYFA GEÇİŞ LOGİĞİ ---
+
+            const showView = (viewToShow) => {
+                forumListView.classList.add('hidden', 'opacity-0');
+                threadDetailView.classList.add('hidden', 'opacity-0');
+                
+                viewToShow.classList.remove('hidden');
+                setTimeout(() => viewToShow.classList.remove('opacity-0'), 50); // Animasyon için küçük bir gecikme
+            };
+            
+            // Konu listesindeki bir konuya tıklandığında detay görünümüne geç
+            threadItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Normalde burada `item.dataset.threadId` ile sunucudan veri çekilir.
+                    // Şimdilik sadece görünümü değiştiriyoruz.
+                    showView(threadDetailView);
+                    window.scrollTo(0, 0); // Sayfanın başına git
+                });
+            });
+
+            // Detay sayfasından listeye geri dön
+            backToListBtn.addEventListener('click', () => {
+                showView(forumListView);
+            });
+
+
+            // --- MODAL LOGİĞİ ---
+
+            const openModal = () => {
+                newThreadModal.classList.remove('hidden');
+                // Animasyon için
+                setTimeout(() => {
+                    newThreadModal.querySelector('.modal-backdrop').classList.add('opacity-100');
+                    newThreadModal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            };
+
+            const closeModal = () => {
+                // Animasyon için
+                newThreadModal.querySelector('.modal-backdrop').classList.remove('opacity-100');
+                newThreadModal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => {
+                    newThreadModal.classList.add('hidden');
+                }, 300); // Transition süresiyle eşleşmeli
+            };
+
+            openModalBtn.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+
+            // Modalın dışına tıklandığında kapat
+            newThreadModal.addEventListener('click', (event) => {
+                if (event.target === newThreadModal) {
+                    closeModal();
+                }
+            });
+
+            // ESC tuşu ile modalı kapat
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !newThreadModal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

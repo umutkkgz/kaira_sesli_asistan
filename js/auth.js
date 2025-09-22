@@ -27,7 +27,7 @@
           <input id="reg-password" type="password" placeholder="Şifre" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
           <div class="text-sm text-gray-300">
             <label class="inline-flex items-start gap-2">
-              <input id="reg-consent" type="checkbox" class="mt-1" disabled />
+              <input id="reg-consent" type="checkbox" class="mt-1" />
               <span>Muvafakatname'yi okudum ve kabul ediyorum. <button id="reg-view-consent" class="underline text-indigo-400">Görüntüle</button></span>
             </label>
           </div>
@@ -51,23 +51,15 @@
 
   const consentCheckbox = modal.querySelector('#reg-consent');
   const CONSENT_KEY = 'kairaConsentAcknowledged';
-  let consentOpened = false;
-
-  function resetConsentState(){
-    consentOpened = false;
-    if (consentCheckbox){
-      consentCheckbox.checked = false;
-      consentCheckbox.disabled = true;
-    }
-  }
 
   function show(){
     modal.classList.remove('hidden');
-    resetConsentState();
+    try {
+      if (localStorage.getItem(CONSENT_KEY) === '1') consentCheckbox.checked = true;
+    } catch(_){ }
   }
   function hide(){
     modal.classList.add('hidden');
-    resetConsentState();
   }
 
   openBtn.addEventListener('click', (e)=>{
@@ -78,14 +70,6 @@
       const tok = localStorage.getItem('kaira_auth_token');
       logged = !!(tok && u && u.username);
     }catch(_){ }
-    try{
-      if (localStorage.getItem(CONSENT_KEY) === '1'){
-        consentOpened = true;
-        if (consentCheckbox) consentCheckbox.disabled = false;
-      } else {
-        resetConsentState();
-      }
-    }catch(_){ resetConsentState(); }
     if (logged) {
       try{ openBtn.setAttribute('href','profile.html'); }catch(_){ }
       try{ window.location.href = 'profile.html'; }catch(_){ }
@@ -96,41 +80,18 @@
   modal.querySelector('#auth-close').addEventListener('click', hide);
   modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
 
-  function markConsentOpened(){
-    consentOpened = true;
-    if (consentCheckbox) {
-      consentCheckbox.disabled = false;
-      consentCheckbox.focus({ preventScroll: true });
-    }
-  }
-
   // Consent viewer
   modal.querySelector('#reg-view-consent').addEventListener('click', async ()=>{
-    // Helper: try to open given URL in a new tab. Returns true if successful.
-    const openUrl = (url)=>{
-      const w = window.open(url, '_blank', 'noopener,noreferrer');
-      if (w) {
-        try { w.focus(); } catch(_){ }
-        markConsentOpened();
-        return true;
-      }
-      return false;
-    };
-
     // Helper: fallback renderer when popup blocked (writes inline HTML)
     const renderTextInNewWindow = (text)=>{
       const w = window.open('', '_blank', 'noopener,noreferrer');
-      if (!w || !w.document) {
-        alert('Belge görüntülenemedi. Açılır pencere engelleyicisini kontrol edin.');
-        return false;
-      }
+      if (!w || !w.document) return false;
       const doc = w.document;
       const payload = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Muvafakatname</title><style>body{margin:0;background:#0f172a;color:#e2e8f0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial;padding:24px;}a{color:#38bdf8;}h1,h2,h3{color:#f472b6;}pre{white-space:pre-wrap;}</style></head><body>${text || 'Belge bulunamadı.'}</body></html>`;
       doc.open('text/html','replace');
       doc.write(payload);
       doc.close();
       try { w.focus(); } catch(_){ }
-      markConsentOpened();
       return true;
     };
 
@@ -149,10 +110,6 @@
     // 2) Fallback: load local file directly
     try {
       const tryPaths = ['server/muvafakatname.html', 'muvafakatname.html'];
-      for (const path of tryPaths){
-        if (openUrl(path)) return;
-      }
-
       let lastErr = null;
       for (const path of tryPaths){
         try {
@@ -183,7 +140,6 @@
         consent: modal.querySelector('#reg-consent').checked
       };
     if (!payload.username || !payload.password || !payload.first_name || !payload.last_name){ msg.textContent = 'Zorunlu alanları doldurun.'; return; }
-    if (!consentOpened){ msg.textContent = 'Kayıt için Muvafakatnameyi görüntüleyip onaylayın.'; return; }
     if (!payload.consent){ msg.textContent = 'Muvafakatnameyi onaylamadan kayıt olamazsınız.'; return; }
     try{ localStorage.setItem(CONSENT_KEY, '1'); }catch(_){ }
     try{
