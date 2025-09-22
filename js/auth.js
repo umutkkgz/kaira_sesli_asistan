@@ -27,7 +27,7 @@
           <input id="reg-password" type="password" placeholder="Şifre" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
           <div class="text-sm text-gray-300">
             <label class="inline-flex items-start gap-2">
-              <input id="reg-consent" type="checkbox" class="mt-1" />
+              <input id="reg-consent" type="checkbox" class="mt-1" disabled />
               <span>Muvafakatname'yi okudum ve kabul ediyorum. <button id="reg-view-consent" class="underline text-indigo-400">Görüntüle</button></span>
             </label>
           </div>
@@ -49,8 +49,25 @@
   </div>`;
   document.body.appendChild(modal);
 
-  function show(){ modal.classList.remove('hidden'); }
-  function hide(){ modal.classList.add('hidden'); }
+  const consentCheckbox = modal.querySelector('#reg-consent');
+  let consentOpened = false;
+
+  function resetConsentState(){
+    consentOpened = false;
+    if (consentCheckbox){
+      consentCheckbox.checked = false;
+      consentCheckbox.disabled = true;
+    }
+  }
+
+  function show(){
+    modal.classList.remove('hidden');
+    resetConsentState();
+  }
+  function hide(){
+    modal.classList.add('hidden');
+    resetConsentState();
+  }
 
   openBtn.addEventListener('click', (e)=>{
     e.preventDefault(); // Biz yöneteceğiz
@@ -70,14 +87,28 @@
   modal.querySelector('#auth-close').addEventListener('click', hide);
   modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
 
+  function markConsentOpened(){
+    consentOpened = true;
+    if (consentCheckbox) {
+      consentCheckbox.disabled = false;
+      consentCheckbox.focus({ preventScroll: true });
+    }
+  }
+
   // Consent viewer
   modal.querySelector('#reg-view-consent').addEventListener('click', async ()=>{
     // Helper to safely open a new window and render plain text (escaped)
-    const renderTextInNewWindow = (text)=>{
-      const safe = (text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]));
-      const w = window.open('', '_blank');
+    const renderTextInNewWindow = (text, opts={})=>{
+      const isRaw = !!opts.raw;
+      const safe = isRaw ? String(text||'') : (String(text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s])));
+      const w = window.open('', '_blank', 'noopener');
       if (w && w.document) {
-        w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${safe}</pre>`);
+        if (isRaw) {
+          w.document.write(safe);
+        } else {
+          w.document.write(`<pre style="white-space:pre-wrap;font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial">${safe}</pre>`);
+        }
+        markConsentOpened();
       } else {
         alert('Belge görüntülenemedi. Açılır pencere engelleyicisini kontrol edin.');
       }
@@ -97,10 +128,19 @@
 
     // 2) Fallback: load local file directly
     try {
-      const res = await fetch('muvafakatname.html', { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
-      if (!res.ok) throw new Error('local not ok');
-      const txt = await res.text();
-      renderTextInNewWindow(txt || 'Belge bulunamadı.');
+      const tryPaths = ['muvafakatname.html', 'server/muvafakatname.html'];
+      let lastErr = null;
+      for (const path of tryPaths){
+        try {
+          const res = await fetch(path, { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
+          if (!res.ok) throw new Error(`${path} not ok`);
+          const txt = await res.text();
+          const ctype = (res.headers.get('content-type') || '').toLowerCase();
+          renderTextInNewWindow(txt || 'Belge bulunamadı.', { raw: /html/.test(ctype) });
+          return;
+        } catch(err){ lastErr = err; }
+      }
+      throw lastErr || new Error('local not ok');
     } catch (e) {
       renderTextInNewWindow('Belge bulunamadı.');
     }
@@ -117,7 +157,9 @@
       last_name: modal.querySelector('#reg-last').value.trim(),
       consent: modal.querySelector('#reg-consent').checked
     };
-    if (!payload.username || !payload.password || !payload.first_name || !payload.last_name || !payload.consent){ msg.textContent = 'Zorunlu alanları doldurun ve onay verin.'; return; }
+    if (!payload.username || !payload.password || !payload.first_name || !payload.last_name){ msg.textContent = 'Zorunlu alanları doldurun.'; return; }
+    if (!consentOpened){ msg.textContent = 'Kayıt için Muvafakatnameyi görüntüleyip onaylayın.'; return; }
+    if (!payload.consent){ msg.textContent = 'Muvafakatnameyi onaylamadan kayıt olamazsınız.'; return; }
     try{
       const base = API(); if (!base){ msg.textContent = 'Sunucu tanımlı değil.'; return; }
       const res = await fetch(`${base}/api/auth/register`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
