@@ -170,11 +170,11 @@
     <button id="learn-chat-toggle" class="fixed bottom-5 left-5 z-[10050] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg" style="z-index:10050;">
       Chatbot
     </button>
-    <div id="learn-chat-panel" class="fixed bottom-24 left-5 z-[10050] hidden w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" style="z-index:10050;">
+    <div id="learn-chat-panel" class="fixed bottom-24 left-5 z-[10050] hidden w-[360px] max-w-[95vw] glass-panel shadow-2xl overflow-hidden" style="z-index:10050;">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <div id="learn-chat-title" class="text-white font-semibold">KΔIRA Chatbot</div>
         <div class="flex items-center gap-2">
-          <div class="bg-gray-800 rounded-lg p-0.5 flex items-center">
+          <div class="glass-chip-group flex items-center">
             <button id="learn-mode-think" class="px-2 py-1 text-xs rounded text-gray-300 hover:text-white focus:outline-none">Düşünen</button>
             <button id="learn-mode-learn" class="px-2 py-1 text-xs rounded text-gray-300 hover:text-white focus:outline-none">Öğrenen</button>
           </div>
@@ -183,9 +183,9 @@
         </div>
       </div>
       <div id="learn-chat-body" class="p-3 space-y-2 h-[260px] overflow-y-auto text-sm"></div>
-      <div class="p-3 border-t border-gray-700 bg-gray-800/40">
+      <div class="p-3 border-t border-gray-700/60 bg-slate-900/35 backdrop-blur">
         <div class="flex items-center gap-2">
-          <input id="learn-chat-input" type="text" placeholder="Sorunuzu yazın…" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input id="learn-chat-input" type="text" placeholder="Sorunuzu yazın…" class="flex-1 glass-input rounded px-3 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <button id="learn-chat-send" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded">Gönder</button>
         </div>
       </div>
@@ -370,10 +370,10 @@
     <div class="w-full max-w-2xl mx-auto glass-container rounded-2xl shadow-2xl flex flex-col p-6 relative h-screen-safe pb-safe">
       <!-- Asistan Yetki Kilidi (Şifre) -->
       <div id="asistan-auth-overlay" class="absolute inset-0 z-40 flex items-center justify-center bg-black/80" style="display:none;">
-        <div class="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-2xl p-6 text-center shadow-xl">
+        <div class="w-full max-w-sm glass-panel p-6 text-center shadow-xl">
           <h3 class="text-xl font-semibold text-white mb-2">Yetkili Şifrenizi Girin</h3>
           <p class="text-sm text-gray-400 mb-4">Sesli Asistan kullanımı yetkililerle sınırlıdır.</p>
-          <input id="asistan-auth-input" type="password" placeholder="Şifre" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <input id="asistan-auth-input" type="password" placeholder="Şifre" class="w-full glass-input rounded-lg px-3 py-2 text-white mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <button id="asistan-auth-submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg">Giriş</button>
           <div id="asistan-auth-msg" class="text-sm text-rose-400 mt-3 min-h-[1.25rem]"></div>
         </div>
@@ -388,7 +388,7 @@
       <canvas id="asistan-visualizer"></canvas>
       <div id="asistan-text-controls" class="mt-2 mb-2">
         <div class="w-full flex gap-2 items-center">
-          <input id="asistan-text-input" type="text" placeholder="Mikrofon çalışmıyorsa buradan yaz ve Enter'a bas..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 allow-select" />
+          <input id="asistan-text-input" type="text" placeholder="Mikrofon çalışmıyorsa buradan yaz ve Enter'a bas..." class="flex-1 glass-input rounded-lg px-3 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 allow-select" />
           <button id="asistan-send-btn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg">Gönder</button>
         </div>
       </div>
@@ -407,20 +407,20 @@
 <!-- Canlı Destek: Yüzen Buton ve Modal -->
   <button id="live-support-btn" class="fixed bottom-5 right-5 z-50 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg">Canlı Destek</button>
   <div id="live-support-modal" class="fixed inset-0 z-50 bg-black/60 hidden">
-  <div class="absolute bottom-20 right-5 w-[360px] max-w-[95vw] bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+  <div class="absolute bottom-20 right-5 w-[360px] max-w-[95vw] glass-panel shadow-2xl overflow-hidden">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
       <div class="text-white font-semibold">Canlı Destek</div>
       <button id="live-support-close" class="text-gray-400 hover:text-white">✕</button>
     </div>
     <div id="live-support-ident" class="p-4 space-y-2">
-      <input id="ls-name" type="text" placeholder="Ad Soyad" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
-      <input id="ls-email" type="email" placeholder="E-posta (opsiyonel)" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+      <input id="ls-name" type="text" placeholder="Ad Soyad" class="w-full glass-input rounded px-3 py-2 text-white" />
+      <input id="ls-email" type="email" placeholder="E-posta (opsiyonel)" class="w-full glass-input rounded px-3 py-2 text-white" />
       <button id="ls-start" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Sohbete Başla</button>
     </div>
     <div id="live-support-chat" class="hidden h-[360px] flex flex-col">
       <div id="ls-messages" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
       <div class="p-3 border-t border-gray-700 flex gap-2">
-        <input id="ls-input" type="text" placeholder="Sorunuzu yazın..." class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white" />
+        <input id="ls-input" type="text" placeholder="Sorunuzu yazın..." class="flex-1 glass-input rounded px-3 py-2 text-white" />
         <button id="ls-send" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
       </div>
     </div>
@@ -470,7 +470,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </button>
         <div class="w-full max-w-4xl mx-auto flex flex-col h-screen p-4">
-            <div class="bg-gray-800 rounded-2xl p-4 mb-4 border border-gray-700 flex-shrink-0">
+            <div class="glass-panel p-4 mb-4 flex-shrink-0">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-400">Sağlayıcı</label>
@@ -479,11 +479,11 @@
                             <label class="flex items-center"><input type="radio" name="provider" value="google" class="mr-2"> Google</label>
                         </div>
                         <label for="model-select" class="block text-sm font-medium text-gray-400 pt-2">Model</label>
-                        <select id="model-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                        <select id="model-select" class="w-full glass-input rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
                     </div>
                    <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-400">API Durumu</label>
-                    <div id="api-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    <div id="api-status" class="w-full glass-input rounded-lg px-3 py-2 text-white">
                         Anahtarlar sunucudan bekleniyor...
                     </div>
                 </div>
@@ -491,7 +491,7 @@
                          <label for="system-prompt" class="block text-sm font-medium text-gray-400">Sistem Promptu
                            <span id="system-prompt-status" class="ml-2 align-middle text-xs px-2 py-0.5 rounded border border-gray-600 bg-gray-700/60 text-gray-300">Uygulanmadı</span>
                          </label>
-                         <textarea id="system-prompt" rows="3" placeholder="Modelin nasıl davranmasını istersin?" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                         <textarea id="system-prompt" rows="3" placeholder="Modelin nasıl davranmasını istersin?" class="w-full glass-input rounded-lg p-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
                          <button id="apply-system-prompt" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg">Promptu Uygula</button>
                     </div>
                 </div>
@@ -500,13 +500,13 @@
                     <div id="groq-key-container">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Groq API Key (opsiyonel)</label>
                         <div class="relative">
-                            <input id="groq-api-key" type="password" placeholder="gsk_..." autocomplete="off" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                            <input id="groq-api-key" type="password" placeholder="gsk_..." autocomplete="off" class="w-full glass-input rounded-lg px-3 py-2 text-white" />
                         </div>
                     </div>
                     <div id="google-key-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Google (Gemini) API Key (opsiyonel)</label>
                         <div class="relative">
-                            <input id="google-api-key" type="password" placeholder="AIza..." autocomplete="off" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                            <input id="google-api-key" type="password" placeholder="AIza..." autocomplete="off" class="w-full glass-input rounded-lg px-3 py-2 text-white" />
                         </div>
                     </div>
                 </div>
@@ -515,7 +515,7 @@
                     <span class="text-xs text-gray-400">Anahtarlar parola gibi maskelenir ve localStorage'a kaydedilir.</span>
                 </div>
             </div>
-            <div class="flex-grow bg-gray-800 rounded-2xl p-4 border border-gray-700 flex flex-col">
+            <div class="flex-grow glass-panel p-4 flex flex-col">
                 <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
                      <h2 class="text-xl font-semibold text-white">Sohbet</h2>
                      <button id="clear-chat" type="button" class="text-sm text-gray-400 hover:text-white">Sohbeti Temizle</button>
@@ -526,7 +526,7 @@
                 </div>
                 <div id="error-message" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg my-2"></div>
                 <div class="mt-4 flex items-center gap-4">
-                    <textarea id="user-input" rows="1" placeholder="Mesajınızı yazın..." class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                    <textarea id="user-input" rows="1" placeholder="Mesajınızı yazın..." class="w-full glass-input rounded-lg p-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
                     <button id="send-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-full transition-colors disabled:bg-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
@@ -556,7 +556,7 @@
         </button>
         <div class="w-full max-w-6xl mx-auto p-4 grid md:grid-cols-2 gap-4">
             <div class="space-y-3">
-                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                <div class="glass-panel p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-gray-300 font-medium">Dosyalar</div>
                         <div class="space-x-2">
@@ -567,7 +567,7 @@
                     </div>
                     <ul id="cl-file-list" class="text-sm text-gray-300 max-h-40 overflow-auto space-y-1"></ul>
                 </div>
-                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                <div class="glass-panel p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-gray-300 font-medium"><span id="cl-active-file">(dosya yok)</span></div>
                         <button id="cl-save" class="px-2 py-1 text-xs rounded bg-blue-600 text-white">Kaydet</button>
@@ -576,7 +576,7 @@
                 </div>
             </div>
             <div class="space-y-3">
-                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                <div class="glass-panel p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div class="text-gray-300 font-medium">Çalıştır</div>
                         <div class="space-x-2">
@@ -588,7 +588,7 @@
                         <iframe id="cl-iframe" class="w-full h-full" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
                     </div>
                 </div>
-                <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-3">
+                <div class="glass-panel p-3">
                     <div class="grid grid-cols-1 gap-2">
                         <div class="flex items-center justify-between">
                             <div class="text-gray-300 font-medium">AI Yardım</div>
@@ -634,17 +634,17 @@
                 <h1 class="text-4xl md:text-5xl font-bold text-orange-400">K<span class="text-orange-300">Δ</span>IRA Gözlem Platformu</h1>
                 <p class="text-gray-400 mt-2">NASA'nın Gözünden Evren</p>
             </header>
-            <div class="mb-6 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+            <div class="mb-6 p-4 glass-panel">
                 <label class="block text-sm font-medium text-gray-300 mb-2">API Durumu</label>
-                <div id="nasa-api-status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-400">Anahtarlar sunucudan bekleniyor...</div>
+                <div id="nasa-api-status" class="w-full glass-input rounded-lg px-4 py-2 text-gray-300">Anahtarlar sunucudan bekleniyor...</div>
             </div>
-            <nav class="flex justify-center space-x-2 md:space-x-4 mb-6 bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <nav class="flex justify-center space-x-2 md:space-x-4 mb-6 glass-chip-group">
                 <button class="nasa-tab active" data-target="apod-container">Günün Fotoğrafı</button>
                 <button class="nasa-tab" data-target="mars-container">Mars Keşfi</button>
                 <button class="nasa-tab" data-target="library-container">Evrenin Kütüphanesi</button>
             </nav>
             <!-- Sky Map Section (Aladin) -->
-            <section id="aladin-section" class="mb-6 p-4 bg-gray-800/60 border border-gray-700 rounded-xl">
+            <section id="aladin-section" class="mb-6 p-4 glass-panel">
               <h2 class="text-xl font-semibold text-white mb-3">Gökyüzü Haritası</h2>
               <div class="mb-2">
                 <div class="al-toolbar glass">
@@ -686,11 +686,11 @@
             <main>
                 <div id="apod-container" class="nasa-content active"><div class="text-center text-gray-500 p-8">Adım 2’de etkinleştirilecek.</div></div>
                 <div id="mars-container" class="nasa-content">
-                  <section class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 md:p-6 mb-4">
+                  <section class="glass-panel p-4 md:p-6 mb-4">
                     <div class="grid md:grid-cols-4 gap-3 items-end">
                       <div>
                         <label class="block text-sm text-gray-300 mb-1">Rover</label>
-                        <select id="mars-rover" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <select id="mars-rover" class="w-full glass-input rounded-lg px-3 py-2 text-white">
                           <option value="curiosity" selected>Curiosity</option>
                           <option value="perseverance">Perseverance</option>
                           <option value="opportunity">Opportunity</option>
@@ -699,11 +699,11 @@
                       </div>
                       <div>
                         <label class="block text-sm text-gray-300 mb-1">Tarih (Dünya)</label>
-                        <input id="mars-date" type="date" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" />
+                        <input id="mars-date" type="date" class="w-full glass-input rounded-lg px-3 py-2 text-white" />
                       </div>
                       <div>
                         <label class="block text-sm text-gray-300 mb-1">Kamera</label>
-                        <select id="mars-camera" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <select id="mars-camera" class="w-full glass-input rounded-lg px-3 py-2 text-white">
                           <option value="">Hepsi</option>
                           <option value="FHAZ">FHAZ (Front Hazard)</option>
                           <option value="RHAZ">RHAZ (Rear Hazard)</option>
@@ -734,8 +734,8 @@
       <h2 class="text-2xl md:text-3xl font-semibold text-white mb-4">Topluluk Yorumları (Yakında!)</h2>
       <p class="text-slate-400 mb-4">Olumlu deneyim ve sorularınızı paylaşın. Küfür/olumsuz içerik yayınlanmaz. Yorum yapabilmek için giriş yapın.</p>
       <div id="comment-auth-hint" class="mb-3 text-sm text-amber-300 hidden">Yorum için giriş gerekli. <a href="profile.html" class="underline">Üyelik</a></div>
-      <div id="comment-form" class="bg-gray-900/60 border border-gray-700 rounded-2xl p-4 mb-6 allow-select">
-        <textarea id="comment-text" rows="3" placeholder="Mesajınızı yazın (yalnızca olumlu, yapıcı içerikler yayınlanır)" class="allow-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      <div id="comment-form" class="glass-panel p-4 mb-6 allow-select">
+        <textarea id="comment-text" rows="3" placeholder="Mesajınızı yazın (yalnızca olumlu, yapıcı içerikler yayınlanır)" class="allow-select w-full glass-input rounded px-3 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
         <div class="mt-3 flex items-center gap-2">
           <button id="comment-send" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">Gönder</button>
           <div id="comment-msg" class="text-sm"></div>
