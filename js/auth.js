@@ -97,7 +97,7 @@
 
     // 2) Fallback: load local file directly
     try {
-      const res = await fetch('muvafakatname.md', { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
+      const res = await fetch('muvafakatname.html', { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
       if (!res.ok) throw new Error('local not ok');
       const txt = await res.text();
       renderTextInNewWindow(txt || 'Belge bulunamadı.');

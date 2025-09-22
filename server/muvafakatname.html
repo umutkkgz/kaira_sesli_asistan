@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KΔIRA Platformu Kullanıcı Muvafakatnamesi</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-4">KΔIRA Platformu Kullanıcı Muvafakatnamesi ve Veri İşleme İzin Belgesi</h1>
+        <p class="mb-4">Son Güncelleme: 1 Eylül 2025</p>
+        <p class="mb-4">KΔIRA Birleşik Yapay Zeka Platformu'na ("Platform") hoş geldiniz. Bu platform, Umut Kökgöz ("Geliştirici") tarafından geliştirilen deneysel bir projedir. Platformu kullanarak aşağıdaki şartları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz.</p>
+        <h2 class="text-2xl font-semibold mb-2">1. Verilerin İşlenmesi ve Paylaşılması</h2>
+        <p class="mb-2">Platform, yapay zeka modelleriyle etkileşim kurmanızı sağlamak amacıyla çeşitli verilerinizi işlemektedir.</p>
+        <ul class="list-disc list-inside mb-4">
+            <li><strong>Ses Verileri:</strong> "KΔIRA Sesli Asistan" modülünü kullandığınızda, sesli komutlarınız kaydedilir, metne dönüştürülür ve yanıt üretmek amacıyla üçüncü taraf yapay zeka modellerine gönderilir. Bu veriler, hizmet kalitesini artırmak amacıyla anonim olarak analiz edilebilir.</li>
+            <li><strong>Metin Verileri:</strong> "Evrensel Sohbet Arayüzü", "Yapay Zeka Editör" ve "Code Lab" modüllerine girdiğiniz metinler (prompt'lar, kodlar, mesajlar), talimatlarınızı işlemek ve size bir çıktı sunmak üzere Google (Gemini) ve Groq (Llama, vb.) gibi üçüncü taraf API'lere gönderilir.</li>
+            <li><strong>Görsel Veriler:</strong> "Yapay Zeka Editör" modülüne yüklediğiniz fotoğraflar, düzenleme talimatlarınızla birlikte Google Gemini API'sine gönderilir. Yüklenen görseller, işlem tamamlandıktan sonra sunucularımızda kalıcı olarak saklanmaz.</li>
+            <li><strong>Kullanıcı Tarafında Saklanan Veriler:</strong> İsteğe bağlı olarak girdiğiniz API anahtarları, sohbet geçmişleriniz veya Code Lab dosyalarınız, güvenliğiniz için sadece sizin tarayıcınızın yerel depolama alanında (localStorage) saklanır ve Geliştirici tarafından erişilemez.</li>
+        </ul>
+    </div>
+</body>
+</html>
+        <h2 class="text-2xl font-semibold mb-2">2. Hizmetin Amacı ve Sınırları</h2>
+        <p class="mb-4">Deneysel Nitelik: KΔIRA, araştırma ve geliştirme amacıyla oluşturulmuş, kar amacı gütmeyen deneysel bir platformdur. Hizmetin kesintisiz veya hatasız olacağı garanti edilmez.</p>
+        <p class="mb-4">Yapay Zeka Yanıtları: Platform tarafından üretilen metin, görsel, ses veya kod içerikleri yapay zeka tarafından oluşturulmuştur. Bu içeriklerin doğruluğu, eksiksizliği veya uygunluğu garanti edilmez. Üretilen içerikler tıbbi, hukuki, finansal veya diğer profesyonel tavsiye niteliği taşımaz.</p>
+        <p class="mb-4">Sorumluluk Reddi: Geliştirici, yapay zeka tarafından üretilen içeriklerden veya bu içeriklerin kullanımından doğabilecek herhangi bir zarardan sorumlu tutulamaz.</p>
+        <h2 class="text-2xl font-semibold mb-2">3. Kullanıcı Yükümlülükleri</h2>
+        <ul class="list-disc list-inside mb-4">
+            <li>Platformu yasa dışı, zararlı, taciz edici veya başkalarının haklarını ihlal eden amaçlarla kullanmayacağınızı kabul edersiniz.</li>
+            <li>Hassas kişisel bilgilerinizi (TC Kimlik No, adres, finansal bilgiler vb.) platforma girmemelisiniz.</li>
+            <li>Oluşturduğunuz ve paylaştığınız tüm içeriklerin sorumluluğu size aittir.</li>
+        </ul>
+        <h2 class="text-2xl font-semibold mb-2">4. Onay Beyanı</h2>
+        <p class="mb-4">Bu metnin altındaki onay kutusunu işaretleyip "Kabul Et ve Devam Et" butonuna tıklayarak; yukarıdaki tüm maddeleri okuduğunuzu, anladığınızı ve KΔIRA platformunu bu koşullar altında kullanmayı, verilerinizin belirtilen şekilde işlenmesini ve üçüncü taraf API'lerle paylaşılmasını açıkça kabul ettiğinizi beyan edersiniz.</p>
+        <div class="mb-4">
+            <input type="checkbox" id="consent" class="mr-2">
+            <label for="consent">Yukarıdaki şartları okudum, anladım ve kabul ediyorum.</label>
+        </div>
+        <button id="acceptBtn" class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50" disabled>Kabul Et ve Devam Et</button>
+    </div>
+    <script>
+        const consentCheckbox = document.getElementById('consent');
+        const acceptBtn = document.getElementById('acceptBtn');
+        consentCheckbox.addEventListener('change', () => {
+            acceptBtn.disabled = !consentCheckbox.checked;
+        });
+        acceptBtn.addEventListener('click', () => {
+            if (consentCheckbox.checked) {
+                // Kullanıcı onayını localStorage'a kaydet
+                localStorage.setItem('kairaConsent', 'true');
+                // Ana sayfaya yönlendir
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>
