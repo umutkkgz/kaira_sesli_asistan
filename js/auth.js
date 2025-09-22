@@ -97,23 +97,32 @@
 
   // Consent viewer
   modal.querySelector('#reg-view-consent').addEventListener('click', async ()=>{
-    // Helper to safely open a new window and render plain text (escaped)
-    const renderTextInNewWindow = (text, opts={})=>{
-      const isRaw = !!opts.raw;
-      const w = window.open('', '_blank', 'noopener');
+    // Helper: try to open given URL in a new tab. Returns true if successful.
+    const openUrl = (url)=>{
+      const w = window.open(url, '_blank', 'noopener,noreferrer');
+      if (w) {
+        try { w.focus(); } catch(_){ }
+        markConsentOpened();
+        return true;
+      }
+      return false;
+    };
+
+    // Helper: fallback renderer when popup blocked (writes inline HTML)
+    const renderTextInNewWindow = (text)=>{
+      const w = window.open('', '_blank', 'noopener,noreferrer');
       if (!w || !w.document) {
         alert('Belge görüntülenemedi. Açılır pencere engelleyicisini kontrol edin.');
-        return;
+        return false;
       }
       const doc = w.document;
-      const payload = isRaw
-        ? String(text || '')
-        : `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Muvafakatname</title><style>body{margin:0;background:#0f172a;color:#e2e8f0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial;padding:24px;}pre{white-space:pre-wrap;}</style></head><body><pre>${String(text||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</pre></body></html>`;
+      const payload = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Muvafakatname</title><style>body{margin:0;background:#0f172a;color:#e2e8f0;font:16px/1.6 -apple-system,Segoe UI,Roboto,Arial;padding:24px;}a{color:#38bdf8;}h1,h2,h3{color:#f472b6;}pre{white-space:pre-wrap;}</style></head><body>${text || 'Belge bulunamadı.'}</body></html>`;
       doc.open('text/html','replace');
       doc.write(payload);
       doc.close();
-      try { w.focus(); } catch(_){}
+      try { w.focus(); } catch(_){ }
       markConsentOpened();
+      return true;
     };
 
     // 1) Try backend API if configured
@@ -130,7 +139,11 @@
 
     // 2) Fallback: load local file directly
     try {
-      const tryPaths = ['muvafakatname.html', 'server/muvafakatname.html'];
+      const tryPaths = ['server/muvafakatname.html', 'muvafakatname.html'];
+      for (const path of tryPaths){
+        if (openUrl(path)) return;
+      }
+
       let lastErr = null;
       for (const path of tryPaths){
         try {
@@ -138,7 +151,8 @@
           if (!res.ok) throw new Error(`${path} not ok`);
           const txt = await res.text();
           const ctype = (res.headers.get('content-type') || '').toLowerCase();
-          renderTextInNewWindow(txt || 'Belge bulunamadı.', { raw: /html/.test(ctype) });
+          const body = /html/.test(ctype) ? txt : `<pre>${String(txt||'').replace(/[&<>]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</pre>`;
+          if (renderTextInNewWindow(body)) return;
           return;
         } catch(err){ lastErr = err; }
       }
