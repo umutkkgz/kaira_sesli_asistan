@@ -82,7 +82,7 @@
 
   // Consent viewer
   modal.querySelector('#reg-view-consent').addEventListener('click', async ()=>{
-    // Helper: fallback renderer when popup blocked (writes inline HTML)
+    // Helper: fallback renderer when popup engeller
     const renderTextInNewWindow = (text)=>{
       const w = window.open('', '_blank', 'noopener,noreferrer');
       if (!w || !w.document) return false;
@@ -92,6 +92,7 @@
       doc.write(payload);
       doc.close();
       try { w.focus(); } catch(_){ }
+      try{ localStorage.setItem(CONSENT_KEY, '1'); }catch(_){ }
       return true;
     };
 
@@ -107,12 +108,18 @@
       }catch(_){ /* fall back to local file */ }
     }
 
-    // 2) Fallback: load local file directly
+    // 2) Fallback: load local dosyayı açmaya çalış
     try {
       const tryPaths = ['server/muvafakatname.html', 'muvafakatname.html'];
       let lastErr = null;
       for (const path of tryPaths){
         try {
+          const win = window.open(path, '_blank', 'noopener,noreferrer');
+          if (win){
+            try { win.focus(); } catch(_){ }
+            try{ localStorage.setItem(CONSENT_KEY, '1'); }catch(_){ }
+            return;
+          }
           const res = await fetch(path, { cache: 'no-store', headers:{'ngrok-skip-browser-warning':'true'} });
           if (!res.ok) throw new Error(`${path} not ok`);
           const txt = await res.text();
