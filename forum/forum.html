@@ -255,49 +255,41 @@
     const joinUrl = (base, path) => {
       if (!base) return path;
       if (/^https?:\/\//i.test(path)) return path;
-      return `${base}${path}`;
+      return base.replace(/\/$/, '') + path;
     };
 
-    const apiGet = async (path, params = {}) => {
-      const urlString = joinUrl(API_BASE, path);
-      const url = new URL(urlString, window.location.origin);
+    const baseHeaders = { 'ngrok-skip-browser-warning': 'true' };
+
+    const requestJson = async (method, path, { params = {}, body = null } = {}) => {
+      const url = new URL(joinUrl(API_BASE, path), window.location.origin);
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           url.searchParams.append(key, value);
         }
       });
-      const res = await fetch(url.toString());
+      const options = {
+        method,
+        headers: { ...baseHeaders },
+      };
+      if (body !== null) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+      }
+      const res = await fetch(url.toString(), options);
       if (!res.ok) {
-        const detail = await res.text();
+        const detail = await res.text().catch(() => res.statusText);
         throw new Error(detail || 'İstek başarısız oldu');
       }
       const text = await res.text();
       try {
-        return JSON.parse(text);
-      } catch (err) {
-        throw new Error(`Forum API JSON parse error. Yanıt: ${text.slice(0,120)}`);
+        return JSON.parse(text || 'null');
+      } catch (_) {
+        throw new Error(`Forum API JSON parse error. Yanıt: ${text.slice(0, 160)}`);
       }
     };
 
-    const apiPost = async (path, payload) => {
-      const urlString = joinUrl(API_BASE, path);
-      const res = await fetch(urlString, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const detail = await res.text();
-        throw new Error(detail || 'İşlem başarısız oldu');
-      }
-      const text = await res.text();
-      try {
-        return JSON.parse(text);
-      } catch (err) {
-        throw new Error(`Forum API JSON parse error. Yanıt: ${text.slice(0,120)}`);
-      }
-    };
-
+    const apiGet = (path, params = {}) => requestJson('GET', path, { params });
+    const apiPost = (path, payload) => requestJson('POST', path, { body: payload });
     const renderCategories = () => {
       elements.categoriesList.innerHTML = '';
       const frag = document.createDocumentFragment();
