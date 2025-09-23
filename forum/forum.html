@@ -160,6 +160,10 @@
                         <!-- Kategoriler JS ile yüklenecek -->
                     </select>
                 </div>
+                <div class="mb-4">
+                    <label for="thread-author" class="block text-sm font-medium text-gray-700 mb-1">Görünen Adınız (opsiyonel)</label>
+                    <input type="text" id="thread-author" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Forumda çıkacak isim" maxlength="60">
+                </div>
                 <div class="mb-6">
                     <label for="thread-message" class="block text-sm font-medium text-gray-700 mb-1">Mesajınız</label>
                     <!-- Sahte Zengin Metin Editörü Araç Çubuğu -->
@@ -181,14 +185,14 @@
 
     
 <script>
+
   document.addEventListener('DOMContentLoaded', () => {
     const DEFAULT_API_BASE = 'https://53575c229bbb.ngrok-free.app';
     const storedBase = (() => {
       try { return localStorage.getItem('kaira_api_base') || ''; }
       catch (_) { return ''; }
     })();
-    const apiBaseCandidate = (window.API_PROXY_BASE || storedBase || DEFAULT_API_BASE || '').trim();
-    const API_BASE = apiBaseCandidate.replace(/\/$/, '');
+    const API_BASE = (window.API_PROXY_BASE || storedBase || DEFAULT_API_BASE || '').trim().replace(/\/$/, '');
 
     const elements = {
       categoriesList: document.getElementById('categories-list'),
@@ -206,6 +210,7 @@
       closeModalBtn: document.getElementById('close-modal-btn'),
       newThreadForm: document.getElementById('new-thread-form'),
       threadCategorySelect: document.getElementById('thread-category'),
+      threadAuthorInput: document.getElementById('thread-author'),
     };
 
     const state = {
@@ -214,6 +219,8 @@
       threads: [],
       search: '',
       activeThread: null,
+      loadingThreads: false,
+      posting: false,
     };
 
     const escapeHtml = (str = '') => str
@@ -223,10 +230,14 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
 
+    const stripHtml = (html = '') => html.replace(/<[^>]*>/g, '');
+
     const textToHtml = (text = '') => {
       const safe = escapeHtml(text.trim());
       if (!safe) return '';
-      return '<p>' + safe.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+      return '<p>' + safe.replace(/
+{2,}/g, '</p><p>').replace(/
+/g, '<br>') + '</p>';
     };
 
     const formatDate = (iso) => {
@@ -284,12 +295,37 @@
       try {
         return JSON.parse(text || 'null');
       } catch (_) {
-        throw new Error(`Forum API JSON parse error. Yanıt: ${text.slice(0, 160)}`);
+        throw new Error(`Forum API JSON parse error. Yanıt: ${text.slice(0, 200)}`);
       }
     };
 
     const apiGet = (path, params = {}) => requestJson('GET', path, { params });
     const apiPost = (path, payload) => requestJson('POST', path, { body: payload });
+
+    const hideView = (view) => {
+      view.classList.add('opacity-0');
+      setTimeout(() => view.classList.add('hidden'), 200);
+    };
+
+    const showView = (view) => {
+      [elements.forumListView, elements.threadDetailView].forEach(v => {
+        if (v !== view) hideView(v);
+      });
+      view.classList.remove('hidden');
+      requestAnimationFrame(() => view.classList.remove('opacity-0'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const setThreadListSkeleton = (show) => {
+      if (show) {
+        elements.threadsContainer.innerHTML = `
+          <div class="p-4 animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
+            <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>`;
+      }
+    };
+
     const renderCategories = () => {
       elements.categoriesList.innerHTML = '';
       const frag = document.createDocumentFragment();
@@ -303,14 +339,15 @@
       });
       elements.categoriesList.appendChild(frag);
 
-      // Yeni konu formu için seçenekler
       elements.threadCategorySelect.innerHTML = '';
-      state.categories.filter((c) => c.slug !== 'all').forEach((category) => {
-        const opt = document.createElement('option');
-        opt.value = category.slug;
-        opt.textContent = category.name;
-        elements.threadCategorySelect.appendChild(opt);
-      });
+      state.categories
+        .filter((c) => c.slug !== 'all')
+        .forEach((category) => {
+          const opt = document.createElement('option');
+          opt.value = category.slug;
+          opt.textContent = category.name;
+          elements.threadCategorySelect.appendChild(opt);
+        });
     };
 
     const renderThreadList = () => {
@@ -325,14 +362,16 @@
         const div = document.createElement('div');
         div.className = 'thread-item p-4 flex items-start space-x-4 hover:bg-gray-50 cursor-pointer';
         div.dataset.threadId = thread.id;
+        const summary = stripHtml(thread.body || '').slice(0, 140);
         div.innerHTML = `
           <img src="${thread.author_avatar || generateAvatar(thread.author_name)}" alt="Avatar" class="w-12 h-12 rounded-full flex-shrink-0">
           <div class="flex-grow">
             <h3 class="font-semibold text-gray-900">${escapeHtml(thread.title)}</h3>
-            <div class="text-xs text-gray-500 mt-2">
-              <span>${escapeHtml(thread.author_name || 'Anonim')}</span> · <span>${formatDate(thread.created_at)}</span>
+            <div class="text-xs text-gray-500 mt-1">${escapeHtml(thread.category_name || '')}</div>
+            <p class="text-sm text-gray-500 mt-2">${escapeHtml(summary)}${summary.length === 140 ? '…' : ''}</p>
+            <div class="text-xs text-gray-400 mt-2">
+              ${escapeHtml(thread.author_name || 'Anonim')} · ${formatDate(thread.created_at)}
             </div>
-            <div class="text-xs text-gray-400 mt-1">${escapeHtml(thread.category_name || '')}</div>
           </div>`;
         frag.appendChild(div);
       });
@@ -346,10 +385,8 @@
           <img src="${reply.author_avatar || generateAvatar(reply.author_name)}" alt="Avatar" class="w-10 h-10 rounded-full flex-shrink-0 mt-1">
           <div class="flex-grow">
             <div class="flex justify-between items-center">
-              <div>
-                <span class="font-semibold">${escapeHtml(reply.author_name || 'Anonim')}</span>
-                <span class="text-sm text-gray-500">· ${formatDate(reply.created_at)}</span>
-              </div>
+              <span class="font-semibold">${escapeHtml(reply.author_name || 'Anonim')}</span>
+              <span class="text-xs text-gray-500">${formatDate(reply.created_at)}</span>
             </div>
             <div class="prose max-w-none mt-2 text-gray-700">${reply.body || ''}</div>
           </div>
@@ -357,7 +394,10 @@
 
       elements.threadDetailContent.innerHTML = `
         <div class="bg-white rounded-xl shadow-md p-5">
-          <h2 class="text-2xl font-bold text-gray-900">${escapeHtml(thread.title)}</h2>
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold text-gray-900">${escapeHtml(thread.title)}</h2>
+            <span class="px-3 py-1 rounded-full text-xs bg-indigo-100 text-indigo-600">${escapeHtml(thread.category_name || '')}</span>
+          </div>
           <div class="flex items-center space-x-3 mt-4 pb-4 border-b border-gray-200">
             <img src="${thread.author_avatar || generateAvatar(thread.author_name)}" alt="Avatar" class="w-12 h-12 rounded-full">
             <div>
@@ -384,10 +424,13 @@
       const replyForm = document.getElementById('reply-form');
       replyForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const textArea = document.getElementById('reply-text');
-        const message = textArea.value.trim();
+        if (state.posting) return;
+        const textarea = document.getElementById('reply-text');
+        const message = textarea.value.trim();
         if (!message) return;
         try {
+          state.posting = true;
+          replyForm.querySelector('button').disabled = true;
           const user = currentUser();
           const payload = {
             body: textToHtml(message),
@@ -395,19 +438,16 @@
             author_avatar: user.avatar || generateAvatar(user.username || user.name || message),
           };
           const data = await apiPost(`/api/forum/threads/${thread.id}/replies`, payload);
-          textArea.value = '';
+          textarea.value = '';
           renderThreadDetail(data);
+          showView(elements.threadDetailView);
         } catch (err) {
           alert(err.message);
+        } finally {
+          state.posting = false;
+          replyForm.querySelector('button').disabled = false;
         }
       });
-    };
-
-    const showView = (view) => {
-      elements.forumListView.classList.add('hidden');
-      elements.threadDetailView.classList.add('hidden');
-      view.classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const loadCategories = async () => {
@@ -420,39 +460,55 @@
     };
 
     const loadThreads = async () => {
-      const params = {};
-      if (state.currentCategory && state.currentCategory !== 'all') params.category_id = state.currentCategory;
-      if (state.search) params.search = state.search;
-      const data = await apiGet('/api/forum/threads', params);
-      state.threads = data.threads || [];
-      renderThreadList();
+      state.loadingThreads = true;
+      setThreadListSkeleton(true);
+      try {
+        const params = {};
+        if (state.currentCategory && state.currentCategory !== 'all') params.category_id = state.currentCategory;
+        if (state.search) params.search = state.search;
+        const data = await apiGet('/api/forum/threads', params);
+        state.threads = data.threads || [];
+        renderThreadList();
+      } catch (err) {
+        elements.threadsContainer.innerHTML = `<p class="p-4 text-center text-red-500">${escapeHtml(err.message)}</p>`;
+      } finally {
+        state.loadingThreads = false;
+      }
     };
 
     const loadThreadDetail = async (threadId) => {
-      const data = await apiGet(`/api/forum/threads/${threadId}`);
-      renderThreadDetail(data);
-      const category = state.categories.find((c) => c.slug === data.thread.category_slug) || state.categories[0];
-      elements.backToListText.textContent = `${category ? category.name : 'Tüm Konular'} listesine geri dön`;
-      showView(elements.threadDetailView);
+      try {
+        const data = await apiGet(`/api/forum/threads/${threadId}`);
+        renderThreadDetail(data);
+        const category = state.categories.find((c) => c.slug === (data.thread.category_slug || '')); 
+        elements.backToListText.textContent = `${category ? category.name : 'Tüm Konular'} listesine geri dön`;
+        showView(elements.threadDetailView);
+      } catch (err) {
+        alert(err.message);
+      }
     };
 
     const handleThreadCreation = async (event) => {
       event.preventDefault();
+      if (state.posting) return;
       const title = elements.newThreadForm['thread-title'].value.trim();
       const categorySlug = elements.newThreadForm['thread-category'].value;
       const message = elements.newThreadForm['thread-message'].value;
+      const displayName = elements.threadAuthorInput?.value.trim();
       if (!title || !categorySlug || !message.trim()) {
         alert('Lütfen tüm alanları doldurun.');
         return;
       }
       try {
+        state.posting = true;
+        elements.newThreadForm.querySelector('button[type="submit"]').disabled = true;
         const user = currentUser();
         const payload = {
           title,
           category_id: categorySlug,
           body: textToHtml(message),
-          author_name: user.username || user.name || 'Misafir Kullanıcı',
-          author_avatar: user.avatar || generateAvatar(user.username || user.name || title),
+          author_name: displayName || user.username || user.name || 'Misafir Kullanıcı',
+          author_avatar: user.avatar || generateAvatar(displayName || user.username || user.name || title),
         };
         const data = await apiPost('/api/forum/threads', payload);
         elements.newThreadForm.reset();
@@ -463,6 +519,9 @@
         await loadThreadDetail(data.thread.id);
       } catch (err) {
         alert(err.message);
+      } finally {
+        state.posting = false;
+        elements.newThreadForm.querySelector('button[type="submit"]').disabled = false;
       }
     };
 
@@ -480,12 +539,11 @@
       setTimeout(() => elements.newThreadModal.classList.add('hidden'), 250);
     };
 
-    // Event bindings
     elements.categoriesList.addEventListener('click', (event) => {
-      const target = event.target.closest('.category-item');
-      if (!target) return;
+      const item = event.target.closest('.category-item');
+      if (!item) return;
       event.preventDefault();
-      state.currentCategory = target.dataset.categoryId;
+      state.currentCategory = item.dataset.categoryId;
       const category = state.categories.find((c) => c.slug === state.currentCategory);
       elements.listTitle.textContent = category ? category.name : 'Konular';
       renderCategories();
@@ -500,6 +558,7 @@
     });
 
     elements.backToListBtn.addEventListener('click', () => {
+      state.activeThread = null;
       showView(elements.forumListView);
     });
 
@@ -514,11 +573,13 @@
 
     elements.newThreadForm.addEventListener('submit', handleThreadCreation);
 
-    elements.searchInput.addEventListener('input', (event) => {
-      state.search = event.target.value.trim();
-      clearTimeout(elements.searchInput._debounce);
-      elements.searchInput._debounce = setTimeout(loadThreads, 300);
-    });
+    if (elements.searchInput) {
+      elements.searchInput.addEventListener('input', (event) => {
+        state.search = event.target.value.trim();
+        clearTimeout(elements.searchInput._debounce);
+        elements.searchInput._debounce = setTimeout(loadThreads, 300);
+      });
+    }
 
     (async () => {
       try {
@@ -529,6 +590,7 @@
       }
     })();
   });
+
 </script>
 
 </body>
