@@ -235,9 +235,7 @@
     const textToHtml = (text = '') => {
       const safe = escapeHtml(text.trim());
       if (!safe) return '';
-      return '<p>' + safe.replace(/
-{2,}/g, '</p><p>').replace(/
-/g, '<br>') + '</p>';
+      return '<p>' + safe.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
     };
 
     const formatDate = (iso) => {
