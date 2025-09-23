@@ -21,6 +21,13 @@
       return sessionStorage.getItem('kaira_asistan_auth') === '1';
     } catch(_){ return false; }
   }
+
+  function ensureInitialCapital(str){
+    if (!str) return str;
+    const first = str.charAt(0);
+    return first.toLocaleUpperCase('tr-TR') + str.slice(first.length);
+  }
+
   function showAsistanAuth(msg){
     const overlay = document.getElementById('asistan-auth-overlay');
     const input = document.getElementById('asistan-auth-input');
@@ -157,10 +164,11 @@
       if (!isAsistanAuthorized()) { if (statusEl) statusEl.textContent = 'Yetkili şifresi gerekli'; showAsistanAuth(); return; }
       const txt = (textInput && textInput.value ? textInput.value : '').trim();
       if (!txt) return;
-      addMessageToChat(txt, 'user');
+      const normalized = ensureInitialCapital(txt);
+      addMessageToChat(normalized, 'user');
       if (textInput) textInput.value = '';
       unlockAudio();
-      getAIResponse(txt).catch(()=>{});
+      getAIResponse(normalized).catch(()=>{});
     }
     let isRecording = false;
 
@@ -186,7 +194,7 @@
       recognition = new SpeechRecognition(); recognition.continuous = false; recognition.lang = 'tr-TR'; recognition.interimResults = false;
       recognition.onstart = ()=>{ isRecording = true; micBtn.classList.remove('breathe'); micBtn.classList.add('is-listening'); statusEl.textContent='Dinliyorum...'; setCoreState('listening'); try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_start'); }catch(_){ } };
       recognition.onend = ()=>{ isRecording = false; micBtn.classList.remove('is-listening'); micBtn.classList.add('breathe'); if (statusEl.textContent==='Dinliyorum...') statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; setCoreState('idle'); try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_end'); }catch(_){ } };
-      recognition.onresult = (ev)=>{ const transcript = ev.results[0][0].transcript; try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_result', { len: (transcript||'').length }); }catch(_){ } addMessageToChat(transcript,'user'); getAIResponse(transcript); };
+      recognition.onresult = (ev)=>{ const transcript = ev.results[0][0].transcript; const normalized = ensureInitialCapital((transcript||'').trim()); try{ if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_sr_result', { len: (normalized||'').length }); }catch(_){ } if (!normalized) return; addMessageToChat(normalized,'user'); getAIResponse(normalized); };
       recognition.onerror = (ev)=>{ console.error('[SR]', ev.error); statusEl.textContent = `Hata: ${ev.error}`; setCoreState('idle'); };
     }
 

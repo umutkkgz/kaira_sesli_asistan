@@ -990,6 +990,12 @@
         const loader = chatView.querySelector('#loader');
         const errorMessageDiv = chatView.querySelector('#error-message');
 
+        function ensureInitialCapital(str) {
+            if (!str) return str;
+            const first = str.charAt(0);
+            return first.toLocaleUpperCase('tr-TR') + str.slice(first.length);
+        }
+
         // --- Sistem Promptu durum rozetini güncelle ---
         const promptStatus = chatView.querySelector('#system-prompt-status');
         function setPromptStatus(state){
@@ -1177,7 +1183,7 @@
             const selectedModel = modelSelect.value;
             const apiKey = selectedProvider === 'groq' ? groqApiKeyInput.value.trim() : googleApiKeyInput.value.trim();
             const systemPrompt = currentSystemPrompt;
-            const userMessage = userInput.value.trim();
+            const userMessage = ensureInitialCapital(userInput.value.trim());
 
             if (!apiKey) {
                 showError(`Lütfen ${PROVIDERS[selectedProvider].name} API anahtarınızı girin.`);
@@ -1405,23 +1411,29 @@
         const groqApiKeyInput = document.getElementById('groq-api-key');
         const googleApiKeyInput = document.getElementById('google-api-key');
         const systemPromptInput = document.getElementById('system-prompt');
-        const applySystemPromptBtn = document.getElementById('apply-system-prompt');
-        let currentSystemPrompt = systemPromptInput.value.trim();
-        const chatHistoryDiv = document.getElementById('chat-history');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const clearChatButton = document.getElementById('clear-chat');
-        const loader = document.getElementById('loader');
-        const errorMessageDiv = document.getElementById('error-message');
-        const apiStatusDiv = document.getElementById('api-status');
-        const fetchKeysBtn = document.getElementById('fetch-keys-btn');
-        const toggleGroqKeyBtn = document.getElementById('toggle-groq-key');
-        const toggleGoogleKeyBtn = document.getElementById('toggle-google-key');
+const applySystemPromptBtn = document.getElementById('apply-system-prompt');
+let currentSystemPrompt = systemPromptInput.value.trim();
+const chatHistoryDiv = document.getElementById('chat-history');
+const userInput = document.getElementById('user-input');
+const sendButton = document.getElementById('send-button');
+const clearChatButton = document.getElementById('clear-chat');
+const loader = document.getElementById('loader');
+const errorMessageDiv = document.getElementById('error-message');
+const apiStatusDiv = document.getElementById('api-status');
+const fetchKeysBtn = document.getElementById('fetch-keys-btn');
+const toggleGroqKeyBtn = document.getElementById('toggle-groq-key');
+const toggleGoogleKeyBtn = document.getElementById('toggle-google-key');
 
-        function toggleMask(inputEl, btnEl){
-            inputEl.type = inputEl.type === 'password' ? 'text' : 'password';
-            btnEl.classList.toggle('text-yellow-300');
-        }
+function ensureInitialCapital(str) {
+    if (!str) return str;
+    const first = str.charAt(0);
+    return first.toLocaleUpperCase('tr-TR') + str.slice(first.length);
+}
+
+function toggleMask(inputEl, btnEl){
+    inputEl.type = inputEl.type === 'password' ? 'text' : 'password';
+    btnEl.classList.toggle('text-yellow-300');
+}
 
         // --- Sistem Promptu durum rozetini güncelle ---
         const promptStatus2 = document.getElementById('system-prompt-status');
@@ -1557,7 +1569,7 @@
             const selectedModel = modelSelect.value;
             const apiKey = selectedProvider === 'groq' ? groqApiKeyInput.value.trim() : googleApiKeyInput.value.trim();
             const systemPrompt = currentSystemPrompt;
-            const userMessage = userInput.value.trim();
+    const userMessage = ensureInitialCapital(userInput.value.trim());
 
             if (!apiKey) {
                 showError(`Lütfen ${PROVIDERS[selectedProvider].name} API anahtarınızı girin.`);
@@ -1729,6 +1741,7 @@
   function THINKER_BASE(){ return (localStorage.getItem('kaira_thinker_base') || '').trim() || API(); }
   function LEARNER_BASE(){ return (localStorage.getItem('kaira_learner_base') || '').trim() || API(); }
   let MODE = (localStorage.getItem('kaira_chat_mode') || 'think'); // 'think' | 'learn'
+  function ensureInitialCapital(str){ if (!str) return str; const first = str.charAt(0); return first.toLocaleUpperCase('tr-TR') + str.slice(first.length); }
   function applyModeUI(){
     if (titleEl){ titleEl.textContent = 'KΔIRA Chatbot — ' + (MODE==='think' ? 'Düşünen' : 'Öğrenen'); }
     if (modeThinkBtn && modeLearnBtn){
@@ -1780,7 +1793,7 @@
   function saveHistory(){ try{ localStorage.setItem('kaira_learn_chat', body.innerHTML); }catch(_){ } }
   function loadHistory(){ try{ const h = localStorage.getItem('kaira_learn_chat'); if (h) body.innerHTML = h; }catch(_){ } }
   async function send(){
-    const t = (input.value||'').trim(); if (!t) return; input.value=''; addMsg(t,'user'); saveHistory();
+    const t = ensureInitialCapital((input.value||'').trim()); if (!t) return; input.value=''; addMsg(t,'user'); saveHistory();
     const base = (MODE==='think' ? THINKER_BASE() : LEARNER_BASE()) || API();
     if (!base){ addMsg('Sunucu ayarlı değil.', 'bot'); return; }
     const b = base.replace(/\/$/,'');
@@ -1789,7 +1802,7 @@
       let streamed = false;
       if (MODE === 'think'){
         // Try streaming endpoint first
-        const reqBody = JSON.stringify({ prompt: t });
+          const reqBody = JSON.stringify({ prompt: t });
         let resp;
         try {
           resp = await fetch(b + '/api/think/stream', { method:'POST', headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'}, body: reqBody });
