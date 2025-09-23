@@ -233,7 +233,7 @@
       function hideWaitingContent(){ statusEl.textContent='Konuşmak için mikrofon simgesine dokunun'; }
       waitingTimeout = setTimeout(showWaitingContent, 2000);
       const fd = new FormData(); fd.append('text', (text||'').trim()); fd.append('angry', angry ? 'true' : 'false'); fd.append('history', JSON.stringify(chatHistory.slice(-10))); fd.append('user_id', USER_ID);
-      const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 300000);
+      const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 3000000);
       try{
         try { if (window.KAIRA_LOG) window.KAIRA_LOG('asistan_tts_request', { len: (text||'').length, angry: !!angry }); } catch(_){ }
         const res = await fetch(`${API_BASE.replace(/\/$/,'')}/api/tts`, { method:'POST', body: fd, signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
