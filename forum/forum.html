@@ -252,8 +252,14 @@
       return `https://placehold.co/48x48/6366f1/ffffff?text=${encodeURIComponent(letter)}`;
     };
 
+    const joinUrl = (base, path) => {
+      if (!base) return path;
+      if (/^https?:\/\//i.test(path)) return path;
+      return `${base}${path}`;
+    };
+
     const apiGet = async (path, params = {}) => {
-      const url = new URL(`${API_BASE}${path}` || path, window.location.origin);
+      const url = new URL(joinUrl(API_BASE, path), window.location.origin);
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           url.searchParams.append(key, value);
@@ -268,7 +274,7 @@
     };
 
     const apiPost = async (path, payload) => {
-      const res = await fetch(`${API_BASE}${path}` || path, {
+      const res = await fetch(joinUrl(API_BASE, path), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
