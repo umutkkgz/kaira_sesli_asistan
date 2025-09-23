@@ -6,6 +6,7 @@ const selectEditorBtn = document.getElementById('select-editor');
 const selectChatBtn = document.getElementById('select-chat'); // Yeni
 const selectNasaBtn = document.getElementById('select-nasa');
 const selectCodeBtn = document.getElementById('select-codelab');
+const selectForumBtn = document.getElementById('select-forum');
 const backButtons = document.querySelectorAll('.back-to-selection');
 
 let activeView = 'selection';
@@ -285,6 +286,15 @@ selectEditorBtn.addEventListener('click', () => switchView('editor'));
 selectChatBtn.addEventListener('click', () => switchView('chat')); // Yeni
 selectNasaBtn.addEventListener('click', () => switchView('nasa'));
 if (selectCodeBtn) selectCodeBtn.addEventListener('click', () => switchView('code'));
+if (selectForumBtn) {
+  selectForumBtn.addEventListener('click', () => {
+    try {
+      window.location.href = 'forum/forum.html';
+    } catch (_) {
+      window.open('forum/forum.html', '_blank');
+    }
+  });
+}
 backButtons.forEach(btn => btn.addEventListener('click', () => switchView('selection')));
 
 // Lightweight deep-linking: support ?start=chat and #/chat etc.
