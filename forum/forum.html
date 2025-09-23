@@ -182,7 +182,13 @@
     
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE = ((window.API_PROXY_BASE || '').trim()).replace(/\/$/, '');
+    const DEFAULT_API_BASE = 'https://53575c229bbb.ngrok-free.app';
+    const storedBase = (() => {
+      try { return localStorage.getItem('kaira_api_base') || ''; }
+      catch (_) { return ''; }
+    })();
+    const apiBaseCandidate = (window.API_PROXY_BASE || storedBase || DEFAULT_API_BASE || '').trim();
+    const API_BASE = apiBaseCandidate.replace(/\/$/, '');
 
     const elements = {
       categoriesList: document.getElementById('categories-list'),
@@ -220,9 +226,7 @@
     const textToHtml = (text = '') => {
       const safe = escapeHtml(text.trim());
       if (!safe) return '';
-      return `<p>${safe.replace(/
-{2,}/g, '</p><p>').replace(/
-/g, '<br>')}</p>`;
+      return '<p>' + safe.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
     };
 
     const formatDate = (iso) => {
@@ -255,7 +259,7 @@
           url.searchParams.append(key, value);
         }
       });
-      const res = await fetch(url.toString(), { credentials: 'include' });
+      const res = await fetch(url.toString());
       if (!res.ok) {
         const detail = await res.text();
         throw new Error(detail || 'İstek başarısız oldu');
@@ -267,7 +271,6 @@
       const res = await fetch(`${API_BASE}${path}` || path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
