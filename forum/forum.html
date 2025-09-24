@@ -5,11 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaira Forumları</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
+            background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.18), transparent 55%),
+                        radial-gradient(circle at 80% 30%, rgba(236, 72, 153, 0.15), transparent 60%),
+                        linear-gradient(140deg, #020617 0%, #0b1028 45%, #111827 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 15% 85%, rgba(56, 189, 248, 0.12), transparent 55%),
+                        radial-gradient(circle at 85% 70%, rgba(129, 140, 248, 0.12), transparent 60%);
+            z-index: -3;
+        }
+        #forum-starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
         }
         .view {
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -46,6 +70,8 @@
     </style>
 </head>
 <body class="text-gray-800">
+
+    <canvas id="forum-starfield"></canvas>
 
     <!-- ANA KONTEYNER -->
     <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-8xl">
@@ -193,6 +219,85 @@
       catch (_) { return ''; }
     })();
     const API_BASE = (window.API_PROXY_BASE || storedBase || DEFAULT_API_BASE || '').trim().replace(/\/$/, '');
+
+    const initStarfieldBackground = () => {
+      if (typeof THREE === 'undefined') return;
+      const canvas = document.getElementById('forum-starfield');
+      if (!canvas) return;
+
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 60;
+
+      const starGeometry = new THREE.BufferGeometry();
+      const starCount = 4500;
+      const positions = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount; i += 1) {
+        const i3 = i * 3;
+        positions[i3] = (Math.random() - 0.5) * 900;
+        positions[i3 + 1] = (Math.random() - 0.5) * 900;
+        positions[i3 + 2] = (Math.random() - 0.5) * 900;
+      }
+      starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+      const starMaterial = new THREE.PointsMaterial({
+        color: 0xa5b4fc,
+        size: 0.85,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+      });
+
+      const stars = new THREE.Points(starGeometry, starMaterial);
+      scene.add(stars);
+
+      const nebulaGeometry = new THREE.SphereGeometry(200, 32, 32);
+      const nebulaMaterial = new THREE.MeshBasicMaterial({
+        color: 0x312e81,
+        transparent: true,
+        opacity: 0.08,
+        side: THREE.BackSide,
+      });
+      const nebula = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
+      scene.add(nebula);
+
+      const baseRotation = { x: 0, y: 0 };
+      const pointer = { x: 0, y: 0 };
+      const pointerTarget = { x: 0, y: 0 };
+
+      const onPointerMove = (event) => {
+        pointerTarget.x = (event.clientY / window.innerHeight - 0.5) * 0.18;
+        pointerTarget.y = (event.clientX / window.innerWidth - 0.5) * 0.25;
+      };
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+
+      const onResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      };
+      window.addEventListener('resize', onResize);
+
+      const animate = () => {
+        baseRotation.x += 0.00006;
+        baseRotation.y += 0.0002;
+        pointer.x += (pointerTarget.x - pointer.x) * 0.05;
+        pointer.y += (pointerTarget.y - pointer.y) * 0.05;
+        stars.rotation.x = baseRotation.x + pointer.x;
+        stars.rotation.y = baseRotation.y + pointer.y;
+        nebula.rotation.y += 0.00008;
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      };
+
+      animate();
+    };
+
+    initStarfieldBackground();
 
     const elements = {
       categoriesList: document.getElementById('categories-list'),
